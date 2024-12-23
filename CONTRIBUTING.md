@@ -1,7 +1,7 @@
 # Contributing to Atlas CLI KUBERNETES PLUGIN
 
-Thanks for your interest in contributing to Atlas CLI Kubernetes Plugin,
-this document describes some guidelines necessary to participate in the community.
+Thanks for your interest in contributing to Atlas CLI Kubernetes Plugin.
+This document describes some guidelines necessary to participate in the community.
 
 ## Asking Support Questions
 
@@ -10,13 +10,13 @@ Please don't use the GitHub issue tracker to ask questions.
 
 ## Feature Requests
 
-We welcome any feedback or feature request, to submit yours
+We welcome any feedback or feature requests, to submit yours
 please head over to our [feedback page](https://feedback.mongodb.com/forums/930808-mongodb-cli).
 
 ## Reporting Issues
 
 Please create a [GitHub issue](https://github.com/mongodb/atlas-cli-plugin-kubernetes/issues/new?assignees=&labels=&template=bug_report.md) describing the kind of problem you're facing
-with as much detail as possible, including things like operating system or anything else may be relevant to the issue.
+with as much detail as possible, including things like operating system or anything else that may be relevant to the issue.
 
 ## Auto-close Stale Issues and Pull Requests
 
@@ -116,18 +116,18 @@ Depending on the feature you are building you might choose to:
 - Add a new command group that provides ability to run nested commands under certain prefix
 
 For a command group, we need to create new cobra root command. 
-This command aggregates a number of subcommands that can perform network requests and return results
+This command aggregates a number of subcommands that can perform network requests and return results.
 
 
 
-For example, `kubernetes` command root provides the main execution point for `atlas kubernetes` with subcommands like `atlas kubernetes config`
+For example, `kubernetes` command root provides the main execution point for `atlas kubernetes` with subcommands like `atlas kubernetes config`.
 
 Root command links to a number of child commands. Atlas CLI provides a number of patterns for child commands depending on the type of operation performed.
 Each new feature might cover typical commands like `list` and `describe` along with dedicated actions.
 For example, `config apply`.
 It is normal to duplicate existing commands and edit descriptions and methods for your own needs.
 
-Additionally, after adding new command we need to add it to the main CLI plugin root command. 
+Additionally, after adding a new command we need to add it to the main CLI plugin root command. 
 For example, please edit `./cmd/plugin/main.go` to add your command builder method for Atlas CLI Kubernetes Plugin.
 
 ### Adding a New Command
@@ -150,10 +150,10 @@ For commands that create or modify complex data structures, the use of configura
 
 > [!IMPORTANT]  
 > Commands are executing network requests by using `./internal/store` interface that wraps [Atlas Go SDK](https://github.com/mongodb/atlas-sdk-go). 
-Before adding a command please make sure that your api exists in the GO SDK. 
+Before adding a command, please make sure that your API exists in the GO SDK. 
 
 > [!TIP]  
-> Atlas CLI provides an experimental generator, make sure to try it out in [tools/cli-generator](./tools/cli-generator)
+> Atlas CLI provides an experimental generator. Make sure to try it out in [tools/cli-generator](./tools/cli-generator)
 
 ### API Interactions
 
@@ -172,7 +172,7 @@ Flags are a way to modify the command, also may be called "options". Flags alway
   As shown in the examples, the standard format used to represent data structures consists of splitting the first value with the second one by at sign `@` or colon `:`, and the second value with the third one by a full stop `.`.
   We recommend using configuration files for complex data structures that require more than three values. For an example of configuration files, see [atlas cluster create](https://github.com/mongodb/mongodb-atlas-cli/blob/f2e6d661a3eb2cfcf9baab5f9e0b1c0f872b8c14/internal/cli/atlas/clusters/create.go#L235).
 
-When in doubt refer to [Utility Argument Syntax Conventions](https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap12.html)
+When in doubt refer to [Utility Argument Syntax Conventions](https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap12.html).
 
 If you are adding a brand-new command, or updating a command that has no doc annotations, please define the following doc structures for the command. For more information on all command structs, see [Cobra](https://pkg.go.dev/github.com/spf13/cobra#Command).
 
@@ -202,7 +202,7 @@ For changes that involve user facing copy, please include `docs-cloud-team` as a
 
 Atlas CLI Kubernetes Plugin uses [atlas-sdk-go](https://github.com/mongodb/atlas-sdk-go) for API integration.
 Go SDK will be automatically updated for the new versions using dependabot.
-In situations when SDK does new major releases developers need to specify the version explicitly in the go update command. For example:
+In situations when SDK does new major releases, developers need to specify the version explicitly in the Go update command. For example:
 
 ```sh
 go get go.mongodb.org/atlas-sdk/v20230501001
@@ -211,13 +211,13 @@ go get go.mongodb.org/atlas-sdk/v20230501001
 Atlas CLI Kubernetes Plugin can work with multiple versions of the GO SDK supporting various Resource Versions. 
 
 For more info please refer to the [SDK documentation](https://github.com/mongodb/atlas-sdk-go/blob/main/docs/doc_1_concepts.md#release-strategy-semantic-versioning) and 
-[golang documentation](https://go.dev/doc/modules/version-numbers#major)
+[golang documentation](https://go.dev/doc/modules/version-numbers#major).
 
 ### Major Version Updates   
 
-When adding a new major version of the go sdk, the old sdk version dependency will be still present in the go mod files.
+When adding a new major version of the Go SDK, the old SDK version dependency will be still present in the Go mod files.
 Atlas CLI plugin developers should update all imports to new major versions and remove old dependencies.
 
-To update, simply rename all instances of major version across the repository imports and go.mod files.
+To update, simply rename all instances of major versions across the repository imports and go.mod files.
 
 e.g `v20230201001` => `v20230201002` 

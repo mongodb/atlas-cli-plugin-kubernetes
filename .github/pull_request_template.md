@@ -5,7 +5,7 @@ Before you submit your pull request, please review our contribution guidelines:
 https://github.com/mongodb/atlas-cli-plugin-kubernetes/blob/master/CONTRIBUTING.md
 
 Please fill out the information below to help speed up the review process
-and getting you pull request merged!
+and get you pull request merged!
 -->
 
 ## Proposed changes
@@ -32,7 +32,7 @@ We're here to help! This is simply a reminder of what we are going to look for b
 
 - [ ] I have signed the [MongoDB CLA](https://www.mongodb.com/legal/contributor-agreement)
 - [ ] I have added tests that prove my fix is effective or that my feature works
-- [ ] I have added any necessary documentation in document requirements section listed in [CONTRIBUTING.md](https://github.com/mongodb/atlas-cli-plugin-kubernetes/blob/master/CONTRIBUTING.md) (if appropriate)
+- [ ] I have added any necessary documentation in the document requirements section listed in [CONTRIBUTING.md](https://github.com/mongodb/atlas-cli-plugin-kubernetes/blob/master/CONTRIBUTING.md) (if appropriate)
 - [ ] I have addressed the @mongodb/docs-cloud-team comments (if appropriate)
 - [ ] I have run `make fmt` and formatted my code
 
