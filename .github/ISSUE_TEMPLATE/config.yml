@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: MongoDB Support
+    url: https://support.mongodb.com/
+    about: Support is provided under MongoDB Atlas or Enterprise Advance support plans.
+  - name: MongoDB Atlas
+    url: https://www.mongodb.com/cloud/atlas
+    about: Learn more about MongoDB Atlas.
