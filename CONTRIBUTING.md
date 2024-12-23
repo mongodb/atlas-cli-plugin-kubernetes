@@ -1,6 +1,6 @@
-# Contributing to Atlas CLI PLUGIN KUBERNETES
+# Contributing to Atlas CLI KUBERNETES PLUGIN
 
-Thanks for your interest in contributing to Atlas CLI Plugin Kubernetes,
+Thanks for your interest in contributing to Atlas CLI Kubernetes Plugin,
 this document describes some guidelines necessary to participate in the community.
 
 ## Asking Support Questions
@@ -25,7 +25,7 @@ with as much detail as possible, including things like operating system or anyth
 
 ## Submitting Patches
 
-The Atlas CLI Plugin Kubernetes project welcomes all contributors and contributions regardless of skill or experience level.
+The Atlas CLI Kubernetes Plugin project welcomes all contributors and contributions regardless of skill or experience level.
 If you are interested in helping with the project, please follow our [guidelines](#code-contribution-guidelines).
 
 ### Code Contribution Guidelines
@@ -108,7 +108,7 @@ Review and replace the command name and arguments depending on the command you w
 
 ### Contributing New Command Group
 
-`Atlas CLI Plugin Kubernetes` uses the [Cobra Framework](https://umarcor.github.io/cobra/).
+`Atlas CLI Kubernetes Plugin` uses the [Cobra Framework](https://umarcor.github.io/cobra/).
 
 Depending on the feature you are building you might choose to:
 
@@ -128,7 +128,7 @@ For example, `config apply`.
 It is normal to duplicate existing commands and edit descriptions and methods for your own needs.
 
 Additionally, after adding new command we need to add it to the main CLI plugin root command. 
-For example, please edit `./cmd/plugin/main.go` to add your command builder method for Atlas CLI Plugin Kubernetes.
+For example, please edit `./cmd/plugin/main.go` to add your command builder method for Atlas CLI Kubernetes Plugin.
 
 ### Adding a New Command
 
@@ -157,7 +157,7 @@ Before adding a command please make sure that your api exists in the GO SDK.
 
 ### API Interactions
 
-Atlas CLI Plugin Kubernetes uses [atlas-sdk-go](https://github.com/mongodb/atlas-sdk-go) for all backend integration.
+Atlas CLI Kubernetes Plugin uses [atlas-sdk-go](https://github.com/mongodb/atlas-sdk-go) for all backend integration.
 This SDK is updated automatically based on Atlas OpenAPI file.
 
 #### How to define flags:
@@ -200,7 +200,7 @@ For changes that involve user facing copy, please include `docs-cloud-team` as a
 
 ## SDK integration
 
-Atlas CLI Plugin Kubernetes uses [atlas-sdk-go](https://github.com/mongodb/atlas-sdk-go) for API integration.
+Atlas CLI Kubernetes Plugin uses [atlas-sdk-go](https://github.com/mongodb/atlas-sdk-go) for API integration.
 Go SDK will be automatically updated for the new versions using dependabot.
 In situations when SDK does new major releases developers need to specify the version explicitly in the go update command. For example:
 
@@ -208,7 +208,7 @@ In situations when SDK does new major releases developers need to specify the ve
 go get go.mongodb.org/atlas-sdk/v20230501001
 ```
 
-Atlas CLI Plugin Kubernetes can work with multiple versions of the GO SDK supporting various Resource Versions. 
+Atlas CLI Kubernetes Plugin can work with multiple versions of the GO SDK supporting various Resource Versions. 
 
 For more info please refer to the [SDK documentation](https://github.com/mongodb/atlas-sdk-go/blob/main/docs/doc_1_concepts.md#release-strategy-semantic-versioning) and 
 [golang documentation](https://go.dev/doc/modules/version-numbers#major)

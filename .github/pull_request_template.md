@@ -1,5 +1,5 @@
 <!--
-Thanks for contributing to MongoDB Atlas CLI Plugin Kubernetes!
+Thanks for contributing to Atlas CLI Kubernetes Plugin!
 
 Before you submit your pull request, please review our contribution guidelines:
 https://github.com/mongodb/atlas-cli-plugin-kubernetes/blob/master/CONTRIBUTING.md
@@ -18,7 +18,7 @@ If it fixes a bug or resolves a feature request, be sure to link to that issue.
 _Jira ticket:_ CLOUDP-#
 
 <!--
-What Atlas CLI Plugin Kubernetes issue does this PR address? (for example, #1234), remove this section if none.
+What Atlas CLI Kubernetes Plugin issue does this PR address? (for example, #1234), remove this section if none.
 -->
 
 Closes #[issue number]
@@ -34,7 +34,6 @@ We're here to help! This is simply a reminder of what we are going to look for b
 - [ ] I have added tests that prove my fix is effective or that my feature works
 - [ ] I have added any necessary documentation in document requirements section listed in [CONTRIBUTING.md](https://github.com/mongodb/atlas-cli-plugin-kubernetes/blob/master/CONTRIBUTING.md) (if appropriate)
 - [ ] I have addressed the @mongodb/docs-cloud-team comments (if appropriate)
-- [ ] I have updated [test/README.md](https://github.com/mongodb/mongodb-atlas-cli/blob/master/test/README.md) (if an e2e test has been added)
 - [ ] I have run `make fmt` and formatted my code
 
 ## Further comments
