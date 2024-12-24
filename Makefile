@@ -16,6 +16,7 @@ build: ## Generate the binary in ./bin
 devtools:  ## Install dev tools
 	@echo "==> Installing dev tools..."
 	go install github.com/google/addlicense@latest
+	go install github.com/golang/mock/mockgen@latest
 	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(shell go env GOPATH)/bin $(GOLANGCI_VERSION)
 
 
@@ -32,6 +33,12 @@ unit-test: ## Run unit-tests
 fuzz-normalizer-test: ## Run fuzz test
 	@echo "==> Running fuzz test..."
 	$(TEST_CMD) -fuzz=Fuzz -fuzztime 50s --tags="$(UNIT_TAGS)" -race ./cmd/plugin
+
+.PHONY: gen-mocks
+gen-mocks: ## Generate mocks
+	@echo "==> Generating mocks"
+	rm -rf ./internal/mocks
+	go generate ./internal...
 
 .PHONY: gen-docs
 gen-docs: ## Generate docs for atlascli commands
