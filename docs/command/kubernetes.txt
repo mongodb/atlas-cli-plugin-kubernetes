@@ -1,0 +1,39 @@
+.. _kubernetes:
+
+==========
+kubernetes
+==========
+
+.. default-domain:: mongodb
+
+.. contents:: On this page
+   :local:
+   :backlinks: none
+   :depth: 1
+   :class: singlecol
+
+Manage Kubernetes resources.
+
+This command provides access to Kubernetes features within Atlas.
+
+Options
+-------
+
+.. list-table::
+   :header-rows: 1
+   :widths: 20 10 10 60
+
+   * - Name
+     - Type
+     - Required
+     - Description
+   * - -h, --help
+     - 
+     - false
+     - help for kubernetes
+
+
+.. toctree::
+   :titlesonly:
+
+
