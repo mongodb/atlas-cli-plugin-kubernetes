@@ -31,8 +31,9 @@ unit-test: ## Run unit-tests
 
 .PHONY: fuzz-normalizer-test
 fuzz-normalizer-test: ## Run fuzz test
+## TODO: change path when fuzz tests are migrated over - current path is placeholder
 	@echo "==> Running fuzz test..."
-	$(TEST_CMD) -fuzz=Fuzz -fuzztime 50s --tags="$(UNIT_TAGS)" -race ./cmd/plugin
+	$(TEST_CMD) -fuzz=Fuzz -fuzztime 50s --tags="$(UNIT_TAGS)" -race ./cmd/plugin 
 
 .PHONY: gen-mocks
 gen-mocks: ## Generate mocks
