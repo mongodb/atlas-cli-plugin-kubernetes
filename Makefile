@@ -3,6 +3,10 @@ CLI_SOURCE_FILES?=./cmd/plugin
 CLI_BINARY_NAME=binary
 CLI_DESTINATION=./bin/$(CLI_BINARY_NAME)
 
+TEST_CMD?=go test
+UNIT_TAGS?=unit
+COVERAGE?=coverage.out
+
 .PHONY: build
 build: ## Generate the binary in ./bin
 	@echo "==> Building $(CLI_BINARY_NAME) binary"
@@ -20,7 +24,7 @@ unit-test: ## Run unit-tests
 .PHONY: fuzz-normalizer-test
 fuzz-normalizer-test: ## Run fuzz test
 	@echo "==> Running fuzz test..."
-	$(TEST_CMD) -fuzz=Fuzz -fuzztime 50s --tags="$(UNIT_TAGS)" -race ./internal/kubernetes/operator/resources
+	$(TEST_CMD) -fuzz=Fuzz -fuzztime 50s --tags="$(UNIT_TAGS)" -race ./cmd/plugin
 
 .PHONY: gen-docs
 gen-docs: ## Generate docs for atlascli commands
