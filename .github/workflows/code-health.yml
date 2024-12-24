@@ -3,7 +3,7 @@ name: Code Health
 on:
   push:
     branches:
-      - master
+      - main
   pull_request:
 permissions:
   pull-requests: write  # For PR-specific operations
