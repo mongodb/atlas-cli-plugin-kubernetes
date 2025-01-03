@@ -1,4 +1,4 @@
-// Copyright 2025 MongoDB Inc
+// Copyright 2020 MongoDB Inc
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,23 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package root
+package jsonwriter
 
 import (
-	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/cli/kubernetes/config"
-
-	"github.com/spf13/cobra"
+	"encoding/json"
+	"fmt"
+	"io"
 )
 
-func Builder() *cobra.Command {
-	const use = "kubernetes"
+const (
+	prefix = ""
+	indent = "  "
+)
 
-	cmd := &cobra.Command{
-		Use:   use,
-		Short: "Manage Kubernetes resources.",
-		Long:  `This command provides access to Kubernetes features within Atlas.`,
+func Print(w io.Writer, obj any) error {
+	prettyJSON, err := json.MarshalIndent(obj, prefix, indent)
+	if err != nil {
+		return err
 	}
+	_, err = fmt.Fprintln(w, string(prettyJSON))
 
-	cmd.AddCommand(config.Builder())
-	return cmd
+	return err
 }

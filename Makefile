@@ -9,7 +9,7 @@ COVERAGE?=coverage.out
 
 .PHONY: build
 build: ## Generate the binary in ./bin
-	@echo "==> Building $(CLI_BINARY_NAME) binary"
+	@echo "==> Building kubernetes plugin binary"
 	go build -o $(CLI_DESTINATION) $(CLI_SOURCE_FILES)
 
 .PHONY: devtools

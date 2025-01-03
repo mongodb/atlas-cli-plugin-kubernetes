@@ -1,4 +1,4 @@
-// Copyright 2025 MongoDB Inc
+// Copyright 2021 MongoDB Inc
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,23 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package root
+package store
 
-import (
-	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/cli/kubernetes/config"
+//go:generate mockgen -destination=../mocks/mock_default_mongodb_version.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store DefaultVersionGetter
 
-	"github.com/spf13/cobra"
-)
+type DefaultVersionGetter interface {
+	DefaultMongoDBVersion() (string, error)
+}
 
-func Builder() *cobra.Command {
-	const use = "kubernetes"
-
-	cmd := &cobra.Command{
-		Use:   use,
-		Short: "Manage Kubernetes resources.",
-		Long:  `This command provides access to Kubernetes features within Atlas.`,
-	}
-
-	cmd.AddCommand(config.Builder())
-	return cmd
+// DefaultMongoDBVersion encapsulates the logic to manage different cloud providers.
+func (s *Store) DefaultMongoDBVersion() (string, error) {
+	result, _, err := s.client.DefaultMongoDBMajorVersion.Get(s.ctx)
+	return result, err
 }

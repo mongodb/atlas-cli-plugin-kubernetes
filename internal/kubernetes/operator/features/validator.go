@@ -1,4 +1,4 @@
-// Copyright 2025 MongoDB Inc
+// Copyright 2023 MongoDB Inc
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,23 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package root
+package features
 
-import (
-	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/cli/kubernetes/config"
+//go:generate mockgen -destination=../../../mocks/mock_atlas_operator_feature_validator.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator/features FeatureValidator
 
-	"github.com/spf13/cobra"
-)
-
-func Builder() *cobra.Command {
-	const use = "kubernetes"
-
-	cmd := &cobra.Command{
-		Use:   use,
-		Short: "Manage Kubernetes resources.",
-		Long:  `This command provides access to Kubernetes features within Atlas.`,
-	}
-
-	cmd.AddCommand(config.Builder())
-	return cmd
+type FeatureValidator interface {
+	IsResourceSupported(resourceName string) bool
+	FeatureExist(resourceName, version string) bool
 }
