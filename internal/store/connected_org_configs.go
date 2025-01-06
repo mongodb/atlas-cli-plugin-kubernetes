@@ -18,43 +18,14 @@ import (
 	atlasv2 "go.mongodb.org/atlas-sdk/v20241113004/admin"
 )
 
-//go:generate mockgen -destination=../mocks/mock_connected_orgs_store.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store ConnectedOrgConfigsUpdater,ConnectedOrgConfigsDescriber,ConnectedOrgConfigsDeleter,ConnectedOrgConfigsLister
-
-type ConnectedOrgConfigsUpdater interface {
-	UpdateConnectedOrgConfig(opts *atlasv2.UpdateConnectedOrgConfigApiParams) (*atlasv2.ConnectedOrgConfig, error)
-}
+//go:generate mockgen -destination=../mocks/mock_connected_orgs_store.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store ConnectedOrgConfigsDescriber
 
 type ConnectedOrgConfigsDescriber interface {
 	GetConnectedOrgConfig(opts *atlasv2.GetConnectedOrgConfigApiParams) (*atlasv2.ConnectedOrgConfig, error)
-}
-
-type ConnectedOrgConfigsLister interface {
-	ListConnectedOrgConfigs(opts *atlasv2.ListConnectedOrgConfigsApiParams) (*atlasv2.PaginatedConnectedOrgConfigs, error)
-}
-type ConnectedOrgConfigsDeleter interface {
-	DeleteConnectedOrgConfig(federationSettingsID string, orgID string) error
-}
-
-// UpdateConnectedOrgConfig encapsulate the logic to manage different cloud providers.
-func (s *Store) UpdateConnectedOrgConfig(opts *atlasv2.UpdateConnectedOrgConfigApiParams) (*atlasv2.ConnectedOrgConfig, error) {
-	result, _, err := s.clientv2.FederatedAuthenticationApi.UpdateConnectedOrgConfigWithParams(s.ctx, opts).Execute()
-	return result, err
 }
 
 // GetConnectedOrgConfig encapsulate the logic to manage different cloud providers.
 func (s *Store) GetConnectedOrgConfig(opts *atlasv2.GetConnectedOrgConfigApiParams) (*atlasv2.ConnectedOrgConfig, error) {
 	result, _, err := s.clientv2.FederatedAuthenticationApi.GetConnectedOrgConfigWithParams(s.ctx, opts).Execute()
 	return result, err
-}
-
-// ListConnectedOrgConfigs encapsulate the logic to manage different cloud providers.
-func (s *Store) ListConnectedOrgConfigs(opts *atlasv2.ListConnectedOrgConfigsApiParams) (*atlasv2.PaginatedConnectedOrgConfigs, error) {
-	result, _, err := s.clientv2.FederatedAuthenticationApi.ListConnectedOrgConfigsWithParams(s.ctx, opts).Execute()
-	return result, err
-}
-
-// DeleteConnectedOrgConfig encapsulate the logic to manage different cloud providers.
-func (s *Store) DeleteConnectedOrgConfig(federationSettingsID string, orgID string) error {
-	_, _, err := s.clientv2.FederatedAuthenticationApi.RemoveConnectedOrgConfig(s.ctx, federationSettingsID, orgID).Execute()
-	return err
 }

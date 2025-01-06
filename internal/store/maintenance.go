@@ -18,40 +18,10 @@ import (
 	atlasv2 "go.mongodb.org/atlas-sdk/v20241113004/admin"
 )
 
-//go:generate mockgen -destination=../mocks/mock_maintenance.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store MaintenanceWindowUpdater,MaintenanceWindowClearer,MaintenanceWindowDeferrer,MaintenanceWindowDescriber
-
-type MaintenanceWindowUpdater interface {
-	UpdateMaintenanceWindow(string, *atlasv2.GroupMaintenanceWindow) error
-}
-
-type MaintenanceWindowClearer interface {
-	ClearMaintenanceWindow(string) error
-}
-
-type MaintenanceWindowDeferrer interface {
-	DeferMaintenanceWindow(string) error
-}
+//go:generate mockgen -destination=../mocks/mock_maintenance.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store MaintenanceWindowDescriber
 
 type MaintenanceWindowDescriber interface {
 	MaintenanceWindow(string) (*atlasv2.GroupMaintenanceWindow, error)
-}
-
-// UpdateMaintenanceWindow encapsulates the logic to manage different cloud providers.
-func (s *Store) UpdateMaintenanceWindow(projectID string, maintenanceWindow *atlasv2.GroupMaintenanceWindow) error {
-	_, _, err := s.clientv2.MaintenanceWindowsApi.UpdateMaintenanceWindow(s.ctx, projectID, maintenanceWindow).Execute()
-	return err
-}
-
-// ClearMaintenanceWindow encapsulates the logic to manage different cloud providers.
-func (s *Store) ClearMaintenanceWindow(projectID string) error {
-	_, err := s.clientv2.MaintenanceWindowsApi.ResetMaintenanceWindow(s.ctx, projectID).Execute()
-	return err
-}
-
-// DeferMaintenanceWindow encapsulates the logic to manage different cloud providers.
-func (s *Store) DeferMaintenanceWindow(projectID string) error {
-	_, err := s.clientv2.MaintenanceWindowsApi.DeferMaintenanceWindow(s.ctx, projectID).Execute()
-	return err
 }
 
 // MaintenanceWindow encapsulates the logic to manage different cloud providers.

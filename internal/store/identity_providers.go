@@ -18,7 +18,7 @@ import (
 	atlasv2 "go.mongodb.org/atlas-sdk/v20241113004/admin"
 )
 
-//go:generate mockgen -destination=../mocks/mock_identity_providers_store.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store IdentityProviderLister,IdentityProviderDescriber,IdentityProviderCreator,IdentityProviderDeleter,IdentityProviderUpdater,IdentityProviderJwkRevoker
+//go:generate mockgen -destination=../mocks/mock_identity_providers_store.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store IdentityProviderLister,IdentityProviderDescriber
 
 type IdentityProviderLister interface {
 	IdentityProviders(opts *atlasv2.ListIdentityProvidersApiParams) (*atlasv2.PaginatedFederationIdentityProvider, error)
@@ -26,22 +26,6 @@ type IdentityProviderLister interface {
 
 type IdentityProviderDescriber interface {
 	IdentityProvider(opts *atlasv2.GetIdentityProviderApiParams) (*atlasv2.FederationIdentityProvider, error)
-}
-
-type IdentityProviderCreator interface {
-	CreateIdentityProvider(*atlasv2.CreateIdentityProviderApiParams) (*atlasv2.FederationOidcIdentityProvider, error)
-}
-
-type IdentityProviderDeleter interface {
-	DeleteIdentityProvider(string, string) error
-}
-
-type IdentityProviderJwkRevoker interface {
-	RevokeJwksFromIdentityProvider(string, string) error
-}
-
-type IdentityProviderUpdater interface {
-	UpdateIdentityProvider(opts *atlasv2.UpdateIdentityProviderApiParams) (*atlasv2.FederationIdentityProvider, error)
 }
 
 // IdentityProviders encapsulate the logic to manage different cloud providers.
@@ -54,28 +38,4 @@ func (s *Store) IdentityProviders(opts *atlasv2.ListIdentityProvidersApiParams) 
 func (s *Store) IdentityProvider(opts *atlasv2.GetIdentityProviderApiParams) (*atlasv2.FederationIdentityProvider, error) {
 	result, _, err := s.clientv2.FederatedAuthenticationApi.GetIdentityProviderWithParams(s.ctx, opts).Execute()
 	return result, err
-}
-
-// CreateIdentityProvider encapsulate the logic to manage different cloud providers.
-func (s *Store) CreateIdentityProvider(opts *atlasv2.CreateIdentityProviderApiParams) (*atlasv2.FederationOidcIdentityProvider, error) {
-	result, _, err := s.clientv2.FederatedAuthenticationApi.CreateIdentityProviderWithParams(s.ctx, opts).Execute()
-	return result, err
-}
-
-// DeleteIdentityProvider encapsulate the logic to manage different cloud providers.
-func (s *Store) DeleteIdentityProvider(federationSettingsID string, identityProviderID string) error {
-	_, err := s.clientv2.FederatedAuthenticationApi.DeleteIdentityProvider(s.ctx, federationSettingsID, identityProviderID).Execute()
-	return err
-}
-
-// UpdateIdentityProvider encapsulate the logic to manage different cloud providers.
-func (s *Store) UpdateIdentityProvider(opts *atlasv2.UpdateIdentityProviderApiParams) (*atlasv2.FederationIdentityProvider, error) {
-	result, _, err := s.clientv2.FederatedAuthenticationApi.UpdateIdentityProviderWithParams(s.ctx, opts).Execute()
-	return result, err
-}
-
-// RevokeJwksFromIdentityProvider encapsulate the logic to manage different cloud providers.
-func (s *Store) RevokeJwksFromIdentityProvider(federationSettingsID string, identityProviderID string) error {
-	_, err := s.clientv2.FederatedAuthenticationApi.RevokeJwksFromIdentityProvider(s.ctx, federationSettingsID, identityProviderID).Execute()
-	return err
 }

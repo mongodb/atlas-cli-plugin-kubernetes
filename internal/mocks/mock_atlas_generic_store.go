@@ -290,21 +290,6 @@ func (mr *MockOperatorGenericStoreMockRecorder) FederationSetting(arg0 interface
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FederationSetting", reflect.TypeOf((*MockOperatorGenericStore)(nil).FederationSetting), arg0)
 }
 
-// FlexCluster mocks base method.
-func (m *MockOperatorGenericStore) FlexCluster(arg0, arg1 string) (*admin0.FlexClusterDescription20241113, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FlexCluster", arg0, arg1)
-	ret0, _ := ret[0].(*admin0.FlexClusterDescription20241113)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// FlexCluster indicates an expected call of FlexCluster.
-func (mr *MockOperatorGenericStoreMockRecorder) FlexCluster(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FlexCluster", reflect.TypeOf((*MockOperatorGenericStore)(nil).FlexCluster), arg0, arg1)
-}
-
 // GetConnectedOrgConfig mocks base method.
 func (m *MockOperatorGenericStore) GetConnectedOrgConfig(arg0 *admin0.GetConnectedOrgConfigApiParams) (*admin0.ConnectedOrgConfig, error) {
 	m.ctrl.T.Helper()
@@ -423,21 +408,6 @@ func (m *MockOperatorGenericStore) InterfaceEndpoint(arg0, arg1, arg2, arg3 stri
 func (mr *MockOperatorGenericStoreMockRecorder) InterfaceEndpoint(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InterfaceEndpoint", reflect.TypeOf((*MockOperatorGenericStore)(nil).InterfaceEndpoint), arg0, arg1, arg2, arg3)
-}
-
-// ListFlexClusters mocks base method.
-func (m *MockOperatorGenericStore) ListFlexClusters(arg0 *admin0.ListFlexClustersApiParams) (*admin0.PaginatedFlexClusters20241113, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ListFlexClusters", arg0)
-	ret0, _ := ret[0].(*admin0.PaginatedFlexClusters20241113)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// ListFlexClusters indicates an expected call of ListFlexClusters.
-func (mr *MockOperatorGenericStoreMockRecorder) ListFlexClusters(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListFlexClusters", reflect.TypeOf((*MockOperatorGenericStore)(nil).ListFlexClusters), arg0)
 }
 
 // MaintenanceWindow mocks base method.
@@ -663,21 +633,6 @@ func (m *MockOperatorGenericStore) TeamByID(arg0, arg1 string) (*admin0.TeamResp
 func (mr *MockOperatorGenericStoreMockRecorder) TeamByID(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TeamByID", reflect.TypeOf((*MockOperatorGenericStore)(nil).TeamByID), arg0, arg1)
-}
-
-// TeamByName mocks base method.
-func (m *MockOperatorGenericStore) TeamByName(arg0, arg1 string) (*admin0.TeamResponse, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "TeamByName", arg0, arg1)
-	ret0, _ := ret[0].(*admin0.TeamResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// TeamByName indicates an expected call of TeamByName.
-func (mr *MockOperatorGenericStoreMockRecorder) TeamByName(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TeamByName", reflect.TypeOf((*MockOperatorGenericStore)(nil).TeamByName), arg0, arg1)
 }
 
 // TeamUsers mocks base method.

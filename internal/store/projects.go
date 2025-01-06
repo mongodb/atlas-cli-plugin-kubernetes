@@ -18,7 +18,7 @@ import (
 	atlasv2 "go.mongodb.org/atlas-sdk/v20241113004/admin"
 )
 
-//go:generate mockgen -destination=../mocks/mock_projects.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store ProjectLister,ProjectCreator,ProjectUpdater,ProjectDeleter,ProjectDescriber,ProjectUsersLister,ProjectUserDeleter,ProjectTeamLister,ProjectTeamAdder,ProjectTeamDeleter,OrgProjectLister,ProjectMDBVersionLister
+//go:generate mockgen -destination=../mocks/mock_projects.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store ProjectLister,ProjectCreator,ProjectDescriber,ProjectTeamLister,OrgProjectLister
 
 type ProjectLister interface {
 	Projects(*ListOptions) (*atlasv2.PaginatedAtlasGroup, error)
@@ -33,41 +33,13 @@ type ProjectCreator interface {
 	CreateProject(*atlasv2.CreateProjectApiParams) (*atlasv2.Group, error)
 }
 
-type ProjectUpdater interface {
-	UpdateProject(*atlasv2.UpdateProjectApiParams) (*atlasv2.Group, error)
-}
-
-type ProjectDeleter interface {
-	DeleteProject(string) error
-}
-
 type ProjectDescriber interface {
 	Project(string) (*atlasv2.Group, error)
 	ProjectByName(string) (*atlasv2.Group, error)
 }
 
-type ProjectUsersLister interface {
-	ProjectUsers(string, *ListOptions) (*atlasv2.PaginatedAppUser, error)
-}
-
-type ProjectUserDeleter interface {
-	DeleteUserFromProject(string, string) error
-}
-
 type ProjectTeamLister interface {
 	ProjectTeams(string, *ListOptions) (*atlasv2.PaginatedTeamRole, error)
-}
-
-type ProjectTeamAdder interface {
-	AddTeamsToProject(string, []atlasv2.TeamRole) (*atlasv2.PaginatedTeamRole, error)
-}
-
-type ProjectTeamDeleter interface {
-	DeleteTeamFromProject(string, string) error
-}
-
-type ProjectMDBVersionLister interface {
-	MDBVersions(projectID string, opt *MDBVersionListOptions) (*atlasv2.PaginatedAvailableVersion, error)
 }
 
 // Projects encapsulates the logic to manage different cloud providers.
@@ -107,34 +79,6 @@ func (s *Store) CreateProject(params *atlasv2.CreateProjectApiParams) (*atlasv2.
 	return result, err
 }
 
-// UpdateProject encapsulates the logic to manage different cloud providers.
-func (s *Store) UpdateProject(params *atlasv2.UpdateProjectApiParams) (*atlasv2.Group, error) {
-	result, _, err := s.clientv2.ProjectsApi.UpdateProjectWithParams(s.ctx, params).Execute()
-	return result, err
-}
-
-// DeleteProject encapsulates the logic to manage different cloud providers.
-func (s *Store) DeleteProject(projectID string) error {
-	_, _, err := s.clientv2.ProjectsApi.DeleteProject(s.ctx, projectID).Execute()
-	return err
-}
-
-// ProjectUsers lists all IAM users in a project.
-func (s *Store) ProjectUsers(projectID string, opts *ListOptions) (*atlasv2.PaginatedAppUser, error) {
-	res := s.clientv2.ProjectsApi.ListProjectUsers(s.ctx, projectID)
-	if opts != nil {
-		res = res.ItemsPerPage(opts.ItemsPerPage).PageNum(opts.PageNum).IncludeCount(opts.IncludeCount)
-	}
-	result, _, err := res.Execute()
-	return result, err
-}
-
-// DeleteUserFromProject encapsulates the logic to manage different cloud providers.
-func (s *Store) DeleteUserFromProject(projectID, userID string) error {
-	_, err := s.clientv2.ProjectsApi.RemoveProjectUser(s.ctx, projectID, userID).Execute()
-	return err
-}
-
 // ProjectTeams encapsulates the logic to manage different cloud providers.
 func (s *Store) ProjectTeams(projectID string, opts *ListOptions) (*atlasv2.PaginatedTeamRole, error) {
 	res := s.clientv2.TeamsApi.
@@ -149,47 +93,4 @@ func (s *Store) ProjectTeams(projectID string, opts *ListOptions) (*atlasv2.Pagi
 
 	result, _, err := res.Execute()
 	return result, err
-}
-
-// AddTeamsToProject encapsulates the logic to manage different cloud providers.
-func (s *Store) AddTeamsToProject(projectID string, teams []atlasv2.TeamRole) (*atlasv2.PaginatedTeamRole, error) {
-	result, _, err := s.clientv2.TeamsApi.AddAllTeamsToProject(s.ctx, projectID, &teams).Execute()
-	return result, err
-}
-
-// DeleteTeamFromProject encapsulates the logic to manage different cloud providers.
-func (s *Store) DeleteTeamFromProject(projectID, teamID string) error {
-	_, err := s.clientv2.TeamsApi.RemoveProjectTeam(s.ctx, projectID, teamID).Execute()
-	return err
-}
-
-type MDBVersionListOptions struct {
-	ListOptions
-	CloudProvider *string
-	InstanceSize  *string
-	DefaultStatus *string
-}
-
-// MDBVersions encapsulates the logic to manage different cloud providers.
-func (s *Store) MDBVersions(projectID string, opt *MDBVersionListOptions) (*atlasv2.PaginatedAvailableVersion, error) {
-	req := s.clientv2.ProjectsApi.GetProjectLtsVersions(s.ctx, projectID)
-
-	if opt != nil {
-		req = req.
-			PageNum(opt.PageNum).
-			ItemsPerPage(int64(opt.ItemsPerPage))
-		if opt.CloudProvider != nil {
-			req = req.CloudProvider(*opt.CloudProvider)
-		}
-		if opt.DefaultStatus != nil {
-			req = req.DefaultStatus(*opt.DefaultStatus)
-		}
-		if opt.InstanceSize != nil {
-			req = req.InstanceSize(*opt.InstanceSize)
-		}
-	}
-
-	res, _, err := req.Execute()
-
-	return res, err
 }

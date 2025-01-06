@@ -350,21 +350,6 @@ func (mr *MockOperatorProjectStoreMockRecorder) TeamByID(arg0, arg1 interface{})
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TeamByID", reflect.TypeOf((*MockOperatorProjectStore)(nil).TeamByID), arg0, arg1)
 }
 
-// TeamByName mocks base method.
-func (m *MockOperatorProjectStore) TeamByName(arg0, arg1 string) (*admin.TeamResponse, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "TeamByName", arg0, arg1)
-	ret0, _ := ret[0].(*admin.TeamResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// TeamByName indicates an expected call of TeamByName.
-func (mr *MockOperatorProjectStoreMockRecorder) TeamByName(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TeamByName", reflect.TypeOf((*MockOperatorProjectStore)(nil).TeamByName), arg0, arg1)
-}
-
 // TeamUsers mocks base method.
 func (m *MockOperatorProjectStore) TeamUsers(arg0, arg1 string) (*admin.PaginatedAppUser, error) {
 	m.ctrl.T.Helper()

@@ -18,24 +18,14 @@ import (
 	atlasv2 "go.mongodb.org/atlas-sdk/v20241113004/admin"
 )
 
-//go:generate mockgen -destination=../mocks/mock_project_settings.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store ProjectSettingsDescriber,ProjectSettingsUpdater
+//go:generate mockgen -destination=../mocks/mock_project_settings.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store ProjectSettingsDescriber
 
 type ProjectSettingsDescriber interface {
 	ProjectSettings(string) (*atlasv2.GroupSettings, error)
 }
 
-type ProjectSettingsUpdater interface {
-	UpdateProjectSettings(string, *atlasv2.GroupSettings) (*atlasv2.GroupSettings, error)
-}
-
 // ProjectSettings encapsulates the logic of getting settings of a particular project.
 func (s *Store) ProjectSettings(projectID string) (*atlasv2.GroupSettings, error) {
 	result, _, err := s.clientv2.ProjectsApi.GetProjectSettings(s.ctx, projectID).Execute()
-	return result, err
-}
-
-// UpdateProjectSettings encapsulates the logic of updating settings of a particular project.
-func (s *Store) UpdateProjectSettings(projectID string, projectSettings *atlasv2.GroupSettings) (*atlasv2.GroupSettings, error) {
-	result, _, err := s.clientv2.ProjectsApi.UpdateProjectSettings(s.ctx, projectID, projectSettings).Execute()
 	return result, err
 }

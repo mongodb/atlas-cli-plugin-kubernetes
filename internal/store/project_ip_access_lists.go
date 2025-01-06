@@ -15,47 +15,13 @@
 package store
 
 import (
-	"errors"
-
 	atlasv2 "go.mongodb.org/atlas-sdk/v20241113004/admin"
 )
 
-//go:generate mockgen -destination=../mocks/mock_project_ip_access_lists.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store ProjectIPAccessListDescriber,ProjectIPAccessListLister,ProjectIPAccessListCreator,ProjectIPAccessListDeleter
+//go:generate mockgen -destination=../mocks/mock_project_ip_access_lists.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store ProjectIPAccessListLister
 
-type ProjectIPAccessListDescriber interface {
-	IPAccessList(string, string) (*atlasv2.NetworkPermissionEntry, error)
-}
 type ProjectIPAccessListLister interface {
 	ProjectIPAccessLists(string, *ListOptions) (*atlasv2.PaginatedNetworkAccess, error)
-}
-
-type ProjectIPAccessListCreator interface {
-	CreateProjectIPAccessList([]*atlasv2.NetworkPermissionEntry) (*atlasv2.PaginatedNetworkAccess, error)
-}
-
-type ProjectIPAccessListDeleter interface {
-	DeleteProjectIPAccessList(string, string) error
-}
-
-// CreateProjectIPAccessList encapsulate the logic to manage different cloud providers.
-func (s *Store) CreateProjectIPAccessList(entries []*atlasv2.NetworkPermissionEntry) (*atlasv2.PaginatedNetworkAccess, error) {
-	if len(entries) == 0 {
-		return nil, errors.New("no entries")
-	}
-
-	entry := make([]atlasv2.NetworkPermissionEntry, len(entries))
-	for i, ptr := range entries {
-		entry[i] = *ptr
-	}
-
-	result, _, err := s.clientv2.ProjectIPAccessListApi.CreateProjectIpAccessList(s.ctx, entries[0].GetGroupId(), &entry).Execute()
-	return result, err
-}
-
-// DeleteProjectIPAccessList encapsulate the logic to manage different cloud providers.
-func (s *Store) DeleteProjectIPAccessList(projectID, entry string) error {
-	_, _, err := s.clientv2.ProjectIPAccessListApi.DeleteProjectIpAccessList(s.ctx, projectID, entry).Execute()
-	return err
 }
 
 // ProjectIPAccessLists encapsulate the logic to manage different cloud providers.
@@ -65,11 +31,5 @@ func (s *Store) ProjectIPAccessLists(projectID string, opts *ListOptions) (*atla
 		res = res.PageNum(opts.PageNum).ItemsPerPage(opts.ItemsPerPage).IncludeCount(opts.IncludeCount)
 	}
 	result, _, err := res.Execute()
-	return result, err
-}
-
-// IPAccessList encapsulate the logic to manage different cloud providers.
-func (s *Store) IPAccessList(projectID, name string) (*atlasv2.NetworkPermissionEntry, error) {
-	result, _, err := s.clientv2.ProjectIPAccessListApi.GetProjectIpList(s.ctx, projectID, name).Execute()
 	return result, err
 }
