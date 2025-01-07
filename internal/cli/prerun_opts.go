@@ -12,23 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package root
+package cli
 
-import (
-	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/cli/kubernetes/config"
+import "github.com/mongodb/atlas-cli-plugin-kubernetes/internal/prerun"
 
-	"github.com/spf13/cobra"
-)
+type PreRunOpts struct {
+}
 
-func Builder() *cobra.Command {
-	const use = "kubernetes"
-
-	cmd := &cobra.Command{
-		Use:   use,
-		Short: "Manage Kubernetes resources.",
-		Long:  `This command provides access to Kubernetes features within Atlas.`,
-	}
-
-	cmd.AddCommand(config.Builder())
-	return cmd
+func (*PreRunOpts) PreRunE(cbs ...prerun.CmdOpt) error {
+	return prerun.ExecuteE(cbs...)
 }

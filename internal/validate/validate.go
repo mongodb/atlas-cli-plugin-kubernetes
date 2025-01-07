@@ -12,23 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package root
+package validate
 
 import (
-	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/cli/kubernetes/config"
-
-	"github.com/spf13/cobra"
+	"encoding/hex"
+	"fmt"
 )
 
-func Builder() *cobra.Command {
-	const use = "kubernetes"
-
-	cmd := &cobra.Command{
-		Use:   use,
-		Short: "Manage Kubernetes resources.",
-		Long:  `This command provides access to Kubernetes features within Atlas.`,
+// ObjectID validates a value is a valid ObjectID.
+func ObjectID(s string) error {
+	b, err := hex.DecodeString(s)
+	if err != nil || len(b) != 12 {
+		return fmt.Errorf("the provided value '%s' is not a valid ID", s)
 	}
-
-	cmd.AddCommand(config.Builder())
-	return cmd
+	return nil
 }

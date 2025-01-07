@@ -1,4 +1,4 @@
-// Copyright 2025 MongoDB Inc
+// Copyright 2022 MongoDB Inc
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,23 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package root
+package store
 
 import (
-	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/cli/kubernetes/config"
-
-	"github.com/spf13/cobra"
+	atlasv2 "go.mongodb.org/atlas-sdk/v20241113004/admin"
 )
 
-func Builder() *cobra.Command {
-	const use = "kubernetes"
+//go:generate mockgen -destination=../mocks/mock_auditing.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store AuditingDescriber
 
-	cmd := &cobra.Command{
-		Use:   use,
-		Short: "Manage Kubernetes resources.",
-		Long:  `This command provides access to Kubernetes features within Atlas.`,
-	}
+type AuditingDescriber interface {
+	Auditing(string) (*atlasv2.AuditLog, error)
+}
 
-	cmd.AddCommand(config.Builder())
-	return cmd
+func (s *Store) Auditing(projectID string) (*atlasv2.AuditLog, error) {
+	result, _, err := s.clientv2.AuditingApi.GetAuditingConfiguration(s.ctx, projectID).Execute()
+	return result, err
 }

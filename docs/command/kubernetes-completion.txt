@@ -1,0 +1,53 @@
+.. _kubernetes-completion:
+
+=====================
+kubernetes completion
+=====================
+
+.. default-domain:: mongodb
+
+.. contents:: On this page
+   :local:
+   :backlinks: none
+   :depth: 1
+   :class: singlecol
+
+Generate the autocompletion script for the specified shell
+
+Generate the autocompletion script for kubernetes for the specified shell.
+See each sub-command's help for details on how to use the generated script.
+
+
+Options
+-------
+
+.. list-table::
+   :header-rows: 1
+   :widths: 20 10 10 60
+
+   * - Name
+     - Type
+     - Required
+     - Description
+   * - -h, --help
+     - 
+     - false
+     - help for completion
+
+Related Commands
+----------------
+
+* :ref:`kubernetes-completion-bash` - Generate the autocompletion script for bash
+* :ref:`kubernetes-completion-fish` - Generate the autocompletion script for fish
+* :ref:`kubernetes-completion-powershell` - Generate the autocompletion script for powershell
+* :ref:`kubernetes-completion-zsh` - Generate the autocompletion script for zsh
+
+
+.. toctree::
+   :titlesonly:
+
+   bash </command/kubernetes-completion-bash>
+   fish </command/kubernetes-completion-fish>
+   powershell </command/kubernetes-completion-powershell>
+   zsh </command/kubernetes-completion-zsh>
+

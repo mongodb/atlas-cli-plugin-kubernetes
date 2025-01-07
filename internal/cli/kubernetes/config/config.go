@@ -12,23 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package root
+package config
 
 import (
-	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/cli/kubernetes/config"
+	"log"
 
+	"github.com/mongodb/atlas-cli-core/config"
 	"github.com/spf13/cobra"
 )
 
 func Builder() *cobra.Command {
-	const use = "kubernetes"
-
+	const use = "config"
 	cmd := &cobra.Command{
 		Use:   use,
-		Short: "Manage Kubernetes resources.",
-		Long:  `This command provides access to Kubernetes features within Atlas.`,
+		Short: "Manage Kubernetes configuration resources.",
+		Long:  `This command provides your Kubernetes configuration access to Atlas.`,
+		PersistentPreRun: func(_ *cobra.Command, _ []string) {
+			err := config.LoadAtlasCLIConfig()
+			if err != nil {
+				log.Fatalf("Failed to load Atlas CLI config: %v", err)
+			}
+		},
 	}
 
-	cmd.AddCommand(config.Builder())
+	cmd.AddCommand(GenerateBuilder())
+
 	return cmd
 }
