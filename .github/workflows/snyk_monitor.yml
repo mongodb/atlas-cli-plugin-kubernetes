@@ -1,6 +1,5 @@
 name: Snyk Monitor
 on:
-  pull_request:  # tmp for testing
   schedule:
     - cron: '0 8 * * *'
   workflow_dispatch: 
