@@ -7,8 +7,10 @@ updates:
       interval: weekly
       day: tuesday
     open-pull-requests-limit: 20
+    commit-message:
+      prefix: "chore"
     reviewers:
-      - "mongodb/apix-2" 
+      - "mongodb/apix-2" # TODO: change to AKO team as part of handover
     ignore:
       - dependency-name: "go.mongodb.org/atlas-sdk/*"
     groups:
