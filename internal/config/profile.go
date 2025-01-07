@@ -29,8 +29,6 @@ import (
 	"go.mongodb.org/atlas/auth"
 )
 
-//go:generate mockgen -destination=../mocks/mock_profile.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/config SetSaver
-
 const (
 	DefaultProfile           = "default"  // DefaultProfile default
 	CloudService             = "cloud"    // CloudService setting when using Atlas API
