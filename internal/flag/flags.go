@@ -15,12 +15,14 @@
 package flag
 
 const (
-	OrgID                   = "orgId"                // OrgID flag to use an Organization ID
-	ProjectID               = "projectId"            // ProjectID flag to use a project ID
-	ClusterName             = "clusterName"          // ClusterName flag
-	OperatorIncludeSecrets  = "includeSecrets"       // OperatorIncludeSecrets flag
-	OperatorTargetNamespace = "targetNamespace"      // OperatorTargetNamespace flag
-	OperatorVersion         = "operatorVersion"      // OperatorVersion flag
-	DataFederationName      = "dataFederationName"   // DataFederationName flag
-	IndependentResources    = "independentResources" // IndependentResources flag
+	OrgID                    = "orgId"                // OrgID flag to use an Organization ID
+	ProjectID                = "projectId"            // ProjectID flag to use a project ID
+	ClusterName              = "clusterName"          // ClusterName flag
+	OperatorIncludeSecrets   = "includeSecrets"       // OperatorIncludeSecrets flag
+	OperatorTargetNamespace  = "targetNamespace"      // OperatorTargetNamespace flag
+	OperatorVersion          = "operatorVersion"      // OperatorVersion flag
+	KubernetesClusterConfig  = "kubeconfig"           // Kubeconfig flag
+	KubernetesClusterContext = "kubeContext"          // KubeContext flag
+	DataFederationName       = "dataFederationName"   // DataFederationName flag
+	IndependentResources     = "independentResources" // IndependentResources flag
 )

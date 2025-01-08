@@ -35,13 +35,11 @@ Options
 Related Commands
 ----------------
 
-* :ref:`kubernetes-completion` - Generate the autocompletion script for the specified shell
 * :ref:`kubernetes-config` - Manage Kubernetes configuration resources.
 
 
 .. toctree::
    :titlesonly:
 
-   completion </command/kubernetes-completion>
    config </command/kubernetes-config>
 

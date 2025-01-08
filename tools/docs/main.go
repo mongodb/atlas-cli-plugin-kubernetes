@@ -41,13 +41,11 @@ func main() {
 		log.Fatal(err)
 	}
 
-	atlasBuilder := root.Builder()
+	pluginBuilder := root.Builder()
 
-	atlasBuilder.InitDefaultCompletionCmd()
+	setDisableAutoGenTag(pluginBuilder)
 
-	setDisableAutoGenTag(atlasBuilder)
-
-	if err := cobra2snooty.GenTreeDocs(atlasBuilder, "./docs/command"); err != nil {
+	if err := cobra2snooty.GenTreeDocs(pluginBuilder, "./docs/command"); err != nil {
 		log.Fatal(err)
 	}
 }
