@@ -21,6 +21,8 @@ const (
 	OperatorIncludeSecrets     = "Flag that generates kubernetes secrets with data for projects, users, deployments entities."
 	OperatorTargetNamespace    = "Namespaces to use for generated kubernetes entities"
 	OperatorVersion            = "Version of Atlas Kubernetes Operator to generate resources for."
+	KubernetesClusterConfig    = "Path to the kubeconfig file to use for CLI requests."
+	KubernetesClusterContext   = "Name of the kubeconfig context to use."
 	ExporterDataFederationName = "One or more comma separated data federation names to import"
 	IndependentResources       = "Flag that makes the generated resources that support independent usage, to use external IDs rather than Kubernetes references."
 )
