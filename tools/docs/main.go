@@ -18,7 +18,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/cli/root"
+	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/cli/kubernetes"
 
 	"github.com/mongodb-labs/cobra2snooty"
 	"github.com/spf13/cobra"
@@ -41,7 +41,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	pluginBuilder := root.Builder()
+	pluginBuilder := kubernetes.Builder()
 
 	setDisableAutoGenTag(pluginBuilder)
 
