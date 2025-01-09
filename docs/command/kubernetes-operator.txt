@@ -1,0 +1,45 @@
+.. _kubernetes-operator:
+
+===================
+kubernetes operator
+===================
+
+.. default-domain:: mongodb
+
+.. contents:: On this page
+   :local:
+   :backlinks: none
+   :depth: 1
+   :class: singlecol
+
+Manage Atlas Kubernetes Operator.
+
+This command manages the Atlas Kubernetes Operator.
+
+Options
+-------
+
+.. list-table::
+   :header-rows: 1
+   :widths: 20 10 10 60
+
+   * - Name
+     - Type
+     - Required
+     - Description
+   * - -h, --help
+     - 
+     - false
+     - help for operator
+
+Related Commands
+----------------
+
+* :ref:`kubernetes-operator-install` - Install Atlas Kubernetes Operator to a cluster.
+
+
+.. toctree::
+   :titlesonly:
+
+   install </command/kubernetes-operator-install>
+

@@ -36,10 +36,12 @@ Related Commands
 ----------------
 
 * :ref:`kubernetes-config` - Manage Kubernetes configuration resources.
+* :ref:`kubernetes-operator` - Manage Atlas Kubernetes Operator.
 
 
 .. toctree::
    :titlesonly:
 
    config </command/kubernetes-config>
+   operator </command/kubernetes-operator>
 
