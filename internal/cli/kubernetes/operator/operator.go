@@ -1,4 +1,4 @@
-// Copyright 2024 MongoDB Inc
+// Copyright 2023 MongoDB Inc
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,35 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package operator
 
 import (
-	"os"
-
-	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/cli/kubernetes"
-
 	"github.com/spf13/cobra"
 )
 
-func main() {
-	cmd := kubernetes.Builder()
+func Builder() *cobra.Command {
+	const use = "operator"
+	cmd := &cobra.Command{
+		Use:   use,
+		Short: "Manage Atlas Kubernetes Operator.",
+		Long:  `This command manages the Atlas Kubernetes Operator.`,
+	}
 
-	completionOption := &cobra.CompletionOptions{
-		DisableDefaultCmd:   true,
-		DisableNoDescFlag:   true,
-		DisableDescriptions: true,
-		HiddenDefaultCmd:    true,
-	}
-	rootCmd := &cobra.Command{
-		DisableFlagParsing: true,
-		DisableAutoGenTag:  true,
-		DisableSuggestions: true,
-		CompletionOptions:  *completionOption,
-		SilenceUsage:       true,
-	}
-	rootCmd.AddCommand(cmd)
+	cmd.AddCommand(InstallBuilder())
 
-	if err := rootCmd.Execute(); err != nil {
-		os.Exit(1)
-	}
+	return cmd
 }
