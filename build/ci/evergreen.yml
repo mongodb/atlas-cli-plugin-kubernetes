@@ -1,0 +1,452 @@
+# Copyright 2025 MongoDB Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+exec_timeout_secs: 4200 # automatically fail any task if it takes longer than 1h10m to finish.
+stepback: true
+command_type: system
+pre_error_fails_task: true
+
+variables:
+  - &go_linux_version
+      go_root: "/opt/golang/go1.23"
+      go_bin: "/opt/golang/go1.23/bin"
+      go_base_path: ""
+  - &go_env
+      XDG_CONFIG_HOME: ${go_base_path}${workdir}
+      GO111MODULE: "on"
+      GOROOT: ${go_root}
+      GOPATH: ${go_base_path}${workdir}
+      ADD_PATH: "${go_bin}:${go_base_path}${workdir}/bin:${go_base_path}${workdir}/src/github.com/mongodb/atlas-cli-plugin-kubernetes/bin"
+      GOPROXY: ${go_proxy}
+  - &go_options
+    add_to_path:
+      - ${go_bin}
+      - ${go_base_path}${workdir}/bin
+      - ${go_base_path}${workdir}/src/github.com/mongodb/atlas-cli-plugin-kubernetes/bin
+    include_expansions_in_env:
+      - go_base_path
+      - go_proxy
+      - workdir
+    working_dir: src/github.com/mongodb/atlas-cli-plugin-kubernetes
+    env:
+      <<: *go_env
+pre:
+  - func: "clone"
+  - func: "set-expansions"
+post:
+  - command: attach.xunit_results
+    params:
+      files: ["src/github.com/mongodb/atlas-cli-plugin-kubernetes/*.xml"]
+functions:
+  "clone":
+    - command: git.get_project
+      type: setup
+      params:
+        directory: src/github.com/mongodb/atlas-cli-plugin-kubernetes
+  "build":
+    - command: subprocess.exec
+      type: test
+      params:
+        <<: *go_options
+        command: make build
+  "e2e test":
+    - command: subprocess.exec
+      type: test
+      params:
+        <<: *go_options
+        include_expansions_in_env:
+          - go_base_path
+          - workdir
+          - MCLI_ORG_ID
+          - MCLI_PROJECT_ID
+          - MCLI_PRIVATE_API_KEY
+          - MCLI_PUBLIC_API_KEY
+          - MCLI_SERVICE
+          - TEST_CMD
+          - E2E_TAGS
+          - E2E_TEST_BUCKET
+          - E2E_CLOUD_ROLE_ID
+          - MCLI_OPS_MANAGER_URL
+          - OM_VERSION
+          - LOCAL_KEY
+          - KMIP_CA
+          - KMIP_CERT
+          - GCP_CREDENTIALS
+          - AWS_ACCESS_KEY
+          - AWS_SECRET_ACCESS_KEY
+          - AZURE_TENANT_ID
+          - AZURE_CLIENT_ID
+          - AZURE_CLIENT_SECRET
+          - E2E_TIMEOUT
+          - E2E_SERVERLESS_INSTANCE_NAME
+          - E2E_FLEX_INSTANCE_NAME
+          - E2E_PARALLEL
+          - IDENTITY_PROVIDER_ID
+          - revision
+        env:
+          <<: *go_env
+          MCLI_SKIP_UPDATE_CHECK: "yes"
+          DO_NOT_TRACK: "1"
+          TEST_CMD: gotestsum --junitfile e2e-tests.xml --format standard-verbose --
+        command: make e2e-test
+    - command: archive.targz_pack
+      params:
+        target: src/github.com/mongodb/atlas-cli-plugin-kubernetes/coverage.tgz
+        source_dir: src/github.com/mongodb/atlas-cli-plugin-kubernetes/cov
+        include:
+          - '*'
+        exclude_files:
+          - .gitkeep
+    - command: s3.put
+      params:
+        aws_key: ${aws_key}
+        aws_secret: ${aws_secret}
+        local_file: src/github.com/mongodb/atlas-cli-plugin-kubernetes/coverage.tgz
+        remote_file: ${project}/dist/${revision}_${created_at}/atlascli-k8s-plugin/cov/${build_variant}_${task_name}.coverage.tgz
+        bucket: mongodb-mongocli-build
+        permissions: public-read
+        content_type: ${content_type|application/json}
+        display_name: internal-bucket
+  "merge cov":
+    - command: subprocess.exec
+      params:
+        <<: *go_options
+        binary: build/ci/merge-cov.sh
+    - command: archive.targz_pack
+      params:
+        target: src/github.com/mongodb/atlas-cli-plugin-kubernetes/coverage.tgz
+        source_dir: src/github.com/mongodb/atlas-cli-plugin-kubernetes/
+        include:
+          - 'coverage.out'
+          - 'cov/merged/*'
+        exclude_files:
+          - .gitkeep
+    - command: shell.exec
+      params:
+        <<: *go_options
+        shell: bash
+        script: |
+          set -Eeou pipefail
+          PERCENTAGE=$(go tool cover -func=coverage.out | grep total: | awk '{print $3}' | sed 's/%//')
+          COUNT=$(ls -1 cov/*.tgz | wc -l)
+          cat <<EOF > expansions.yaml
+          percentage: $PERCENTAGE
+          count: $COUNT
+          EOF
+    - command: s3.put
+      params:
+        aws_key: ${aws_key}
+        aws_secret: ${aws_secret}
+        local_file: src/github.com/mongodb/atlas-cli-plugin-kubernetes/expansions.yaml
+        remote_file: ${project}/dist/${revision}_${created_at}/atlascli/expansions.yaml
+        bucket: mongodb-mongocli-build
+        permissions: public-read
+        content_type: ${content_type|application/yaml}
+        display_name: internal-bucket expansions.yaml
+    - command: expansions.update
+      params:
+        ignore_missing_file: true
+        file: src/github.com/mongodb/atlas-cli-plugin-kubernetes/expansions.yaml
+    - command: subprocess.exec
+      params:
+        <<: *go_options
+        binary: rm
+        args:
+          - -f
+          - expansions.yaml
+    - command: s3.put
+      params:
+        aws_key: ${aws_key}
+        aws_secret: ${aws_secret}
+        local_file: src/github.com/mongodb/atlas-cli-plugin-kubernetes/coverage.tgz
+        remote_file: ${project}/dist/${revision}_${created_at}/atlascli-k8s-plugin/cov/e2e.coverage.tgz
+        bucket: mongodb-mongocli-build
+        permissions: public-read
+        content_type: ${content_type|application/json}
+        display_name: internal-bucket e2e.coverage.tgz
+    - command: s3.put
+      params:
+        aws_key: ${aws_key}
+        aws_secret: ${aws_secret}
+        local_file: src/github.com/mongodb/atlas-cli-plugin-kubernetes/coverage.out
+        remote_file: ${project}/dist/${revision}_${created_at}/atlascli-k8s-plugin/cov/e2e.coverage.out
+        bucket: mongodb-mongocli-build
+        permissions: public-read
+        content_type: ${content_type|application/json}
+        display_name: internal-bucket e2e.coverage.out
+  "install gotestsum":
+    - command: shell.exec
+      type: setup
+      params:
+        <<: *go_options
+        working_dir: src/github.com/mongodb/atlas-cli-plugin-kubernetes/bin
+        shell: bash
+        script: |
+          set -Eeou pipefail
+          export PATH="$ADD_PATH:$PATH"
+          if [[ "$(uname -s)" == "Darwin"* ]]; then
+            URL=https://github.com/gotestyourself/gotestsum/releases/download/v${gotestsum_ver}/gotestsum_${gotestsum_ver}_darwin_arm64.tar.gz
+          else
+            URL=https://github.com/gotestyourself/gotestsum/releases/download/v${gotestsum_ver}/gotestsum_${gotestsum_ver}_linux_amd64.tar.gz
+          fi
+          curl -sfL $URL | tar zx
+  "ssh":
+    - command: subprocess.exec
+      params:
+        binary: ssh
+        args:
+          - -o
+          - StrictHostKeyChecking=no
+          - -i "${identity_file}"
+          - "${user}@${host}"
+          - ${cmd}
+  "ssh-ready":
+    - command: shell.exec
+      params:
+        exec_as_string: true
+        script: |
+          attempts=0
+          connection_attempts=${connection_attempts|25}
+          ## Check for remote connectivity
+          while ! ssh \
+            -i "${identity_file}" \
+            -o ConnectTimeout=10 \
+            -o ForwardAgent=yes \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=no \
+            "${user}@${host}" \
+            exit
+          do
+            [ "$attempts" -ge "$connection_attempts" ] && exit 1
+            ((attempts++))
+            printf "SSH connection attempt %d/%d failed. Retrying...\n" "$attempts" "$connection_attempts"
+            ## sleep for Permission denied (publickey) errors
+            sleep 10
+          done
+        shell: bash
+  "set-expansions":
+    - command: shell.exec
+      params:
+        <<: *go_options
+        shell: bash
+        script: |
+          set -Eeou pipefail
+          cat <<EOF > expansions.yaml
+          home: $HOME
+          tag: $(git tag --list 'atlascli/v*' --sort=-taggerdate | head -1)
+          version: $(git tag --list 'atlascli/v*' --sort=-taggerdate | head -1 | cut -d 'v' -f 2)
+          EOF
+    - command: expansions.update
+      params:
+        ignore_missing_file: true
+        file: src/github.com/mongodb/atlas-cli-plugin-kubernetes/expansions.yaml
+    - command: subprocess.exec
+      params:
+        <<: *go_options
+        binary: rm
+        args:
+          - -f
+          - expansions.yaml
+  "otel":
+    - command: subprocess.exec
+      params:
+        <<: *go_options
+        include_expansions_in_env:
+          - go_base_path
+          - go_proxy
+          - workdir
+          - project_id
+          - project_identifier
+          - otel_trace_id
+          - otel_parent_id
+          - otel_collector_endpoint
+        env:
+          <<: *go_env
+          SPAN: ${span}
+          ATTRS: ${attr}
+        binary: make
+        args:
+          - otel
+tasks:
+  - name: compile
+    tags: ["code_health"]
+    commands:
+      - func: "build"
+  - name: binary_e2e
+    tags: ["e2e","required"]
+    must_have_test_results: true
+    commands:
+      - func: "install gotestsum"
+      - command: shell.exec
+        type: test
+        params:
+          <<: *go_options
+          shell: bash
+          script: |
+            set -Eeou pipefail
+            mkdir "$XDG_CONFIG_HOME/atlascli"
+            cat <<EOF > "$XDG_CONFIG_HOME/atlascli/config.toml"
+            [e2e]
+              org_id = "5e429e7706822c6eac4d5971"
+              public_api_key = "AAUMGJXA"
+              service = "cloud"
+            EOF
+      - func: "e2e test"
+        vars:
+          MCLI_ORG_ID: ${atlas_org_id}
+          MCLI_PROJECT_ID: ${atlas_project_id}
+          MCLI_PRIVATE_API_KEY: ${atlas_private_api_key}
+          MCLI_PUBLIC_API_KEY: ${atlas_public_api_key}
+          MCLI_OPS_MANAGER_URL: ${mcli_ops_manager_url}
+          MCLI_SERVICE: cloud
+          E2E_TAGS: atlas,cli
+  - name: atlas_kubernetes_generate_e2e
+    tags: ["e2e","atlas","kubernetes", "assigned_to_jira_team_cloudp_kubernetes_atlas"]
+    must_have_test_results: true
+    commands:
+      - func: "install gotestsum"
+      # - func: "e2e test"
+      #   vars:
+      #     MCLI_ORG_ID: ${atlas_org_id}
+      #     MCLI_PROJECT_ID: ${atlas_project_id}
+      #     MCLI_PRIVATE_API_KEY: ${atlas_private_api_key}
+      #     MCLI_PUBLIC_API_KEY: ${atlas_public_api_key}
+      #     MCLI_OPS_MANAGER_URL: ${mcli_ops_manager_url}
+      #     MCLI_SERVICE: cloud
+      #     E2E_TAGS: atlas,cluster,kubernetes,generate
+  - name: atlas_kubernetes_apply_e2e
+    tags: [ "e2e","atlas","kubernetes", "assigned_to_jira_team_cloudp_kubernetes_atlas" ]
+    must_have_test_results: true
+    commands:
+      - func: "install gotestsum"
+      # - func: "e2e test"
+      #   vars:
+      #     MCLI_ORG_ID: ${atlas_org_id}
+      #     MCLI_PROJECT_ID: ${atlas_project_id}
+      #     MCLI_PRIVATE_API_KEY: ${atlas_private_api_key}
+      #     MCLI_PUBLIC_API_KEY: ${atlas_public_api_key}
+      #     MCLI_OPS_MANAGER_URL: ${mcli_ops_manager_url}
+      #     MCLI_SERVICE: cloud
+      #     E2E_TAGS: atlas,cluster,kubernetes,apply
+  - name: atlas_kubernetes_install_e2e
+    tags: [ "e2e","atlas","kubernetes", "assigned_to_jira_team_cloudp_kubernetes_atlas" ]
+    must_have_test_results: true
+    commands:
+      - func: "install gotestsum"
+      # - func: "e2e test"
+      #   vars:
+      #     MCLI_ORG_ID: ${atlas_org_id}
+      #     MCLI_PROJECT_ID: ${atlas_project_id}
+      #     MCLI_PRIVATE_API_KEY: ${atlas_private_api_key}
+      #     MCLI_PUBLIC_API_KEY: ${atlas_public_api_key}
+      #     MCLI_OPS_MANAGER_URL: ${mcli_ops_manager_url}
+      #     MCLI_SERVICE: cloud
+      #     E2E_TAGS: atlas,cluster,kubernetes,local
+  - name: coverage
+    tags: ["coverage"]
+    depends_on:
+      - name: ".e2e"
+        variant: "* !.cron"
+        status: '*'
+    commands:
+      - command: shell.exec
+        params:
+          <<: *go_options
+          env:
+            <<: *go_env
+            AWS_ACCESS_KEY_ID: ${aws_key}
+            AWS_SECRET_ACCESS_KEY: ${aws_secret}
+          script: |
+            aws s3 sync s3://mongodb-mongocli-build/${project}/dist/${revision}_${created_at}/atlascli-k8s-plugin/cov/ ./cov/
+      - func: "merge cov"
+      - func: "otel"
+        vars:
+          span: "coverage"
+          attr: "total=${percentage},count=${count}"
+  - name: snyk_monitor
+    tags:
+    - snyk
+    commands:
+      - command: shell.exec
+        params:
+          include_expansions_in_env:
+            - workdir
+          shell: bash
+          script: |
+            docker run \
+              --rm \
+              -e SNYK_TOKEN=${SNYK_TOKEN} \
+              -e SNYK_CFG_ORG=${SNYK_ORG} \
+              -v ${workdir}/src/github.com/mongodb/atlas-cli-plugin-kubernetes:/app \
+              snyk/snyk:golang snyk monitor
+buildvariants:
+  - name: code_health
+    display_name: "Code Health"
+    run_on:
+      - rhel80-small
+    expansions:
+      <<: *go_linux_version
+    tasks:
+      - name: .code_health
+  - name: e2e_required
+    display_name: "E2E Tests Required"
+    run_on:
+      - rhel80-small
+    expansions:
+      <<: *go_linux_version
+    tasks:
+      - name: ".e2e .required"
+  - name: e2e_atlas_kubernetes
+    display_name: "E2E Atlas Kubernetes Tests"
+    run_on:
+      - ubuntu2204-small
+    expansions:
+      <<: *go_linux_version
+    tasks:
+      - name: ".e2e .atlas .kubernetes"
+  - name: coverage
+    display_name: "Coverage"
+    run_on:
+      - rhel80-small
+    expansions:
+      <<: *go_linux_version
+    tasks:
+      - name: ".coverage"
+  - name: snyk
+    display_name: Snyk
+    allowed_requesters: ["patch", "ad_hoc", "github_pr"]
+    tags:
+      - snyk
+      - cron
+    run_on:
+      - ubuntu2204-small
+    tasks:
+      - name: ".snyk"
+patch_aliases:
+  - alias: "cleanup"
+    variant_tags: ["cleanup cron"]
+    task: ".*"
+  - alias: "snyk"
+    variant_tags: ["snyk cron"]
+    task: ".*"
+github_pr_aliases:
+  - variant: "code_health"
+    task_tags: ["code_health"]
+  - variant: "e2e_generic"
+    task_tags: ["e2e", "generic"]
+  - variant: "e2e_required"
+    task_tags: ["e2e", "required"]
+github_checks_aliases:
+ - variant: ".*"
+   task: ".*"
