@@ -36,6 +36,7 @@ func main() {
 		DisableAutoGenTag:  true,
 		DisableSuggestions: true,
 		CompletionOptions:  *completionOption,
+		SilenceUsage:       true,
 	}
 	rootCmd.AddCommand(cmd)
 

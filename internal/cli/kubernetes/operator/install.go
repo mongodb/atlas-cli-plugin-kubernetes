@@ -181,7 +181,6 @@ The key is scoped to the project when you specify the --projectName option and t
 
 	# Install the operator and disable deletion protection for sub-resources (Atlas project integrations, private endpoints, etc.):
 	atlas kubernetes operator install --subresourceDeletionProtection=false`,
-		SilenceUsage: true,
 		PreRunE: func(_ *cobra.Command, _ []string) error {
 			opts.versionProvider = version.NewOperatorVersion(github.NewClient(nil))
 
