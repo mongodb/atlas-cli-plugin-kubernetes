@@ -15,9 +15,6 @@
 package operator
 
 import (
-	"log"
-
-	"github.com/mongodb/atlas-cli-core/config"
 	"github.com/spf13/cobra"
 )
 
@@ -27,12 +24,6 @@ func Builder() *cobra.Command {
 		Use:   use,
 		Short: "Manage Atlas Kubernetes Operator.",
 		Long:  `This command manages the Atlas Kubernetes Operator.`,
-		PersistentPreRun: func(_ *cobra.Command, _ []string) {
-			err := config.LoadAtlasCLIConfig()
-			if err != nil {
-				log.Fatalf("Failed to load Atlas CLI config: %v", err)
-			}
-		},
 	}
 
 	cmd.AddCommand(InstallBuilder())
