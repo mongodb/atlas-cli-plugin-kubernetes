@@ -1,7 +1,12 @@
 
-CLI_SOURCE_FILES?=./cmd/plugin
-CLI_BINARY_NAME=binary
-CLI_DESTINATION=./bin/$(CLI_BINARY_NAME)
+PLUGIN_SOURCE_FILES?=./cmd/plugin
+ifeq ($(OS),Windows_NT)
+	PLUGIN_BINARY_NAME=binary.exe
+else
+    ATLAS_VERSION?=$(shell git describe --match "atlascli/v*" | cut -d "v" -f 2)
+	PLUGIN_BINARY_NAME=binary
+endif
+PLUGIN_BINARY_PATH=./bin/$(PLUGIN_BINARY_NAME)
 
 TEST_CMD?=go test
 UNIT_TAGS?=unit
@@ -20,10 +25,25 @@ deps:  ## Download go module dependencies
 	go mod download
 	go mod tidy
 
+GOCOVERDIR?=$(abspath cov)
+
+LOCALDEV_IMAGE?=docker.io/mongodb/mongodb-atlas-local
+LINKER_FLAGS=-s -w -X github.com/mongodb/atlas-cli-plugin-kubernetes/internal/version.GitCommit=${GIT_SHA} -X github.com/mongodb/atlas-cli-plugin-kubernetes/internal/version.Version=${ATLAS_VERSION} -X github.com/mongodb/atlas-cli-plugin-kubernetes/internal/cli/deployments/options.LocalDevImage=${LOCALDEV_IMAGE}
+
+DEBUG_FLAGS=all=-N -l
+
+E2E_PLUGIN_BINARY_PATH=../../$(PLUGIN_BINARY_PATH)
+E2E_TAGS?=e2e
+E2E_TIMEOUT?=60m
+E2E_PARALLEL?=1
+E2E_EXTRA_ARGS?=
+
+export E2E_PLUGIN_BINARY_PATH
+
 .PHONY: build
 build: ## Generate the binary in ./bin
 	@echo "==> Building kubernetes plugin binary"
-	go build -o $(CLI_DESTINATION) $(CLI_SOURCE_FILES)
+	go build -o $(PLUGIN_BINARY_PATH) $(PLUGIN_SOURCE_FILES)
 
 .PHONY: devtools
 devtools:  ## Install dev tools
@@ -51,6 +71,17 @@ unit-test: ## Run unit-tests
 fuzz-normalizer-test: ## Run fuzz test
 	@echo "==> Running fuzz test..."
 	$(TEST_CMD) -fuzz=Fuzz -fuzztime 50s --tags="$(UNIT_TAGS)" -race ./internal/kubernetes/operator/resources
+
+.PHONY: build-debug
+build-debug: ## Generate a binary in ./bin for debugging atlascli
+	@echo "==> Building kubernetes plugin binary for debugging"
+	go build -gcflags="all=-N -l" -o ./bin/binary ./cmd/plugin
+
+.PHONY: e2e-test
+e2e-test: build-debug ## Run E2E tests
+# the target assumes the MCLI_* environment variables are exported
+	@echo "==> Running E2E tests..."
+	GOCOVERDIR=$(GOCOVERDIR) go test -v -p 1 -parallel 1 -v -timeout 60m -tags="e2e" ./test/e2e... $(E2E_EXTRA_ARGS)
 
 .PHONY: gen-mocks
 gen-mocks: ## Generate mocks
