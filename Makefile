@@ -6,6 +6,19 @@ CLI_DESTINATION=./bin/$(CLI_BINARY_NAME)
 TEST_CMD?=go test
 UNIT_TAGS?=unit
 COVERAGE?=coverage.out
+GOCOVERDIR?=$(abspath cov)
+TEST_CMD?=go test
+UNIT_TAGS?=unit
+E2E_TAGS?=e2e
+E2E_TIMEOUT?=60m
+E2E_PARALLEL?=1
+E2E_EXTRA_ARGS?=
+
+.PHONY: deps
+deps:  ## Download go module dependencies
+	@echo "==> Installing go.mod dependencies..."
+	go mod download
+	go mod tidy
 
 .PHONY: build
 build: ## Generate the binary in ./bin
@@ -17,8 +30,13 @@ devtools:  ## Install dev tools
 	@echo "==> Installing dev tools..."
 	go install github.com/google/addlicense@latest
 	go install github.com/golang/mock/mockgen@latest
+	go install mvdan.cc/sh/v3/cmd/shfmt@latest
+	go install golang.org/x/tools/cmd/goimports@latest
 	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(shell go env GOPATH)/bin $(GOLANGCI_VERSION)
 
+.PHONY: fmt
+fmt: ## Format changed go
+	@scripts/fmt.sh
 
 .PHONY: lint
 lint: ## Run linter
@@ -49,6 +67,12 @@ gen-docs: ## Generate docs for atlascli commands
 check-licenses: ## Check licenses
 	@echo "==> Running lincense checker..."
 	@build/ci/check-licenses.sh
+
+
+.PHONY: e2e-test
+e2e-test: build ## Run E2E tests
+	@echo "==> Running E2E tests..."
+	GOCOVERDIR=$(GOCOVERDIR) $(TEST_CMD) -v -p 1 -parallel $(E2E_PARALLEL) -v -timeout $(E2E_TIMEOUT) -tags="$(E2E_TAGS)" ./test/e2e... $(E2E_EXTRA_ARGS)
 
 .PHONY: help
 .DEFAULT_GOAL := help
