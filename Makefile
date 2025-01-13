@@ -30,8 +30,13 @@ devtools:  ## Install dev tools
 	@echo "==> Installing dev tools..."
 	go install github.com/google/addlicense@latest
 	go install github.com/golang/mock/mockgen@latest
+	go install mvdan.cc/sh/v3/cmd/shfmt@latest
+	go install golang.org/x/tools/cmd/goimports@latest
 	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(shell go env GOPATH)/bin $(GOLANGCI_VERSION)
 
+.PHONY: fmt
+fmt: ## Format changed go
+	@scripts/fmt.sh
 
 .PHONY: lint
 lint: ## Run linter
@@ -66,7 +71,6 @@ check-licenses: ## Check licenses
 
 .PHONY: e2e-test
 e2e-test: build ## Run E2E tests
-# the target assumes the MCLI_* environment variables are exported
 	@echo "==> Running E2E tests..."
 	GOCOVERDIR=$(GOCOVERDIR) $(TEST_CMD) -v -p 1 -parallel $(E2E_PARALLEL) -v -timeout $(E2E_TIMEOUT) -tags="$(E2E_TAGS)" ./test/e2e... $(E2E_EXTRA_ARGS)
 
