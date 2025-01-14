@@ -76,7 +76,6 @@ build-debug: ## Generate a binary in ./bin for debugging plugin
 	@echo "==> Building kubernetes plugin binary for debugging"
 	go build -gcflags="all=-N -l" -o ./bin/binary ./cmd/plugin
 
-
 .PHONY: e2e-test
 e2e-test: build-debug ## Run E2E tests
 # the target assumes the MCLI_* environment variables are exported
@@ -99,12 +98,6 @@ gen-docs: ## Generate docs for atlascli commands
 check-licenses: ## Check licenses
 	@echo "==> Running lincense checker..."
 	@build/ci/check-licenses.sh
-
-
-.PHONY: e2e-test
-e2e-test: build ## Run E2E tests
-	@echo "==> Running E2E tests..."
-	GOCOVERDIR=$(GOCOVERDIR) $(TEST_CMD) -v -p 1 -parallel $(E2E_PARALLEL) -v -timeout $(E2E_TIMEOUT) -tags="$(E2E_TAGS)" ./test/e2e... $(E2E_EXTRA_ARGS)
 
 .PHONY: help
 .DEFAULT_GOAL := help
