@@ -193,7 +193,7 @@ func (oh *operatorHelper) getOperatorSecretes(namespace string) ([]corev1.Secret
 func (oh *operatorHelper) installOperator(namespace, version string) error {
 	oh.t.Helper()
 
-	cliPath, err := test.PluginCLIBin()
+	cliPath, err := test.PluginBin()
 	if err != nil {
 		return fmt.Errorf("unable to get atlasCli binary path: %w", err)
 	}

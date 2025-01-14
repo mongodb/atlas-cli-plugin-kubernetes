@@ -267,7 +267,7 @@ tasks:
           MCLI_PUBLIC_API_KEY: ${atlas_public_api_key}
           MCLI_OPS_MANAGER_URL: ${mcli_ops_manager_url}
           MCLI_SERVICE: cloud
-          E2E_TAGS: kubernetes
+          E2E_TAGS: kubernetes, install
 buildvariants:
   - name: code_health
     display_name: "Code Health"

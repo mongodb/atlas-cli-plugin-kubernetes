@@ -14,17 +14,18 @@
 
 //go:build e2e || cli
 
-package e2e
+package test
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/require"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestKubernetesPluginBinary(t *testing.T) {
 	t.Run("Find binary", func(t *testing.T) {
-		binary, err := KubernetesPluginBinary()
+		binary, err := PluginBin()
 		require.NoError(t, err)
 		fmt.Println("Found Kubernetes Plugin CLI binary at", binary)
 	})

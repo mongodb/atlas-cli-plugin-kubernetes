@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build e2e || kubernetes
+//go:build e2e || (kubernetes && install)
 
 package e2e
 
@@ -43,7 +43,7 @@ const (
 func TestKubernetesOperatorInstall(t *testing.T) {
 	req := require.New(t)
 
-	cliPath, err := test.PluginCLIBin()
+	cliPath, err := test.PluginBin()
 	fmt.Println(cliPath)
 	req.NoError(err)
 	const contextPrefix = "kind-"

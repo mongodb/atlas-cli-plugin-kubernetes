@@ -1,4 +1,4 @@
-// Copyright 2020 MongoDB Inc
+// Copyright 2025 MongoDB Inc
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:build e2e || cli
+
 package test
 
 import (
@@ -22,7 +24,7 @@ import (
 	"path/filepath"
 )
 
-func PluginCLIBin() (string, error) {
+func PluginBin() (string, error) {
 	path := os.Getenv("E2E_PLUGIN_BINARY_PATH")
 	cliPath, err := filepath.Abs(path)
 	if err != nil {
