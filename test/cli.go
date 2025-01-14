@@ -22,6 +22,9 @@ import (
 	"math/big"
 	"os"
 	"path/filepath"
+	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func PluginBin() (string, error) {
@@ -35,6 +38,12 @@ func PluginBin() (string, error) {
 		return "", fmt.Errorf("%w: invalid bin %q", err, path)
 	}
 	return cliPath, nil
+}
+
+func KubernetesPlugin(t *testing.T) {
+	binary, err := PluginBin()
+	require.NoError(t, err)
+	fmt.Println("Found Kubernetes Plugin CLI binary at", binary)
 }
 
 func AtlasCLIBin() (string, error) {
