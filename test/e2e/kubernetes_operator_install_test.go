@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build e2e || (atlas && cluster && kubernetes && local)
+//go:build e2e || (kubernetes && local)
 
 package e2e
 
