@@ -36,6 +36,7 @@ elif [ "$OS" = "Linux" ]; then
     elif [ "$ARCH" = "aarch64" ]; then
         curl -L https://fastdl.mongodb.org/mongocli/mongodb-atlas-cli_1.35.0_linux_arm64.tar.gz -o ./test/bin/mongodb-atlas-cli.tar.gz
     fi
+    mkdir -p ./test/bin/tmp
     tar -xf ./test/bin/mongodb-atlas-cli.tar.gz -C ./test/bin/tmp
 elif [[ "$OS" =~ "MINGW" ]] || [[ "$OS" =~ "MSYS_NT" ]] || [[ "$OS" =~ "CYGWIN_NT" ]]; then
     curl -L https://fastdl.mongodb.org/mongocli/mongodb-atlas-cli_1.35.0_windows_x86_64.zip -o ./test/bin/mongodb-atlas-cli.zip
@@ -52,4 +53,4 @@ mv ./test/bin/tmp/bin/atlas* ./test/bin/
 rm -rf ./test/bin/tmp
 rm  ./test/bin/mongodb-atlas-cli*
 
-chmod +x ./test/bin/atlas
+chmod +x ./test/bin/atlas*
