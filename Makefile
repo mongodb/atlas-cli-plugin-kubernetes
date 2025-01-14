@@ -1,3 +1,4 @@
+GOCOVERDIR?=$(abspath cov)
 
 PLUGIN_SOURCE_FILES?=./cmd/plugin
 ifeq ($(OS),Windows_NT)
@@ -26,13 +27,6 @@ deps:  ## Download go module dependencies
 	@echo "==> Installing go.mod dependencies..."
 	go mod download
 	go mod tidy
-
-GOCOVERDIR?=$(abspath cov)
-
-LOCALDEV_IMAGE?=docker.io/mongodb/mongodb-atlas-local
-LINKER_FLAGS=-s -w -X github.com/mongodb/atlas-cli-plugin-kubernetes/internal/version.GitCommit=${GIT_SHA} -X github.com/mongodb/atlas-cli-plugin-kubernetes/internal/version.Version=${ATLAS_VERSION} -X github.com/mongodb/atlas-cli-plugin-kubernetes/internal/cli/deployments/options.LocalDevImage=${LOCALDEV_IMAGE}
-
-DEBUG_FLAGS=all=-N -l
 
 E2E_PLUGIN_BINARY_PATH=../../$(PLUGIN_BINARY_PATH)
 E2E_TAGS?=e2e
@@ -82,8 +76,7 @@ build-debug: ## Generate a binary in ./bin for debugging plugin
 
 
 .PHONY: e2e-test
-e2e-test: 
-#build-debug ## Run E2E tests
+e2e-test: build-debug ## Run E2E tests
 # the target assumes the MCLI_* environment variables are exported
 	@./scripts/atlas-binary.sh
 	@echo "==> Running E2E tests..."

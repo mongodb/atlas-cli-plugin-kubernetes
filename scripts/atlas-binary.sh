@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -e  # Exit immediately if a command exits with a non-zero status
+set -Eeou pipefail
 
 OS=$(uname -s)
 ARCH=$(uname -m)

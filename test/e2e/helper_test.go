@@ -25,6 +25,7 @@ import (
 	"os/exec"
 	"strings"
 
+	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator/resources"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/test"
 	atlasv2 "go.mongodb.org/atlas-sdk/v20241113004/admin"
 	"go.mongodb.org/atlas/mongodbatlas"
@@ -324,4 +325,8 @@ func deleteProject(projectID string) error {
 		return fmt.Errorf("%s (%w)", string(resp), err)
 	}
 	return nil
+}
+
+func prepareK8sName(pattern string) string {
+	return resources.NormalizeAtlasName(pattern, resources.AtlasNameToKubernetesName())
 }

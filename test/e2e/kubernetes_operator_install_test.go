@@ -24,7 +24,6 @@ import (
 	"time"
 
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator/features"
-	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator/resources"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/test"
 	akov2 "github.com/mongodb/mongodb-atlas-kubernetes/v2/pkg/api/v1"
 	"github.com/stretchr/testify/assert"
@@ -234,7 +233,7 @@ func TestKubernetesOperatorInstall(t *testing.T) {
 			t.Errorf("project %s was not cleaned up", projectName)
 		}
 
-		cleanUpKeys(t, operator, operatorNamespace, cliPath)
+		cleanUpKeys(t, operator, operatorNamespace)
 	})
 
 	t.Run("should install operator importing atlas existing resources", func(t *testing.T) {
@@ -264,7 +263,7 @@ func TestKubernetesOperatorInstall(t *testing.T) {
 		checkK8sAtlasProject(t, operator, client.ObjectKey{Name: prepareK8sName(g.projectName), Namespace: operatorNamespace})
 		checkK8sAtlasDeployment(t, operator, client.ObjectKey{Name: prepareK8sName(fmt.Sprintf("%s-%s", g.projectName, g.clusterName)), Namespace: operatorNamespace})
 
-		cleanUpKeys(t, operator, operatorNamespace, cliPath)
+		cleanUpKeys(t, operator, operatorNamespace)
 	})
 
 	t.Run("should install operator with deletion protection and sub resource protection disabled", func(t *testing.T) {
@@ -301,7 +300,7 @@ func TestKubernetesOperatorInstall(t *testing.T) {
 		assert.Contains(t, deployment.Spec.Template.Spec.Containers[0].Args, "--resourceDeletionProtection=false")
 		assert.Contains(t, deployment.Spec.Template.Spec.Containers[0].Args, "--subresourceDeletionProtection=false")
 
-		cleanUpKeys(t, operator, operatorNamespace, cliPath)
+		cleanUpKeys(t, operator, operatorNamespace)
 	})
 }
 
@@ -433,7 +432,7 @@ func checkK8sAtlasDeployment(t *testing.T, operator *operatorHelper, key client.
 	}
 }
 
-func cleanUpKeys(t *testing.T, operator *operatorHelper, namespace string, cliPath string) {
+func cleanUpKeys(t *testing.T, operator *operatorHelper, namespace string) {
 	t.Helper()
 
 	secrets, err := operator.getOperatorSecretes(namespace)
@@ -444,9 +443,5 @@ func cleanUpKeys(t *testing.T, operator *operatorHelper, namespace string, cliPa
 		toDelete[secret.Name] = struct{}{}
 	}
 
-	deleteKeys(t, cliPath, toDelete)
-}
-
-func prepareK8sName(pattern string) string {
-	return resources.NormalizeAtlasName(pattern, resources.AtlasNameToKubernetesName())
+	deleteKeys(t, toDelete)
 }
