@@ -2,9 +2,11 @@
 PLUGIN_SOURCE_FILES?=./cmd/plugin
 ifeq ($(OS),Windows_NT)
 	PLUGIN_BINARY_NAME=binary.exe
+	E2E_ATLASCLI_BINARY_PATH=../bin/atlas.exe
 else
     ATLAS_VERSION?=$(shell git describe --match "atlascli/v*" | cut -d "v" -f 2)
 	PLUGIN_BINARY_NAME=binary
+	E2E_ATLASCLI_BINARY_PATH=../bin/atlas
 endif
 PLUGIN_BINARY_PATH=./bin/$(PLUGIN_BINARY_NAME)
 
@@ -39,6 +41,7 @@ E2E_PARALLEL?=1
 E2E_EXTRA_ARGS?=
 
 export E2E_PLUGIN_BINARY_PATH
+export E2E_ATLASCLI_BINARY_PATH
 
 .PHONY: build
 build: ## Generate the binary in ./bin
@@ -73,13 +76,16 @@ fuzz-normalizer-test: ## Run fuzz test
 	$(TEST_CMD) -fuzz=Fuzz -fuzztime 50s --tags="$(UNIT_TAGS)" -race ./internal/kubernetes/operator/resources
 
 .PHONY: build-debug
-build-debug: ## Generate a binary in ./bin for debugging atlascli
+build-debug: ## Generate a binary in ./bin for debugging plugin
 	@echo "==> Building kubernetes plugin binary for debugging"
 	go build -gcflags="all=-N -l" -o ./bin/binary ./cmd/plugin
 
+
 .PHONY: e2e-test
-e2e-test: build-debug ## Run E2E tests
+e2e-test: 
+#build-debug ## Run E2E tests
 # the target assumes the MCLI_* environment variables are exported
+	@./scripts/atlas-binary.sh
 	@echo "==> Running E2E tests..."
 	GOCOVERDIR=$(GOCOVERDIR) go test -v -p 1 -parallel 1 -v -timeout 60m -tags="e2e" ./test/e2e... $(E2E_EXTRA_ARGS)
 

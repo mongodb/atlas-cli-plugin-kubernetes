@@ -44,7 +44,7 @@ const (
 )
 
 func deployClusterForProject(projectID, tier, mDBVersion string, enableBackup bool) (string, string, error) {
-	cliPath, err := test.PluginCLIBin()
+	cliPath, err := test.AtlasCLIBin()
 	if err != nil {
 		return "", "", err
 	}
@@ -103,7 +103,7 @@ func e2eTier() string {
 }
 
 func internalDeleteClusterForProject(projectID, clusterName string) error {
-	cliPath, err := test.PluginCLIBin()
+	cliPath, err := test.AtlasCLIBin()
 	if err != nil {
 		return err
 	}
@@ -129,7 +129,7 @@ func internalDeleteClusterForProject(projectID, clusterName string) error {
 }
 
 func watchCluster(projectID, clusterName string) error {
-	cliPath, err := test.PluginCLIBin()
+	cliPath, err := test.AtlasCLIBin()
 	if err != nil {
 		return err
 	}
@@ -150,7 +150,7 @@ func watchCluster(projectID, clusterName string) error {
 }
 
 func removeTerminationProtectionFromCluster(projectID, clusterName string) error {
-	cliPath, err := test.PluginCLIBin()
+	cliPath, err := test.AtlasCLIBin()
 	if err != nil {
 		return err
 	}
@@ -189,7 +189,7 @@ func deleteClusterForProject(projectID, clusterName string) error {
 var errNoRegions = errors.New("no regions available")
 
 func newAvailableRegion(projectID, tier, provider string) (string, error) {
-	cliPath, err := test.PluginCLIBin()
+	cliPath, err := test.AtlasCLIBin()
 	if err != nil {
 		return "", err
 	}
@@ -280,7 +280,7 @@ func IsGov() bool {
 }
 
 func createProject(projectName string) (string, error) {
-	cliPath, err := test.PluginCLIBin()
+	cliPath, err := test.AtlasCLIBin()
 	if err != nil {
 		return "", fmt.Errorf("%w: invalid bin", err)
 	}
@@ -309,7 +309,7 @@ func createProject(projectName string) (string, error) {
 }
 
 func deleteProject(projectID string) error {
-	cliPath, err := test.PluginCLIBin()
+	cliPath, err := test.AtlasCLIBin()
 	if err != nil {
 		return err
 	}

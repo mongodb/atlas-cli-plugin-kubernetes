@@ -18,7 +18,6 @@ package e2e
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 	"os/exec"
 	"strings"
@@ -63,7 +62,6 @@ func newAtlasE2ETestGenerator(t *testing.T) *atlasE2ETestGenerator {
 
 // generateProject generates a new project and also registers its deletion on test cleanup.
 func (g *atlasE2ETestGenerator) generateProject(prefix string) {
-	fmt.Println(">>>>>>>>> in genProj")
 	g.t.Helper()
 
 	if g.projectID != "" {
@@ -115,8 +113,9 @@ func deleteProjectWithRetry(t *testing.T, projectID string) {
 	}
 }
 
-func deleteKeys(t *testing.T, cliPath string, toDelete map[string]struct{}) {
+func deleteKeys(t *testing.T, toDelete map[string]struct{}) {
 	t.Helper()
+	cliPath, err := test.AtlasCLIBin()
 
 	cmd := exec.Command(cliPath,
 		orgEntity,
