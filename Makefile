@@ -16,19 +16,6 @@ PLUGIN_BINARY_PATH=./bin/$(PLUGIN_BINARY_NAME)
 TEST_CMD?=go test
 UNIT_TAGS?=unit
 COVERAGE?=coverage.out
-GOCOVERDIR?=$(abspath cov)
-TEST_CMD?=go test
-UNIT_TAGS?=unit
-E2E_TAGS?=e2e
-E2E_TIMEOUT?=60m
-E2E_PARALLEL?=1
-E2E_EXTRA_ARGS?=
-
-.PHONY: deps
-deps:  ## Download go module dependencies
-	@echo "==> Installing go.mod dependencies..."
-	go mod download
-	go mod tidy
 
 E2E_PLUGIN_BINARY_PATH=../../$(PLUGIN_BINARY_PATH)
 E2E_TAGS?=e2e
@@ -38,6 +25,15 @@ E2E_EXTRA_ARGS?=
 
 export E2E_PLUGIN_BINARY_PATH
 export E2E_ATLASCLI_BINARY_PATH
+
+.PHONY: setup
+setup: deps devtools ## Set up dev env
+
+.PHONY: deps
+deps:  ## Download go module dependencies
+	@echo "==> Installing go.mod dependencies..."
+	go mod download
+	go mod tidy
 
 .PHONY: build
 build: ## Generate the binary in ./bin
