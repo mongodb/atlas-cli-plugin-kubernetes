@@ -1,4 +1,4 @@
-// Copyright 2021 MongoDB Inc
+// Copyright 2025 MongoDB Inc
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -37,11 +37,10 @@ const (
 	orgEntity      = "org"
 )
 
-// Cluster settings.
 const (
-	e2eClusterTier     = "M10"
-	e2eGovClusterTier  = "M20"
-	e2eClusterProvider = "AWS" // e2eClusterProvider preferred provider for e2e testing.
+	e2eClusterTier            = "M10"
+	e2eGovClusterTier         = "M20"
+	e2eDefaultClusterProvider = "AWS"
 )
 
 func deployClusterForProject(projectID, tier, mDBVersion string, enableBackup bool) (string, string, error) {
@@ -53,7 +52,7 @@ func deployClusterForProject(projectID, tier, mDBVersion string, enableBackup bo
 	if err != nil {
 		return "", "", err
 	}
-	region, err := newAvailableRegion(projectID, tier, e2eClusterProvider)
+	region, err := newAvailableRegion(projectID, tier, e2eDefaultClusterProvider)
 	if err != nil {
 		return "", "", err
 	}
@@ -64,7 +63,7 @@ func deployClusterForProject(projectID, tier, mDBVersion string, enableBackup bo
 		"--mdbVersion", mDBVersion,
 		"--region", region,
 		"--tier", tier,
-		"--provider", e2eClusterProvider,
+		"--provider", e2eDefaultClusterProvider,
 		"--diskSizeGB=30",
 	}
 	if enableBackup {

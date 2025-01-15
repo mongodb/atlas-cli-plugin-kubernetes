@@ -22,41 +22,45 @@ ARCH=$(uname -m)
 echo "==> Fetching AtlasCLI binary..."
 if ls ./test/bin/atlas* 1> /dev/null 2>&1; then
     echo "Binary already exists in ./test/bin, skipping download."
-else
-    rm -rf ./test/bin
-    mkdir -p ./test/bin
-
-    if [ "$OS" = "Darwin" ]; then
-        if [ "$ARCH" = "arm64" ]; then
-            curl -L https://fastdl.mongodb.org/mongocli/mongodb-atlas-cli_1.35.0_macos_arm64.zip -o ./test/bin/mongodb-atlas-cli.zip
-        elif [ "$ARCH" = "x86_64" ]; then
-            curl -L https://fastdl.mongodb.org/mongocli/mongodb-atlas-cli_1.35.0_macos_x86_64.zip -o ./test/bin/mongodb-atlas-cli.zip
-        fi
-        unzip -q ./test/bin/mongodb-atlas-cli.zip -d ./test/bin/tmp
-    elif [ "$OS" = "Linux" ]; then
-        if [ "$ARCH" = "x86_64" ]; then
-            curl -L https://fastdl.mongodb.org/mongocli/mongodb-atlas-cli_1.35.0_linux_x86_64.tar.gz -o ./test/bin/mongodb-atlas-cli.tar.gz
-        elif [ "$ARCH" = "aarch64" ]; then
-            curl -L https://fastdl.mongodb.org/mongocli/mongodb-atlas-cli_1.35.0_linux_arm64.tar.gz -o ./test/bin/mongodb-atlas-cli.tar.gz
-        fi
-        mkdir -p ./test/bin/tmp
-        tar --strip-components=1 -xf ./test/bin/mongodb-atlas-cli.tar.gz -C ./test/bin/tmp
-    elif [[ "$OS" =~ "MINGW" ]] || [[ "$OS" =~ "MSYS_NT" ]] || [[ "$OS" =~ "CYGWIN_NT" ]]; then
-        curl -L https://fastdl.mongodb.org/mongocli/mongodb-atlas-cli_1.35.0_windows_x86_64.zip -o ./test/bin/mongodb-atlas-cli.zip
-        unzip -q ./test/bin/mongodb-atlas-cli.zip -d ./test/bin/tmp
-    else
-        echo "Unsupported OS or architecture"
-        echo "Please visit https://www.mongodb.com/docs/atlas/cli/current/install-atlas-cli/ for a list of all available binaries."
-        echo "Download and extract the correct binary for your operating system and place it in ./test/bin."
-        exit 1
-    fi
-
-    # Move binary to ./test/bin
-    mv ./test/bin/tmp/bin/atlas* ./test/bin/
-
-    # # Clean up
-    rm -rf ./test/bin/tmp
-    rm  ./test/bin/mongodb-atlas-cli*
-
-    chmod +x ./test/bin/atlas*
+    exit 0
 fi
+
+rm -rf ./test/bin
+mkdir -p ./test/bin
+
+if [ "$OS" = "Darwin" ]; then
+    if [ "$ARCH" = "arm64" ]; then
+        curl -L https://fastdl.mongodb.org/mongocli/mongodb-atlas-cli_1.35.0_macos_arm64.zip -o ./test/bin/mongodb-atlas-cli.zip
+    elif [ "$ARCH" = "x86_64" ]; then
+        curl -L https://fastdl.mongodb.org/mongocli/mongodb-atlas-cli_1.35.0_macos_x86_64.zip -o ./test/bin/mongodb-atlas-cli.zip
+    fi
+    unzip -q ./test/bin/mongodb-atlas-cli.zip -d ./test/bin/tmp
+elif [ "$OS" = "Linux" ]; then
+    if [ "$ARCH" = "x86_64" ]; then
+        curl -L https://fastdl.mongodb.org/mongocli/mongodb-atlas-cli_1.35.0_linux_x86_64.tar.gz -o ./test/bin/mongodb-atlas-cli.tar.gz
+    elif [ "$ARCH" = "aarch64" ]; then
+        curl -L https://fastdl.mongodb.org/mongocli/mongodb-atlas-cli_1.35.0_linux_arm64.tar.gz -o ./test/bin/mongodb-atlas-cli.tar.gz
+    fi
+    mkdir -p ./test/bin/tmp
+    tar --strip-components=1 -xf ./test/bin/mongodb-atlas-cli.tar.gz -C ./test/bin/tmp
+elif [[ "$OS" =~ "MINGW" ]] || [[ "$OS" =~ "MSYS_NT" ]] || [[ "$OS" =~ "CYGWIN_NT" ]]; then
+    curl -L https://fastdl.mongodb.org/mongocli/mongodb-atlas-cli_1.35.0_windows_x86_64.zip -o ./test/bin/mongodb-atlas-cli.zip
+    unzip -q ./test/bin/mongodb-atlas-cli.zip -d ./test/bin/tmp
+else
+    echo "Unsupported OS or architecture"
+    echo "Please visit https://www.mongodb.com/docs/atlas/cli/current/install-atlas-cli/ for a list of all available binaries."
+    echo "Download and extract the correct binary for your operating system and place it in ./test/bin."
+    exit 1
+fi
+
+# Move binary to ./test/bin
+pushd ./test/bin/tmp/bin > /dev/null
+cp atlas* ../../
+popd > /dev/null
+
+
+# Clean up
+rm -rf ./test/bin/tmp
+rm  ./test/bin/mongodb-atlas-cli*
+
+chmod +x ./test/bin/atlas*
