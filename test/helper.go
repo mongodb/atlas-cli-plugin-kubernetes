@@ -1,4 +1,4 @@
-// Copyright 2024 MongoDB Inc
+// Copyright 2025 MongoDB Inc
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,21 +12,32 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build e2e || cli
-
-package e2e
+package test
 
 import (
 	"fmt"
-	"testing"
-
-	"github.com/stretchr/testify/require"
+	"os"
+	"os/exec"
 )
 
-func TestKubernetesPluginBinary(t *testing.T) {
-	t.Run("Find binary", func(t *testing.T) {
-		binary, err := PluginBin()
-		require.NoError(t, err)
-		fmt.Println("Found Kubernetes Plugin CLI binary at", binary)
-	})
+func RunAndGetStdOut(cmd *exec.Cmd) ([]byte, error) {
+	cmd.Stderr = os.Stderr
+
+	resp, err := cmd.Output()
+
+	if err != nil {
+		return nil, fmt.Errorf("%s (%w)", string(resp), err)
+	}
+
+	return resp, nil
+}
+
+func RunAndGetStdOutAndErr(cmd *exec.Cmd) ([]byte, error) {
+	resp, err := cmd.CombinedOutput()
+
+	if err != nil {
+		return nil, fmt.Errorf("%s (%w)", string(resp), err)
+	}
+
+	return resp, nil
 }

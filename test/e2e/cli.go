@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build e2e || cli
+//go:build e2e || cli || kubernetes
 
 package e2e
 
@@ -21,13 +21,14 @@ import (
 	"fmt"
 	"math/big"
 	"os"
-	"testing"
 	"path/filepath"
+	"testing"
+
 	"github.com/stretchr/testify/require"
 )
 
-func KubernetesPluginBinary() (string, error) {
-	path := os.Getenv("CLI_DESTINATION")
+func PluginBin() (string, error) {
+	path := os.Getenv("E2E_PLUGIN_BINARY_PATH")
 	cliPath, err := filepath.Abs(path)
 	if err != nil {
 		return "", fmt.Errorf("%w: invalid bin path %q", err, path)
@@ -39,11 +40,23 @@ func KubernetesPluginBinary() (string, error) {
 	return cliPath, nil
 }
 
-
-func KubernetesPluginCLI(t *testing.T) {
-	binary, err := KubernetesPluginBinary()
+func KubernetesPlugin(t *testing.T) {
+	binary, err := PluginBin()
 	require.NoError(t, err)
 	fmt.Println("Found Kubernetes Plugin CLI binary at", binary)
+}
+
+func AtlasCLIBin() (string, error) {
+	path := os.Getenv("E2E_ATLASCLI_BINARY_PATH")
+	cliPath, err := filepath.Abs(path)
+	if err != nil {
+		return "", fmt.Errorf("%w: invalid bin path %q", err, path)
+	}
+
+	if _, err := os.Stat(cliPath); err != nil {
+		return "", fmt.Errorf("%w: invalid bin %q", err, path)
+	}
+	return cliPath, nil
 }
 
 func RandInt(maximum int64) (*big.Int, error) {

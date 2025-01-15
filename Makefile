@@ -1,18 +1,33 @@
+# A Self-Documenting Makefile: http://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
 
-CLI_SOURCE_FILES?=./cmd/plugin
-CLI_BINARY_NAME=binary
-CLI_DESTINATION=./bin/$(CLI_BINARY_NAME)
+GOCOVERDIR?=$(abspath cov)
+
+PLUGIN_SOURCE_FILES?=./cmd/plugin
+ifeq ($(OS),Windows_NT)
+	PLUGIN_BINARY_NAME=binary.exe
+	E2E_ATLASCLI_BINARY_PATH=../bin/atlas.exe
+else
+    ATLAS_VERSION?=$(shell git describe --match "atlascli/v*" | cut -d "v" -f 2)
+	PLUGIN_BINARY_NAME=binary
+	E2E_ATLASCLI_BINARY_PATH=../bin/atlas
+endif
+PLUGIN_BINARY_PATH=./bin/$(PLUGIN_BINARY_NAME)
 
 TEST_CMD?=go test
 UNIT_TAGS?=unit
 COVERAGE?=coverage.out
-GOCOVERDIR?=$(abspath cov)
-TEST_CMD?=go test
-UNIT_TAGS?=unit
+
+E2E_PLUGIN_BINARY_PATH=../../$(PLUGIN_BINARY_PATH)
 E2E_TAGS?=e2e
 E2E_TIMEOUT?=60m
 E2E_PARALLEL?=1
 E2E_EXTRA_ARGS?=
+
+export E2E_PLUGIN_BINARY_PATH
+export E2E_ATLASCLI_BINARY_PATH
+
+.PHONY: setup
+setup: deps devtools ## Set up dev env
 
 .PHONY: deps
 deps:  ## Download go module dependencies
@@ -23,7 +38,7 @@ deps:  ## Download go module dependencies
 .PHONY: build
 build: ## Generate the binary in ./bin
 	@echo "==> Building kubernetes plugin binary"
-	go build -o $(CLI_DESTINATION) $(CLI_SOURCE_FILES)
+	go build -o $(PLUGIN_BINARY_PATH) $(PLUGIN_SOURCE_FILES)
 
 .PHONY: devtools
 devtools:  ## Install dev tools
@@ -52,6 +67,18 @@ fuzz-normalizer-test: ## Run fuzz test
 	@echo "==> Running fuzz test..."
 	$(TEST_CMD) -fuzz=Fuzz -fuzztime 50s --tags="$(UNIT_TAGS)" -race ./internal/kubernetes/operator/resources
 
+.PHONY: build-debug
+build-debug: ## Generate a binary in ./bin for debugging plugin
+	@echo "==> Building kubernetes plugin binary for debugging"
+	go build -gcflags="all=-N -l" -o ./bin/binary ./cmd/plugin
+
+.PHONY: e2e-test
+e2e-test: build-debug ## Run E2E tests
+# the target assumes the MCLI_* environment variables are exported
+	@./scripts/atlas-binary.sh
+	@echo "==> Running E2E tests..."
+	GOCOVERDIR=$(GOCOVERDIR) $(TEST_CMD) -v -p 1 -parallel $(E2E_PARALLEL) -v -timeout $(E2E_TIMEOUT) -tags="$(E2E_TAGS)" ./test/e2e... $(E2E_EXTRA_ARGS)
+
 .PHONY: gen-mocks
 gen-mocks: ## Generate mocks
 	@echo "==> Generating mocks"
@@ -67,12 +94,6 @@ gen-docs: ## Generate docs for atlascli commands
 check-licenses: ## Check licenses
 	@echo "==> Running lincense checker..."
 	@build/ci/check-licenses.sh
-
-
-.PHONY: e2e-test
-e2e-test: build ## Run E2E tests
-	@echo "==> Running E2E tests..."
-	GOCOVERDIR=$(GOCOVERDIR) $(TEST_CMD) -v -p 1 -parallel $(E2E_PARALLEL) -v -timeout $(E2E_TIMEOUT) -tags="$(E2E_TAGS)" ./test/e2e... $(E2E_EXTRA_ARGS)
 
 .PHONY: help
 .DEFAULT_GOAL := help

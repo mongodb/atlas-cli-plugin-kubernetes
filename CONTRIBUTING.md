@@ -41,7 +41,6 @@ To make the contribution process as seamless as possible, we ask for the followi
   - Have test cases for the new code. If you have questions about how to do this, please ask in your pull request.
   - Run `make fmt`.
   - Add documentation if you are adding new features or changing functionality.
-  - Confirm that `make check` succeeds. [GitHub Actions](https://github.com/mongodb/mongodb-atlas-cli/actions).
 
 ### Development Setup
 
