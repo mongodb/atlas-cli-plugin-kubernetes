@@ -14,7 +14,7 @@
 
 //go:build e2e || cli
 
-package test
+package e2e
 
 import (
 	"fmt"

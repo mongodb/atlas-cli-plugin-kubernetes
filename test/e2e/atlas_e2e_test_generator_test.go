@@ -115,7 +115,7 @@ func deleteProjectWithRetry(t *testing.T, projectID string) {
 
 func deleteKeys(t *testing.T, toDelete map[string]struct{}) {
 	t.Helper()
-	cliPath, err := test.AtlasCLIBin()
+	cliPath, err := AtlasCLIBin()
 
 	cmd := exec.Command(cliPath,
 		orgEntity,
