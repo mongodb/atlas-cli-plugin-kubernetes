@@ -1,4 +1,4 @@
-// Copyright 2023 MongoDB Inc
+// Copyright 2025 MongoDB Inc
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,6 +17,14 @@ package pointer
 import (
 	"golang.org/x/exp/constraints"
 )
+
+func GetOrZero[T any](ptr *T) T {
+	if ptr == nil {
+		var zero T
+		return zero
+	}
+	return *ptr
+}
 
 func Get[T any](val T) *T {
 	return &val

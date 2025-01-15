@@ -24,24 +24,171 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"testing"
 
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator/resources"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/test"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	atlasv2 "go.mongodb.org/atlas-sdk/v20241113004/admin"
 	"go.mongodb.org/atlas/mongodbatlas"
 )
 
 const (
-	clustersEntity = "clusters"
-	projectEntity  = "project"
-	orgEntity      = "org"
+	eventsEntity                  = "events"
+	clustersEntity                = "clusters"
+	processesEntity               = "processes"
+	metricsEntity                 = "metrics"
+	searchEntity                  = "search"
+	indexEntity                   = "index"
+	nodesEntity                   = "nodes"
+	datafederationEntity          = "datafederation"
+	datalakePipelineEntity        = "datalakepipeline"
+	alertsEntity                  = "alerts"
+	configEntity                  = "settings"
+	dbusersEntity                 = "dbusers"
+	certsEntity                   = "certs"
+	privateEndpointsEntity        = "privateendpoints"
+	queryLimitsEntity             = "querylimits"
+	onlineArchiveEntity           = "onlineArchives"
+	projectEntity                 = "project"
+	orgEntity                     = "org"
+	invitationsEntity             = "invitations"
+	maintenanceEntity             = "maintenanceWindows"
+	integrationsEntity            = "integrations"
+	securityEntity                = "security"
+	ldapEntity                    = "ldap"
+	awsEntity                     = "aws"
+	azureEntity                   = "azure"
+	gcpEntity                     = "gcp"
+	customDNSEntity               = "customDns"
+	logsEntity                    = "logs"
+	cloudProvidersEntity          = "cloudProviders"
+	accessRolesEntity             = "accessRoles"
+	customDBRoleEntity            = "customDbRoles"
+	serverlessEntity              = "serverless"
+	accessListEntity              = "accessList"
+	networkingEntity              = "networking"
+	networkPeeringEntity          = "peering"
+	projectsEntity                = "projects"
+	settingsEntity                = "settings"
+	backupsEntity                 = "backups"
+	teamsEntity                   = "teams"
+	federatedAuthenticationEntity = "federatedAuthentication"
+	federationSettingsEntity      = "federationSettings"
+	identityProviderEntity        = "identityProvider"
+	connectedOrgsConfigsEntity    = "connectedOrgConfigs"
+	streamsEntity                 = "streams"
 )
 
+// AlertConfig constants.
+const (
+	group       = "GROUP"
+	intervalMin = 5
+	delayMin    = 0
+)
+
+// Integration constants.
+const (
+	datadogEntity = "DATADOG"
+)
+
+// Cluster settings.
 const (
 	e2eClusterTier            = "M10"
 	e2eGovClusterTier         = "M20"
+	e2eSharedClusterTier      = "M2"
 	e2eDefaultClusterProvider = "AWS"
 )
+
+func deployServerlessInstanceForProject(projectID string) (string, error) {
+	cliPath, err := AtlasCLIBin()
+	if err != nil {
+		return "", err
+	}
+	clusterName, err := RandClusterName()
+	if err != nil {
+		return "", err
+	}
+	tier := e2eTier()
+	region, err := newAvailableRegion(projectID, tier, e2eDefaultClusterProvider)
+	if err != nil {
+		return "", err
+	}
+	args := []string{
+		serverlessEntity,
+		"create",
+		clusterName,
+		"--region", region,
+		"--provider", e2eDefaultClusterProvider,
+	}
+
+	if projectID != "" {
+		args = append(args, "--projectId", projectID)
+	}
+	create := exec.Command(cliPath, args...)
+	create.Env = os.Environ()
+	if resp, err := test.RunAndGetStdOut(create); err != nil {
+		return "", fmt.Errorf("error creating serverless instance %w: %s", err, string(resp))
+	}
+
+	watchArgs := []string{
+		serverlessEntity,
+		"watch",
+		clusterName,
+	}
+	if projectID != "" {
+		watchArgs = append(watchArgs, "--projectId", projectID)
+	}
+	watch := exec.Command(cliPath, watchArgs...)
+	watch.Env = os.Environ()
+	if resp, err := test.RunAndGetStdOut(watch); err != nil {
+		return "", fmt.Errorf("error watching serverless instance %w: %s", err, string(resp))
+	}
+	return clusterName, nil
+}
+
+func watchServerlessInstanceForProject(projectID, clusterName string) error {
+	cliPath, err := AtlasCLIBin()
+	if err != nil {
+		return err
+	}
+
+	watchArgs := []string{
+		serverlessEntity,
+		"watch",
+		clusterName,
+	}
+	if projectID != "" {
+		watchArgs = append(watchArgs, "--projectId", projectID)
+	}
+	watchCmd := exec.Command(cliPath, watchArgs...)
+	watchCmd.Env = os.Environ()
+	if resp, err := test.RunAndGetStdOut(watchCmd); err != nil {
+		return fmt.Errorf("error watching serverless instance %w: %s", err, string(resp))
+	}
+	return nil
+}
+
+func deleteServerlessInstanceForProject(t *testing.T, cliPath, projectID, clusterName string) {
+	t.Helper()
+
+	args := []string{
+		serverlessEntity,
+		"delete",
+		clusterName,
+		"--force",
+	}
+	if projectID != "" {
+		args = append(args, "--projectId", projectID)
+	}
+	deleteCmd := exec.Command(cliPath, args...)
+	deleteCmd.Env = os.Environ()
+	resp, err := test.RunAndGetStdOut(deleteCmd)
+	require.NoError(t, err, string(resp))
+
+	_ = watchServerlessInstanceForProject(projectID, clusterName)
+}
 
 func deployClusterForProject(projectID, tier, mDBVersion string, enableBackup bool) (string, string, error) {
 	cliPath, err := AtlasCLIBin()
@@ -236,6 +383,17 @@ func RandClusterName() (string, error) {
 	return fmt.Sprintf("cluster-%v", n), nil
 }
 
+func RandTeamName() (string, error) {
+	n, err := RandInt(1000)
+	if err != nil {
+		return "", err
+	}
+	if revision, ok := os.LookupEnv("revision"); ok {
+		return fmt.Sprintf("team-%v-%s", n, revision), nil
+	}
+	return fmt.Sprintf("team-%v", n), nil
+}
+
 func RandProjectName() (string, error) {
 	n, err := RandInt(1000)
 	if err != nil {
@@ -245,6 +403,18 @@ func RandProjectName() (string, error) {
 		return fmt.Sprintf("%v-%s", n, revision), nil
 	}
 	return fmt.Sprintf("e2e-%v", n), nil
+}
+
+func RandTeamNameWithPrefix(prefix string) (string, error) {
+	name, err := RandTeamName()
+	if err != nil {
+		return "", err
+	}
+	prefixedName := fmt.Sprintf("%s-%s", prefix, name)
+	if len(prefixedName) > 64 {
+		return prefixedName[:64], nil
+	}
+	return prefixedName, nil
 }
 
 func RandProjectNameWithPrefix(prefix string) (string, error) {
@@ -279,6 +449,63 @@ func IsGov() bool {
 	return os.Getenv("MCLI_SERVICE") == "cloudgov"
 }
 
+func getFirstOrgUser() (string, error) {
+	cliPath, err := AtlasCLIBin()
+	if err != nil {
+		return "", err
+	}
+	args := []string{
+		orgEntity,
+		"users",
+		"list",
+		"-o=json",
+	}
+	cmd := exec.Command(cliPath, args...)
+	cmd.Env = os.Environ()
+	resp, err := test.RunAndGetStdOut(cmd)
+	if err != nil {
+		return "", fmt.Errorf("%s (%w)", string(resp), err)
+	}
+
+	var users atlasv2.PaginatedAppUser
+	if err := json.Unmarshal(resp, &users); err != nil {
+		return "", fmt.Errorf("%w: %s", err, string(resp))
+	}
+	if users.GetTotalCount() == 0 {
+		return "", errors.New("no users found")
+	}
+
+	return users.GetResults()[0].Username, nil
+}
+
+func createTeam(teamName, userName string) (string, error) {
+	cliPath, err := AtlasCLIBin()
+	if err != nil {
+		return "", fmt.Errorf("%w: invalid bin", err)
+	}
+	args := []string{
+		teamsEntity,
+		"create",
+		teamName,
+		"--username",
+		userName,
+		"-o=json",
+	}
+	cmd := exec.Command(cliPath, args...)
+	cmd.Env = os.Environ()
+	resp, err := test.RunAndGetStdOut(cmd)
+	if err != nil {
+		return "", fmt.Errorf("%s (%w)", string(resp), err)
+	}
+
+	var team atlasv2.Team
+	if err := json.Unmarshal(resp, &team); err != nil {
+		return "", fmt.Errorf("%w: %s", err, string(resp))
+	}
+
+	return team.GetId(), nil
+}
+
 func createProject(projectName string) (string, error) {
 	cliPath, err := AtlasCLIBin()
 	if err != nil {
@@ -308,6 +535,107 @@ func createProject(projectName string) (string, error) {
 	return project.GetId(), nil
 }
 
+func createProjectWithoutAlertSettings(projectName string) (string, error) {
+	cliPath, err := AtlasCLIBin()
+	if err != nil {
+		return "", fmt.Errorf("%w: invalid bin", err)
+	}
+	args := []string{
+		projectEntity,
+		"create",
+		projectName,
+		"-o=json",
+		"--withoutDefaultAlertSettings",
+	}
+	if IsGov() {
+		args = append(args, "--govCloudRegionsOnly")
+	}
+	cmd := exec.Command(cliPath, args...)
+	cmd.Env = os.Environ()
+	resp, err := test.RunAndGetStdOut(cmd)
+	if err != nil {
+		return "", fmt.Errorf("%s (%w)", string(resp), err)
+	}
+
+	var project atlasv2.Group
+	if err := json.Unmarshal(resp, &project); err != nil {
+		return "", fmt.Errorf("invalid response: %s (%w)", string(resp), err)
+	}
+
+	return project.GetId(), nil
+}
+
+func deleteAllNetworkPeers(t *testing.T, cliPath, projectID, provider string) {
+	t.Helper()
+	cmd := exec.Command(cliPath,
+		networkingEntity,
+		networkPeeringEntity,
+		"list",
+		"--provider",
+		provider,
+		"--projectId",
+		projectID,
+		"-o=json",
+	)
+	cmd.Env = os.Environ()
+	resp, err := test.RunAndGetStdOut(cmd)
+	t.Log("available network peers", string(resp))
+	require.NoError(t, err, string(resp))
+	var networkPeers []atlasv2.BaseNetworkPeeringConnectionSettings
+	err = json.Unmarshal(resp, &networkPeers)
+	require.NoError(t, err)
+	for _, peer := range networkPeers {
+		peerID := peer.GetId()
+		cmd = exec.Command(cliPath,
+			networkingEntity,
+			networkPeeringEntity,
+			"delete",
+			peerID,
+			"--projectId",
+			projectID,
+			"--force",
+		)
+		cmd.Env = os.Environ()
+		resp, err = test.RunAndGetStdOut(cmd)
+		assert.NoError(t, err, string(resp))
+	}
+}
+
+func deletePrivateEndpoint(t *testing.T, cliPath, projectID, provider, endpointID string) {
+	t.Helper()
+
+	cmd := exec.Command(cliPath,
+		privateEndpointsEntity,
+		provider,
+		"delete",
+		endpointID,
+		"--projectId",
+		projectID,
+		"--force",
+	)
+	cmd.Env = os.Environ()
+	resp, err := test.RunAndGetStdOut(cmd)
+	require.NoError(t, err, string(resp))
+}
+
+func deleteTeam(teamID string) error {
+	cliPath, err := AtlasCLIBin()
+	if err != nil {
+		return err
+	}
+	cmd := exec.Command(cliPath,
+		teamsEntity,
+		"delete",
+		teamID,
+		"--force")
+	cmd.Env = os.Environ()
+	resp, err := test.RunAndGetStdOut(cmd)
+	if err != nil {
+		return fmt.Errorf("%s (%w)", string(resp), err)
+	}
+	return nil
+}
+
 func deleteProject(projectID string) error {
 	cliPath, err := AtlasCLIBin()
 	if err != nil {
@@ -323,6 +651,200 @@ func deleteProject(projectID string) error {
 	if err != nil {
 		return fmt.Errorf("%s (%w)", string(resp), err)
 	}
+	return nil
+}
+
+func createDBUserWithCert(projectID, username string) error {
+	cliPath, err := AtlasCLIBin()
+	if err != nil {
+		return err
+	}
+
+	cmd := exec.Command(cliPath,
+		dbusersEntity,
+		"create",
+		"readAnyDatabase",
+		"--username", username,
+		"--x509Type", "MANAGED",
+		"--projectId", projectID)
+	cmd.Env = os.Environ()
+	resp, err := test.RunAndGetStdOut(cmd)
+	if err != nil {
+		return fmt.Errorf("%s (%w)", string(resp), err)
+	}
+
+	return nil
+}
+
+func createDataFederationForProject(projectID string) (string, error) {
+	cliPath, err := AtlasCLIBin()
+	if err != nil {
+		return "", err
+	}
+
+	n, err := RandInt(1000)
+	if err != nil {
+		return "", err
+	}
+	dataFederationName := fmt.Sprintf("e2e-data-federation-%v", n)
+
+	cmd := exec.Command(cliPath,
+		datafederationEntity,
+		"create",
+		dataFederationName,
+		"--projectId", projectID,
+		"--region", "DUBLIN_IRL")
+	cmd.Env = os.Environ()
+	resp, err := test.RunAndGetStdOut(cmd)
+	if err != nil {
+		return "", fmt.Errorf("%s (%w)", string(resp), err)
+	}
+
+	return dataFederationName, nil
+}
+
+func deleteDataFederationForProject(t *testing.T, cliPath, projectID, dataFedName string) {
+	t.Helper()
+
+	cmd := exec.Command(cliPath,
+		datafederationEntity,
+		"delete",
+		dataFedName,
+		"--projectId", projectID,
+		"--force")
+	cmd.Env = os.Environ()
+	resp, err := test.RunAndGetStdOut(cmd)
+	require.NoError(t, err, string(resp))
+}
+
+func compareStingsWithHiddenPart(expectedSting, actualString string, specialChar uint8) bool {
+	if len(expectedSting) != len(actualString) {
+		return false
+	}
+	for i := 0; i < len(expectedSting); i++ {
+		if expectedSting[i] != actualString[i] && actualString[i] != specialChar {
+			return false
+		}
+	}
+	return true
+}
+
+func createStreamsInstance(t *testing.T, projectID, name string) (string, error) {
+	t.Helper()
+
+	cliPath, err := AtlasCLIBin()
+	if err != nil {
+		return "", err
+	}
+
+	n, err := RandInt(1000)
+	if err != nil {
+		return "", err
+	}
+	instanceName := fmt.Sprintf("e2e-%s-%v", name, n)
+
+	cmd := exec.Command(
+		cliPath,
+		streamsEntity,
+		"instance",
+		"create",
+		instanceName,
+		"--projectId", projectID,
+		"--provider", "AWS",
+		"--region", "VIRGINIA_USA",
+	)
+	cmd.Env = os.Environ()
+	resp, err := test.RunAndGetStdOut(cmd)
+	if err != nil {
+		return "", fmt.Errorf("%s (%w)", string(resp), err)
+	}
+
+	return instanceName, nil
+}
+
+func deleteStreamsInstance(t *testing.T, projectID, name string) error {
+	t.Helper()
+
+	cliPath, err := AtlasCLIBin()
+	if err != nil {
+		return err
+	}
+
+	cmd := exec.Command(
+		cliPath,
+		streamsEntity,
+		"instance",
+		"delete",
+		name,
+		"--projectId", projectID,
+		"--force",
+	)
+	cmd.Env = os.Environ()
+	resp, err := test.RunAndGetStdOut(cmd)
+	if err != nil {
+		return fmt.Errorf("%s (%w)", string(resp), err)
+	}
+
+	return nil
+}
+
+func createStreamsConnection(t *testing.T, projectID, instanceName, name string) (string, error) {
+	t.Helper()
+
+	cliPath, err := AtlasCLIBin()
+	if err != nil {
+		return "", err
+	}
+
+	n, err := RandInt(1000)
+	if err != nil {
+		return "", err
+	}
+	connectionName := fmt.Sprintf("e2e-%s-%v", name, n)
+
+	cmd := exec.Command(
+		cliPath,
+		streamsEntity,
+		"connection",
+		"create",
+		connectionName,
+		"--file", "data/create_streams_connection_test.json",
+		"--instance", instanceName,
+		"--projectId", projectID,
+	)
+	cmd.Env = os.Environ()
+	resp, err := test.RunAndGetStdOut(cmd)
+	if err != nil {
+		return "", fmt.Errorf("%s (%w)", string(resp), err)
+	}
+
+	return connectionName, nil
+}
+
+func deleteStreamsConnection(t *testing.T, projectID, instanceName, name string) error {
+	t.Helper()
+
+	cliPath, err := AtlasCLIBin()
+	if err != nil {
+		return err
+	}
+
+	cmd := exec.Command(
+		cliPath,
+		streamsEntity,
+		"connection",
+		"delete",
+		name,
+		"--instance", instanceName,
+		"--projectId", projectID,
+		"--force",
+	)
+	cmd.Env = os.Environ()
+	resp, err := test.RunAndGetStdOut(cmd)
+	if err != nil {
+		return fmt.Errorf("%s (%w)", string(resp), err)
+	}
+
 	return nil
 }
 
