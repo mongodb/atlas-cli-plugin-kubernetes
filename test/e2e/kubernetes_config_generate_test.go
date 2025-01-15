@@ -12,13 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build e2e || (kubernetes && generate)
+//go:build e2e || (kubernetes && gen)
 
 package e2e
 
 import (
 	"bufio"
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -30,15 +31,18 @@ import (
 
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator/features"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator/resources"
+	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator/secrets"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/pointer"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/test"
 	akoapi "github.com/mongodb/mongodb-atlas-kubernetes/v2/pkg/api"
 	akov2 "github.com/mongodb/mongodb-atlas-kubernetes/v2/pkg/api/v1"
 	akov2common "github.com/mongodb/mongodb-atlas-kubernetes/v2/pkg/api/v1/common"
+	akov2project "github.com/mongodb/mongodb-atlas-kubernetes/v2/pkg/api/v1/project"
 	akov2provider "github.com/mongodb/mongodb-atlas-kubernetes/v2/pkg/api/v1/provider"
 	akov2status "github.com/mongodb/mongodb-atlas-kubernetes/v2/pkg/api/v1/status"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	atlasv2 "go.mongodb.org/atlas-sdk/v20241113004/admin"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -131,207 +135,207 @@ func InitialSetup(t *testing.T) KubernetesConfigGenerateProjectSuite {
 	return s
 }
 
-// func TestExportWorksWithoutFedAuth(t *testing.T) {
-// 	s := InitialSetup(t)
-// 	cliPath := s.cliPath
-// 	generator := s.generator
-// 	cmd := exec.Command(cliPath,
-// 		"kubernetes",
-// 		"config",
-// 		"generate",
-// 		"--projectId",
-// 		generator.projectID)
-// 	cmd.Env = os.Environ()
-// 	resp, err := cmd.CombinedOutput()
-// 	t.Log(string(resp))
-// 	require.NoError(t, err, string(resp))
-// 	var objects []runtime.Object
-// 	objects, err = getK8SEntities(resp)
-// 	require.NoError(t, err, "should not fail on decode but got:\n"+string(resp))
-// 	require.NotEmpty(t, objects)
-// }
+func TestExportWorksWithoutFedAuth(t *testing.T) {
+	s := InitialSetup(t)
+	cliPath := s.cliPath
+	generator := s.generator
+	cmd := exec.Command(cliPath,
+		"kubernetes",
+		"config",
+		"generate",
+		"--projectId",
+		generator.projectID)
+	cmd.Env = os.Environ()
+	resp, err := cmd.CombinedOutput()
+	t.Log(string(resp))
+	require.NoError(t, err, string(resp))
+	var objects []runtime.Object
+	objects, err = getK8SEntities(resp)
+	require.NoError(t, err, "should not fail on decode but got:\n"+string(resp))
+	require.NotEmpty(t, objects)
+}
 
-// func TestExportIndependentOrNot(t *testing.T) {
-// 	s := InitialSetup(t)
-// 	cliPath := s.cliPath
-// 	generator := s.generator
-// 	generator.tier = "M0"
-// 	testPrefix := "test-"
-// 	generator.generateDBUser(testPrefix)
-// 	generator.generateCluster()
-// 	expectAlertConfigs := true
-// 	dictionary := resources.AtlasNameToKubernetesName()
-// 	credentialName := resources.NormalizeAtlasName(generator.projectName+credSuffixTest, dictionary)
+func TestExportIndependentOrNot(t *testing.T) {
+	s := InitialSetup(t)
+	cliPath := s.cliPath
+	generator := s.generator
+	generator.tier = "M0"
+	testPrefix := "test-"
+	generator.generateDBUser(testPrefix)
+	generator.generateCluster()
+	expectAlertConfigs := true
+	dictionary := resources.AtlasNameToKubernetesName()
+	credentialName := resources.NormalizeAtlasName(generator.projectName+credSuffixTest, dictionary)
 
-// 	for _, tc := range []struct {
-// 		title                string
-// 		independentResources bool
-// 		expected             []runtime.Object
-// 	}{
-// 		{
-// 			title:                "Exported without independentResources uses Kubernetes references",
-// 			independentResources: false,
-// 			expected: []runtime.Object{
-// 				defaultTestProject(generator.projectName, "", expectedLabels, expectAlertConfigs, nil),
-// 				defaultTestAtlasConnSecret(credentialName, ""),
-// 				defaultTestUser(generator.dbUser, generator.projectName, ""),
-// 				defaultM0TestCluster(generator.clusterName, generator.clusterRegion, generator.projectName, ""),
-// 			},
-// 		},
-// 		{
-// 			title:                "Exported with independentResources uses IDs were supported",
-// 			independentResources: true,
-// 			expected: []runtime.Object{
-// 				defaultTestProject(generator.projectName, "", expectedLabels, expectAlertConfigs, nil),
-// 				defaultTestAtlasConnSecret(credentialName, ""),
-// 				defaultTestUserWithID(generator.dbUser, generator.projectName, generator.projectID, "", credentialName),
-// 				defaultM0TestClusterWithID(
-// 					generator.clusterName, generator.clusterRegion, generator.projectName, generator.projectID, "",
-// 					credentialName,
-// 				),
-// 			},
-// 		},
-// 	} {
-// 		t.Run(tc.title, func(t *testing.T) {
-// 			cmdArgs := []string{
-// 				"kubernetes",
-// 				"config",
-// 				"generate",
-// 				"--projectId",
-// 				generator.projectID,
-// 			}
-// 			if tc.independentResources {
-// 				cmdArgs = append(cmdArgs, "--independentResources")
-// 			}
-// 			cmd := exec.Command(cliPath, cmdArgs...)
-// 			cmd.Env = os.Environ()
-// 			resp, err := cmd.CombinedOutput()
-// 			t.Log(string(resp))
-// 			require.NoError(t, err, string(resp))
-// 			var objects []runtime.Object
-// 			objects, err = getK8SEntities(resp)
-// 			// We want to filter spurious federated auth resources from other tests
-// 			// as these are global resources across all projects.
-// 			objects = filtered(objects).byKind(globalKinds...)
-// 			require.NoError(t, err, "should not fail on decode but got:\n"+string(resp))
-// 			require.NotEmpty(t, objects)
-// 			require.Equal(t, tc.expected, objects)
-// 		})
-// 	}
-// }
+	for _, tc := range []struct {
+		title                string
+		independentResources bool
+		expected             []runtime.Object
+	}{
+		{
+			title:                "Exported without independentResources uses Kubernetes references",
+			independentResources: false,
+			expected: []runtime.Object{
+				defaultTestProject(generator.projectName, "", expectedLabels, expectAlertConfigs, nil),
+				defaultTestAtlasConnSecret(credentialName, ""),
+				defaultTestUser(generator.dbUser, generator.projectName, ""),
+				defaultM0TestCluster(generator.clusterName, generator.clusterRegion, generator.projectName, ""),
+			},
+		},
+		{
+			title:                "Exported with independentResources uses IDs were supported",
+			independentResources: true,
+			expected: []runtime.Object{
+				defaultTestProject(generator.projectName, "", expectedLabels, expectAlertConfigs, nil),
+				defaultTestAtlasConnSecret(credentialName, ""),
+				defaultTestUserWithID(generator.dbUser, generator.projectName, generator.projectID, "", credentialName),
+				defaultM0TestClusterWithID(
+					generator.clusterName, generator.clusterRegion, generator.projectName, generator.projectID, "",
+					credentialName,
+				),
+			},
+		},
+	} {
+		t.Run(tc.title, func(t *testing.T) {
+			cmdArgs := []string{
+				"kubernetes",
+				"config",
+				"generate",
+				"--projectId",
+				generator.projectID,
+			}
+			if tc.independentResources {
+				cmdArgs = append(cmdArgs, "--independentResources")
+			}
+			cmd := exec.Command(cliPath, cmdArgs...)
+			cmd.Env = os.Environ()
+			resp, err := cmd.CombinedOutput()
+			t.Log(string(resp))
+			require.NoError(t, err, string(resp))
+			var objects []runtime.Object
+			objects, err = getK8SEntities(resp)
+			// We want to filter spurious federated auth resources from other tests
+			// as these are global resources across all projects.
+			objects = filtered(objects).byKind(globalKinds...)
+			require.NoError(t, err, "should not fail on decode but got:\n"+string(resp))
+			require.NotEmpty(t, objects)
+			require.Equal(t, tc.expected, objects)
+		})
+	}
+}
 
-// func TestExportPrivateEndpoint(t *testing.T) {
-// 	s := InitialSetup(t)
-// 	s.generator.generatePrivateEndpoint(awsEntity, "eu-central-1")
+func TestExportPrivateEndpoint(t *testing.T) {
+	s := InitialSetup(t)
+	s.generator.generatePrivateEndpoint(awsEntity, "eu-central-1")
 
-// 	expectedPESubresource := []akov2.PrivateEndpoint{
-// 		{
-// 			Provider: "AWS",
-// 			Region:   "EU_CENTRAL_1",
-// 		},
-// 	}
-// 	credentialName := resources.NormalizeAtlasName(s.generator.projectName+credSuffixTest, resources.AtlasNameToKubernetesName())
+	expectedPESubresource := []akov2.PrivateEndpoint{
+		{
+			Provider: "AWS",
+			Region:   "EU_CENTRAL_1",
+		},
+	}
+	credentialName := resources.NormalizeAtlasName(s.generator.projectName+credSuffixTest, resources.AtlasNameToKubernetesName())
 
-// 	tests := map[string]struct {
-// 		independentResources bool
-// 		version              string
-// 		expected             []runtime.Object
-// 	}{
-// 		"should export sub-resource for version without support for separate resource": {
-// 			independentResources: false,
-// 			version:              "2.5.0",
-// 			expected: []runtime.Object{
-// 				defaultTestProject(s.generator.projectName, "", map[string]string{features.ResourceVersion: "2.5.0"}, false, expectedPESubresource),
-// 				defaultTestAtlasConnSecret(credentialName, ""),
-// 			},
-// 		},
-// 		"should export separate resource with internal reference for version with support": {
-// 			independentResources: false,
-// 			version:              features.LatestOperatorMajorVersion,
-// 			expected: []runtime.Object{
-// 				defaultTestProject(s.generator.projectName, "", expectedLabels, false, nil),
-// 				defaultTestAtlasConnSecret(credentialName, ""),
-// 				defaultPrivateEndpoint(s.generator, false),
-// 			},
-// 		},
-// 		"should export separate resource with external reference for version with support": {
-// 			independentResources: true,
-// 			version:              features.LatestOperatorMajorVersion,
-// 			expected: []runtime.Object{
-// 				defaultTestProject(s.generator.projectName, "", expectedLabels, false, nil),
-// 				defaultTestAtlasConnSecret(credentialName, ""),
-// 				defaultPrivateEndpoint(s.generator, true),
-// 			},
-// 		},
-// 	}
-// 	for name, tc := range tests {
-// 		t.Run(name, func(t *testing.T) {
-// 			operatorVersion := tc.version
-// 			cmdArgs := []string{
-// 				"kubernetes",
-// 				"config",
-// 				"generate",
-// 				"--projectId",
-// 				s.generator.projectID,
-// 				"--operatorVersion",
-// 				operatorVersion,
-// 			}
-// 			if tc.independentResources {
-// 				cmdArgs = append(cmdArgs, "--independentResources")
-// 			}
-// 			cmd := exec.Command(s.cliPath, cmdArgs...) //nolint:gosec
-// 			cmd.Env = os.Environ()
-// 			resp, err := cmd.CombinedOutput()
-// 			require.NoError(t, err, string(resp))
+	tests := map[string]struct {
+		independentResources bool
+		version              string
+		expected             []runtime.Object
+	}{
+		"should export sub-resource for version without support for separate resource": {
+			independentResources: false,
+			version:              "2.5.0",
+			expected: []runtime.Object{
+				defaultTestProject(s.generator.projectName, "", map[string]string{features.ResourceVersion: "2.5.0"}, false, expectedPESubresource),
+				defaultTestAtlasConnSecret(credentialName, ""),
+			},
+		},
+		"should export separate resource with internal reference for version with support": {
+			independentResources: false,
+			version:              features.LatestOperatorMajorVersion,
+			expected: []runtime.Object{
+				defaultTestProject(s.generator.projectName, "", expectedLabels, false, nil),
+				defaultTestAtlasConnSecret(credentialName, ""),
+				defaultPrivateEndpoint(s.generator, false),
+			},
+		},
+		"should export separate resource with external reference for version with support": {
+			independentResources: true,
+			version:              features.LatestOperatorMajorVersion,
+			expected: []runtime.Object{
+				defaultTestProject(s.generator.projectName, "", expectedLabels, false, nil),
+				defaultTestAtlasConnSecret(credentialName, ""),
+				defaultPrivateEndpoint(s.generator, true),
+			},
+		},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			operatorVersion := tc.version
+			cmdArgs := []string{
+				"kubernetes",
+				"config",
+				"generate",
+				"--projectId",
+				s.generator.projectID,
+				"--operatorVersion",
+				operatorVersion,
+			}
+			if tc.independentResources {
+				cmdArgs = append(cmdArgs, "--independentResources")
+			}
+			cmd := exec.Command(s.cliPath, cmdArgs...) //nolint:gosec
+			cmd.Env = os.Environ()
+			resp, err := cmd.CombinedOutput()
+			require.NoError(t, err, string(resp))
 
-// 			var objects []runtime.Object
-// 			objects, err = getK8SEntities(resp)
-// 			objects = filtered(objects).byKind(globalKinds...)
-// 			require.NoError(t, err, "should not fail on decode but got:\n"+string(resp))
-// 			require.NotEmpty(t, objects)
-// 			require.Equal(t, tc.expected, objects)
-// 		})
-// 	}
-// }
+			var objects []runtime.Object
+			objects, err = getK8SEntities(resp)
+			objects = filtered(objects).byKind(globalKinds...)
+			require.NoError(t, err, "should not fail on decode but got:\n"+string(resp))
+			require.NotEmpty(t, objects)
+			require.Equal(t, tc.expected, objects)
+		})
+	}
+}
 
-// func defaultPrivateEndpoint(generator *atlasE2ETestGenerator, independent bool) *akov2.AtlasPrivateEndpoint {
-// 	pe := &akov2.AtlasPrivateEndpoint{
-// 		TypeMeta: metav1.TypeMeta{
-// 			Kind:       "AtlasPrivateEndpoint",
-// 			APIVersion: "atlas.mongodb.com/v1",
-// 		},
-// 		ObjectMeta: metav1.ObjectMeta{
-// 			Name:   resources.NormalizeAtlasName(strings.ToLower(generator.projectName)+"-pe-aws-eucentral1", resources.AtlasNameToKubernetesName()),
-// 			Labels: expectedLabels,
-// 		},
-// 		Spec: akov2.AtlasPrivateEndpointSpec{
-// 			Provider: "AWS",
-// 			Region:   "EU_CENTRAL_1",
-// 		},
-// 		Status: akov2status.AtlasPrivateEndpointStatus{
-// 			Common: akoapi.Common{
-// 				Conditions: []akoapi.Condition{},
-// 			},
-// 		},
-// 	}
+func defaultPrivateEndpoint(generator *atlasE2ETestGenerator, independent bool) *akov2.AtlasPrivateEndpoint {
+	pe := &akov2.AtlasPrivateEndpoint{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "AtlasPrivateEndpoint",
+			APIVersion: "atlas.mongodb.com/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   resources.NormalizeAtlasName(strings.ToLower(generator.projectName)+"-pe-aws-eucentral1", resources.AtlasNameToKubernetesName()),
+			Labels: expectedLabels,
+		},
+		Spec: akov2.AtlasPrivateEndpointSpec{
+			Provider: "AWS",
+			Region:   "EU_CENTRAL_1",
+		},
+		Status: akov2status.AtlasPrivateEndpointStatus{
+			Common: akoapi.Common{
+				Conditions: []akoapi.Condition{},
+			},
+		},
+	}
 
-// 	if independent {
-// 		pe.Spec.ExternalProject = &akov2.ExternalProjectReference{
-// 			ID: generator.projectID,
-// 		}
-// 		pe.Spec.LocalCredentialHolder = akoapi.LocalCredentialHolder{
-// 			ConnectionSecret: &akoapi.LocalObjectReference{
-// 				Name: resources.NormalizeAtlasName(strings.ToLower(generator.projectName)+"-credentials", resources.AtlasNameToKubernetesName()),
-// 			},
-// 		}
-// 	} else {
-// 		pe.Spec.Project = &akov2common.ResourceRefNamespaced{
-// 			Name: strings.ToLower(generator.projectName),
-// 		}
-// 	}
+	if independent {
+		pe.Spec.ExternalProject = &akov2.ExternalProjectReference{
+			ID: generator.projectID,
+		}
+		pe.Spec.LocalCredentialHolder = akoapi.LocalCredentialHolder{
+			ConnectionSecret: &akoapi.LocalObjectReference{
+				Name: resources.NormalizeAtlasName(strings.ToLower(generator.projectName)+"-credentials", resources.AtlasNameToKubernetesName()),
+			},
+		}
+	} else {
+		pe.Spec.Project = &akov2common.ResourceRefNamespaced{
+			Name: strings.ToLower(generator.projectName),
+		}
+	}
 
-// 	return pe
-// }
+	return pe
+}
 
 type filtered []runtime.Object
 
@@ -739,869 +743,869 @@ func defaultM0TestClusterWithID(name, region, projectName, projectID, namespace,
 // 	return ds
 // }
 
-// func TestEmptyProject(t *testing.T) {
-// 	s := InitialSetup(t)
-// 	cliPath := s.cliPath
-// 	generator := s.generator
-// 	expectedProject := s.expectedProject
-
-// 	t.Run("Generate valid resources of ONE project", func(t *testing.T) {
-// 		cmd := exec.Command(cliPath,
-// 			"kubernetes",
-// 			"config",
-// 			"generate",
-// 			"--projectId",
-// 			generator.projectID,
-// 			"--orgId", "", // Empty org id does not make it fail
-// 			"--targetNamespace",
-// 			targetNamespace,
-// 			"--includeSecrets")
-// 		cmd.Env = os.Environ()
-
-// 		resp, err := test.RunAndGetStdOut(cmd)
-// 		t.Log(string(resp))
-// 		require.NoError(t, err, string(resp))
-
-// 		var objects []runtime.Object
-// 		objects, err = getK8SEntities(resp)
-// 		require.NoError(t, err, "should not fail on decode")
-// 		require.NotEmpty(t, objects)
-
-// 		checkProject(t, objects, expectedProject)
-// 		secret, found := findSecret(objects)
-// 		require.True(t, found, "Secret is not found in results")
-// 		assert.Equal(t, targetNamespace, secret.Namespace)
-// 	})
-// }
-
-// func TestProjectWithNonDefaultSettings(t *testing.T) {
-// 	s := InitialSetup(t)
-// 	cliPath := s.cliPath
-// 	generator := s.generator
-// 	expectedProject := s.expectedProject
-// 	expectedProject.Spec.Settings.IsCollectDatabaseSpecificsStatisticsEnabled = pointer.Get(false)
-
-// 	t.Run("Change project settings and generate", func(t *testing.T) {
-// 		cmd := exec.Command(cliPath,
-// 			projectsEntity,
-// 			settingsEntity,
-// 			"update",
-// 			"--disableCollectDatabaseSpecificsStatistics",
-// 			"-o=json",
-// 			"--projectId",
-// 			generator.projectID)
-// 		cmd.Env = os.Environ()
-// 		settingsResp, err := test.RunAndGetStdOut(cmd)
-// 		require.NoError(t, err, string(settingsResp))
-
-// 		cmd = exec.Command(cliPath,
-// 			"kubernetes",
-// 			"config",
-// 			"generate",
-// 			"--projectId",
-// 			generator.projectID,
-// 			"--targetNamespace",
-// 			targetNamespace,
-// 			"--includeSecrets")
-// 		cmd.Env = os.Environ()
-
-// 		resp, err := test.RunAndGetStdOut(cmd)
-// 		t.Log(string(resp))
-// 		require.NoError(t, err, string(resp))
-
-// 		var objects []runtime.Object
-// 		objects, err = getK8SEntities(resp)
-// 		require.NoError(t, err)
-// 		require.NotEmpty(t, objects)
-// 		checkProject(t, objects, expectedProject)
-// 	})
-// }
-
-// func TestProjectWithNonDefaultAlertConf(t *testing.T) {
-// 	dictionary := resources.AtlasNameToKubernetesName()
-// 	s := InitialSetup(t)
-// 	cliPath := s.cliPath
-// 	generator := s.generator
-// 	expectedProject := s.expectedProject
-
-// 	newAlertConfig := akov2.AlertConfiguration{
-// 		Threshold:       &akov2.Threshold{},
-// 		MetricThreshold: &akov2.MetricThreshold{},
-// 		EventTypeName:   "HOST_DOWN",
-// 		Enabled:         true,
-// 		Notifications: []akov2.Notification{
-// 			{
-// 				TypeName:     group,
-// 				IntervalMin:  intervalMin,
-// 				DelayMin:     pointer.Get(delayMin),
-// 				SMSEnabled:   pointer.Get(false),
-// 				EmailEnabled: pointer.Get(true),
-// 				APITokenRef: akov2common.ResourceRefNamespaced{
-// 					Name:      resources.NormalizeAtlasName(expectedProject.Name+"-api-token-0", dictionary),
-// 					Namespace: targetNamespace,
-// 				},
-// 				DatadogAPIKeyRef: akov2common.ResourceRefNamespaced{
-// 					Name:      resources.NormalizeAtlasName(expectedProject.Name+"-datadog-api-key-0", dictionary),
-// 					Namespace: targetNamespace,
-// 				},
-// 				OpsGenieAPIKeyRef: akov2common.ResourceRefNamespaced{
-// 					Name:      resources.NormalizeAtlasName(expectedProject.Name+"-ops-genie-api-key-0", dictionary),
-// 					Namespace: targetNamespace,
-// 				},
-// 				ServiceKeyRef: akov2common.ResourceRefNamespaced{
-// 					Name:      resources.NormalizeAtlasName(expectedProject.Name+"-service-key-0", dictionary),
-// 					Namespace: targetNamespace,
-// 				},
-// 				VictorOpsSecretRef: akov2common.ResourceRefNamespaced{
-// 					Name:      resources.NormalizeAtlasName(expectedProject.Name+"-victor-ops-credentials-0", dictionary),
-// 					Namespace: targetNamespace,
-// 				},
-// 			},
-// 		},
-// 		Matchers: []akov2.Matcher{
-// 			{
-// 				FieldName: "HOSTNAME",
-// 				Operator:  "CONTAINS",
-// 				Value:     "some-name",
-// 			},
-// 		},
-// 	}
-// 	expectedProject.Spec.AlertConfigurations = []akov2.AlertConfiguration{
-// 		newAlertConfig,
-// 	}
-
-// 	t.Run("Change project alert config and generate", func(t *testing.T) {
-// 		cmd := exec.Command(cliPath,
-// 			alertsEntity,
-// 			configEntity,
-// 			"create",
-// 			"--projectId",
-// 			generator.projectID,
-// 			"--event",
-// 			newAlertConfig.EventTypeName,
-// 			fmt.Sprintf("--enabled=%t", newAlertConfig.Enabled),
-// 			"--notificationType",
-// 			newAlertConfig.Notifications[0].TypeName,
-// 			"--notificationIntervalMin",
-// 			strconv.Itoa(newAlertConfig.Notifications[0].IntervalMin),
-// 			"--notificationDelayMin",
-// 			strconv.Itoa(*newAlertConfig.Notifications[0].DelayMin),
-// 			fmt.Sprintf("--notificationSmsEnabled=%v", pointer.GetOrZero(newAlertConfig.Notifications[0].SMSEnabled)),
-// 			fmt.Sprintf("--notificationEmailEnabled=%v", pointer.GetOrZero(newAlertConfig.Notifications[0].EmailEnabled)),
-// 			"--matcherFieldName",
-// 			newAlertConfig.Matchers[0].FieldName,
-// 			"--matcherOperator",
-// 			newAlertConfig.Matchers[0].Operator,
-// 			"--matcherValue",
-// 			newAlertConfig.Matchers[0].Value,
-// 			"-o=json")
-// 		cmd.Env = os.Environ()
-// 		alertConfigResp, err := test.RunAndGetStdOut(cmd)
-// 		require.NoError(t, err, string(alertConfigResp))
-
-// 		cmd = exec.Command(cliPath,
-// 			"kubernetes",
-// 			"config",
-// 			"generate",
-// 			"--projectId",
-// 			generator.projectID,
-// 			"--targetNamespace",
-// 			targetNamespace,
-// 			"--includeSecrets")
-// 		cmd.Env = os.Environ()
-
-// 		resp, err := test.RunAndGetStdOut(cmd)
-// 		t.Log(string(resp))
-// 		require.NoError(t, err, string(resp))
-
-// 		var objects []runtime.Object
-// 		objects, err = getK8SEntities(resp)
-// 		require.NoError(t, err)
-// 		require.NotEmpty(t, objects)
-// 		checkProject(t, objects, expectedProject)
-// 	})
-// }
-
-// func TestProjectWithAccessList(t *testing.T) {
-// 	s := InitialSetup(t)
-// 	cliPath := s.cliPath
-// 	generator := s.generator
-// 	expectedProject := s.expectedProject
-
-// 	entry := "192.168.0.10"
-// 	newIPAccess := akov2project.IPAccessList{
-// 		IPAddress: entry,
-// 		Comment:   "test",
-// 	}
-// 	expectedProject.Spec.ProjectIPAccessList = []akov2project.IPAccessList{
-// 		newIPAccess,
-// 	}
-
-// 	t.Run("Add access list to the project", func(t *testing.T) {
-// 		cmd := exec.Command(cliPath,
-// 			accessListEntity,
-// 			"create",
-// 			newIPAccess.IPAddress,
-// 			"--comment",
-// 			newIPAccess.Comment,
-// 			"--projectId",
-// 			generator.projectID,
-// 			"--type",
-// 			"ipAddress",
-// 			"-o=json")
-// 		cmd.Env = os.Environ()
-// 		accessListResp, err := test.RunAndGetStdOut(cmd)
-// 		require.NoError(t, err, string(accessListResp))
-
-// 		cmd = exec.Command(cliPath,
-// 			"kubernetes",
-// 			"config",
-// 			"generate",
-// 			"--projectId",
-// 			generator.projectID,
-// 			"--targetNamespace",
-// 			targetNamespace,
-// 			"--includeSecrets")
-// 		cmd.Env = os.Environ()
-
-// 		resp, err := test.RunAndGetStdOut(cmd)
-// 		t.Log(string(resp))
-// 		require.NoError(t, err, string(resp))
-
-// 		var objects []runtime.Object
-// 		objects, err = getK8SEntities(resp)
-// 		require.NoError(t, err, "should not fail on decode")
-// 		require.NotEmpty(t, objects)
-// 		checkProject(t, objects, expectedProject)
-// 	})
-// }
-
-// func TestProjectWithAccessRole(t *testing.T) {
-// 	s := InitialSetup(t)
-// 	cliPath := s.cliPath
-// 	generator := s.generator
-// 	expectedProject := s.expectedProject
-
-// 	newIPAccess := akov2.CloudProviderAccessRole{
-// 		ProviderName: string(akov2provider.ProviderAWS),
-// 	}
-// 	expectedProject.Spec.CloudProviderAccessRoles = []akov2.CloudProviderAccessRole{
-// 		newIPAccess,
-// 	}
-
-// 	t.Run("Add access role to the project", func(t *testing.T) {
-// 		cmd := exec.Command(cliPath,
-// 			cloudProvidersEntity,
-// 			accessRolesEntity,
-// 			awsEntity,
-// 			"create",
-// 			"--projectId",
-// 			generator.projectID,
-// 			"-o=json")
-// 		cmd.Env = os.Environ()
-// 		accessRoleResp, err := test.RunAndGetStdOut(cmd)
-// 		require.NoError(t, err, string(accessRoleResp))
-
-// 		cmd = exec.Command(cliPath,
-// 			"kubernetes",
-// 			"config",
-// 			"generate",
-// 			"--projectId",
-// 			generator.projectID,
-// 			"--targetNamespace",
-// 			targetNamespace,
-// 			"--includeSecrets")
-// 		cmd.Env = os.Environ()
-
-// 		resp, err := test.RunAndGetStdOut(cmd)
-// 		t.Log(string(resp))
-// 		require.NoError(t, err, string(resp))
-
-// 		var objects []runtime.Object
-// 		objects, err = getK8SEntities(resp)
-// 		require.NoError(t, err)
-// 		require.NotEmpty(t, objects)
-// 		checkProject(t, objects, expectedProject)
-// 	})
-// }
-
-// func TestProjectWithCustomRole(t *testing.T) {
-// 	s := InitialSetup(t)
-// 	cliPath := s.cliPath
-// 	generator := s.generator
-// 	expectedProject := s.expectedProject
-
-// 	newCustomRole := akov2.CustomRole{
-// 		Name: "test-role",
-// 		Actions: []akov2.Action{
-// 			{
-// 				Name: "FIND",
-// 				Resources: []akov2.Resource{
-// 					{
-// 						Database:   pointer.Get("test-db"),
-// 						Collection: pointer.Get(""),
-// 						Cluster:    pointer.Get(false),
-// 					},
-// 				},
-// 			},
-// 		},
-// 	}
-// 	expectedProject.Spec.CustomRoles = []akov2.CustomRole{
-// 		newCustomRole,
-// 	}
-
-// 	t.Run("Add custom role to the project", func(t *testing.T) {
-// 		cmd := exec.Command(cliPath,
-// 			customDBRoleEntity,
-// 			"create",
-// 			newCustomRole.Name,
-// 			"--privilege",
-// 			fmt.Sprintf("%s@%s", newCustomRole.Actions[0].Name, *newCustomRole.Actions[0].Resources[0].Database),
-// 			"--projectId",
-// 			generator.projectID,
-// 			"-o=json")
-// 		cmd.Env = os.Environ()
-// 		dbRoleResp, err := test.RunAndGetStdOut(cmd)
-// 		require.NoError(t, err, string(dbRoleResp))
-
-// 		cmd = exec.Command(cliPath,
-// 			"kubernetes",
-// 			"config",
-// 			"generate",
-// 			"--projectId",
-// 			generator.projectID,
-// 			"--targetNamespace",
-// 			targetNamespace,
-// 			"--includeSecrets")
-// 		cmd.Env = os.Environ()
-
-// 		resp, err := test.RunAndGetStdOut(cmd)
-// 		t.Log(string(resp))
-// 		require.NoError(t, err, string(resp))
-
-// 		var objects []runtime.Object
-// 		objects, err = getK8SEntities(resp)
-// 		require.NoError(t, err, "should not fail on decode")
-// 		require.NotEmpty(t, objects)
-// 		expectedProject.Spec.CustomRoles = nil
-// 		verifyCustomRole(t, objects, &akov2.AtlasCustomRole{
-// 			TypeMeta: metav1.TypeMeta{
-// 				Kind:       "AtlasCustomRole",
-// 				APIVersion: "atlas.mongodb.com/v1",
-// 			},
-// 			ObjectMeta: metav1.ObjectMeta{
-// 				Name:      resources.NormalizeAtlasName(fmt.Sprintf("%s-custom-role-%s", expectedProject.Name, newCustomRole.Name), resources.AtlasNameToKubernetesName()),
-// 				Namespace: expectedProject.Namespace,
-// 				Labels: map[string]string{
-// 					"mongodb.com/atlas-resource-version": features.LatestOperatorMajorVersion,
-// 				},
-// 			},
-// 			Spec: akov2.AtlasCustomRoleSpec{
-// 				ProjectRef: &akov2common.ResourceRefNamespaced{
-// 					Name:      expectedProject.Name,
-// 					Namespace: expectedProject.Namespace,
-// 				},
-// 				Role: akov2.CustomRole{
-// 					Name: "test-role",
-// 					Actions: []akov2.Action{
-// 						{
-// 							Name: "FIND",
-// 							Resources: []akov2.Resource{
-// 								{
-// 									Database:   pointer.Get("test-db"),
-// 									Collection: pointer.Get(""),
-// 									Cluster:    pointer.Get(false),
-// 								},
-// 							},
-// 						},
-// 					},
-// 				},
-// 			},
-// 			Status: akov2status.AtlasCustomRoleStatus{
-// 				Common: akoapi.Common{
-// 					Conditions: []akoapi.Condition{},
-// 				},
-// 			},
-// 		},
-// 		)
-// 		checkProject(t, objects, expectedProject)
-// 	})
-// }
-
-// func verifyCustomRole(t *testing.T, objects []runtime.Object, expectedRole *akov2.AtlasCustomRole) {
-// 	t.Helper()
-// 	var role *akov2.AtlasCustomRole
-// 	for i := range objects {
-// 		d, ok := objects[i].(*akov2.AtlasCustomRole)
-// 		if ok {
-// 			role = d
-// 			break
-// 		}
-// 	}
-// 	assert.Equal(t, expectedRole, role)
-// }
-
-// func TestProjectWithIntegration(t *testing.T) {
-// 	s := InitialSetup(t)
-// 	cliPath := s.cliPath
-// 	generator := s.generator
-// 	expectedProject := s.expectedProject
-
-// 	datadogKey := "00000000000000000000000000000012"
-// 	newIntegration := akov2project.Integration{
-// 		Type:   datadogEntity,
-// 		Region: "US", // it's a default value
-// 		APIKeyRef: akov2common.ResourceRefNamespaced{
-// 			Namespace: targetNamespace,
-// 			Name:      fmt.Sprintf("%s-integration-%s", generator.projectID, strings.ToLower(datadogEntity)),
-// 		},
-// 	}
-// 	expectedProject.Spec.Integrations = []akov2project.Integration{
-// 		newIntegration,
-// 	}
-
-// 	t.Run("Add integration to the project", func(t *testing.T) {
-// 		cmd := exec.Command(cliPath,
-// 			integrationsEntity,
-// 			"create",
-// 			datadogEntity,
-// 			"--apiKey",
-// 			datadogKey,
-// 			"--projectId",
-// 			generator.projectID,
-// 			"-o=json")
-// 		cmd.Env = os.Environ()
-// 		_, err := test.RunAndGetStdOut(cmd)
-// 		require.NoError(t, err)
-
-// 		cmd = exec.Command(cliPath,
-// 			"kubernetes",
-// 			"config",
-// 			"generate",
-// 			"--projectId",
-// 			generator.projectID,
-// 			"--targetNamespace",
-// 			targetNamespace,
-// 			"--includeSecrets")
-// 		cmd.Env = os.Environ()
-
-// 		resp, err := test.RunAndGetStdOut(cmd)
-// 		t.Log(string(resp))
-// 		require.NoError(t, err, string(resp))
-
-// 		var objects []runtime.Object
-
-// 		objects, err = getK8SEntities(resp)
-// 		require.NoError(t, err, "should not fail on decode")
-// 		require.NotEmpty(t, objects)
-
-// 		checkProject(t, objects, expectedProject)
-// 		assert.Len(t, objects, 4, "should have 4 objects in the output: project, integration secret, atlas secret, federated-auth secret")
-// 		integrationSecret := objects[1].(*corev1.Secret)
-// 		password, ok := integrationSecret.Data["password"]
-// 		assert.True(t, ok, "should have password field in the integration secret")
-// 		assert.True(t, compareStingsWithHiddenPart(datadogKey, string(password), uint8('*')), "should have correct password in the integration secret")
-// 	})
-// }
-
-// func TestProjectWithMaintenanceWindow(t *testing.T) {
-// 	s := InitialSetup(t)
-// 	cliPath := s.cliPath
-// 	generator := s.generator
-// 	expectedProject := s.expectedProject
-// 	newMaintenanceWindow := akov2project.MaintenanceWindow{
-// 		DayOfWeek: 1,
-// 		HourOfDay: 1,
-// 	}
-// 	expectedProject.Spec.MaintenanceWindow = newMaintenanceWindow
-// 	expectedProject.Spec.AlertConfigurations = defaultMaintenanceWindowAlertConfigs()
-
-// 	t.Run("Add integration to the project", func(t *testing.T) {
-// 		cmd := exec.Command(cliPath,
-// 			maintenanceEntity,
-// 			"update",
-// 			"--dayOfWeek",
-// 			strconv.Itoa(newMaintenanceWindow.DayOfWeek),
-// 			"--hourOfDay",
-// 			strconv.Itoa(newMaintenanceWindow.HourOfDay),
-// 			"--projectId",
-// 			generator.projectID,
-// 			"-o=json")
-// 		cmd.Env = os.Environ()
-// 		_, err := test.RunAndGetStdOut(cmd)
-// 		require.NoError(t, err)
-
-// 		cmd = exec.Command(cliPath,
-// 			"kubernetes",
-// 			"config",
-// 			"generate",
-// 			"--projectId",
-// 			generator.projectID,
-// 			"--targetNamespace",
-// 			targetNamespace,
-// 			"--includeSecrets")
-// 		cmd.Env = os.Environ()
-
-// 		resp, err := test.RunAndGetStdOut(cmd)
-// 		t.Log(string(resp))
-// 		require.NoError(t, err, string(resp))
-
-// 		var objects []runtime.Object
-// 		objects, err = getK8SEntities(resp)
-// 		require.NoError(t, err, "should not fail on decode")
-// 		require.NotEmpty(t, objects)
-// 		checkProject(t, objects, expectedProject)
-// 	})
-// }
-
-// func TestProjectWithNetworkPeering(t *testing.T) {
-// 	s := InitialSetup(t)
-// 	cliPath := s.cliPath
-// 	generator := s.generator
-// 	expectedProject := s.expectedProject
-
-// 	atlasCidrBlock := "10.8.0.0/18"
-// 	networkPeer := akov2.NetworkPeer{
-// 		ProviderName: akov2provider.ProviderGCP,
-// 		NetworkName:  "test-network",
-// 		GCPProjectID: "test-project-gcp",
-// 	}
-// 	expectedProject.Spec.NetworkPeers = []akov2.NetworkPeer{
-// 		networkPeer,
-// 	}
-
-// 	t.Run("Add network peer to the project", func(t *testing.T) {
-// 		cmd := exec.Command(cliPath,
-// 			networkingEntity,
-// 			networkPeeringEntity,
-// 			"create",
-// 			gcpEntity,
-// 			"--atlasCidrBlock",
-// 			atlasCidrBlock,
-// 			"--network",
-// 			networkPeer.NetworkName,
-// 			"--gcpProjectId",
-// 			networkPeer.GCPProjectID,
-// 			"--projectId",
-// 			generator.projectID,
-// 			"-o=json")
-// 		cmd.Env = os.Environ()
-// 		resp, err := test.RunAndGetStdOut(cmd)
-// 		require.NoError(t, err, string(resp))
-// 		t.Cleanup(func() {
-// 			deleteAllNetworkPeers(t, cliPath, generator.projectID, gcpEntity)
-// 		})
-// 		var createdNetworkPeer atlasv2.BaseNetworkPeeringConnectionSettings
-// 		err = json.Unmarshal(resp, &createdNetworkPeer)
-// 		require.NoError(t, err)
-// 		expectedProject.Spec.NetworkPeers[0].ContainerID = createdNetworkPeer.ContainerId
-
-// 		cmd = exec.Command(cliPath,
-// 			"kubernetes",
-// 			"config",
-// 			"generate",
-// 			"--projectId",
-// 			generator.projectID,
-// 			"--targetNamespace",
-// 			targetNamespace,
-// 			"--includeSecrets")
-// 		cmd.Env = os.Environ()
-
-// 		resp, err = test.RunAndGetStdOut(cmd)
-// 		t.Log(string(resp))
-// 		require.NoError(t, err, string(resp))
-
-// 		var objects []runtime.Object
-// 		objects, err = getK8SEntities(resp)
-// 		require.NoError(t, err, "should not fail on decode")
-// 		require.NotEmpty(t, objects)
-// 		checkProject(t, objects, expectedProject)
-// 	})
-// }
-
-// func TestProjectWithPrivateEndpoint_Azure(t *testing.T) {
-// 	s := InitialSetup(t)
-// 	s.generator.generatePrivateEndpoint(azureEntity, "northeurope")
-
-// 	credentialName := resources.NormalizeAtlasName(s.generator.projectName+credSuffixTest, resources.AtlasNameToKubernetesName())
-// 	expected := []runtime.Object{
-// 		defaultTestProject(s.generator.projectName, targetNamespace, expectedLabels, false, nil),
-// 		defaultTestAtlasConnSecret(credentialName, targetNamespace),
-// 		&akov2.AtlasPrivateEndpoint{
-// 			TypeMeta: metav1.TypeMeta{
-// 				Kind:       "AtlasPrivateEndpoint",
-// 				APIVersion: "atlas.mongodb.com/v1",
-// 			},
-// 			ObjectMeta: metav1.ObjectMeta{
-// 				Name:      resources.NormalizeAtlasName(strings.ToLower(s.generator.projectName)+"-pe-azure-europenorth", resources.AtlasNameToKubernetesName()),
-// 				Namespace: targetNamespace,
-// 				Labels:    expectedLabels,
-// 			},
-// 			Spec: akov2.AtlasPrivateEndpointSpec{
-// 				Provider: "AZURE",
-// 				Region:   "EUROPE_NORTH",
-// 				Project: &akov2common.ResourceRefNamespaced{
-// 					Name:      strings.ToLower(s.generator.projectName),
-// 					Namespace: targetNamespace,
-// 				},
-// 			},
-// 			Status: akov2status.AtlasPrivateEndpointStatus{
-// 				Common: akoapi.Common{
-// 					Conditions: []akoapi.Condition{},
-// 				},
-// 			},
-// 		},
-// 	}
-
-// 	t.Run("Add network peer to the project", func(t *testing.T) {
-// 		cmd := exec.Command(s.cliPath, //nolint:gosec
-// 			"kubernetes",
-// 			"config",
-// 			"generate",
-// 			"--projectId",
-// 			s.generator.projectID,
-// 			"--targetNamespace",
-// 			targetNamespace)
-// 		cmd.Env = os.Environ()
-
-// 		resp, err := test.RunAndGetStdOut(cmd)
-// 		t.Log(string(resp))
-// 		require.NoError(t, err, string(resp))
-
-// 		var objects []runtime.Object
-// 		objects, err = getK8SEntities(resp)
-// 		objects = filtered(objects).byKind(globalKinds...)
-// 		require.NoError(t, err, "should not fail on decode but got:\n"+string(resp))
-// 		require.NotEmpty(t, objects)
-// 		require.Equal(t, expected, objects)
-// 	})
-// }
-
-// func TestProjectAndTeams(t *testing.T) {
-// 	s := InitialSetupWithTeam(t)
-// 	cliPath := s.cliPath
-// 	generator := s.generator
-// 	expectedProject := s.expectedProject
-
-// 	teamRole := "GROUP_OWNER"
-
-// 	t.Run("Add team to project", func(t *testing.T) {
-// 		expectedTeam := referenceTeam(generator.teamName, targetNamespace, []akov2.TeamUser{
-// 			akov2.TeamUser(generator.teamUser),
-// 		}, generator.projectName, expectedLabels)
-
-// 		expectedProject.Spec.Teams = []akov2.Team{
-// 			{
-// 				TeamRef: akov2common.ResourceRefNamespaced{
-// 					Namespace: targetNamespace,
-// 					Name:      expectedTeam.Name,
-// 				},
-// 				Roles: []akov2.TeamRole{
-// 					akov2.TeamRole(teamRole),
-// 				},
-// 			},
-// 		}
-
-// 		cmd := exec.Command(cliPath,
-// 			projectsEntity,
-// 			teamsEntity,
-// 			"add",
-// 			generator.teamID,
-// 			"--role",
-// 			teamRole,
-// 			"--projectId",
-// 			generator.projectID,
-// 			"-o=json")
-// 		cmd.Env = os.Environ()
-// 		resp, err := test.RunAndGetStdOut(cmd)
-// 		require.NoError(t, err, string(resp))
-
-// 		cmd = exec.Command(cliPath,
-// 			"kubernetes",
-// 			"config",
-// 			"generate",
-// 			"--projectId",
-// 			generator.projectID,
-// 			"--targetNamespace",
-// 			targetNamespace,
-// 			"--includeSecrets")
-// 		cmd.Env = os.Environ()
-
-// 		resp, err = test.RunAndGetStdOut(cmd)
-// 		t.Log(string(resp))
-// 		require.NoError(t, err, string(resp))
-
-// 		var objects []runtime.Object
-// 		objects, err = getK8SEntities(resp)
-// 		require.NoError(t, err, "should not fail on decode")
-// 		require.NotEmpty(t, objects)
-// 		checkProject(t, objects, expectedProject)
-// 		t.Run("Team is created", func(t *testing.T) {
-// 			for _, obj := range objects {
-// 				if team, ok := obj.(*akov2.AtlasTeam); ok {
-// 					assert.Equal(t, expectedTeam, team)
-// 				}
-// 			}
-// 		})
-// 	})
-// }
-
-// func TestProjectWithStreamsProcessing(t *testing.T) {
-// 	s := InitialSetup(t)
-// 	s.generator.generateStreamsInstance("test-instance")
-// 	s.generator.generateStreamsConnection("test-connection")
-
-// 	cliPath := s.cliPath
-// 	generator := s.generator
-
-// 	t.Run("should export streams instance and connection resources", func(t *testing.T) {
-// 		cmd := exec.Command(cliPath,
-// 			"kubernetes",
-// 			"config",
-// 			"generate",
-// 			"--projectId",
-// 			generator.projectID,
-// 			"--targetNamespace",
-// 			targetNamespace,
-// 			"--includeSecrets")
-// 		cmd.Env = os.Environ()
-
-// 		resp, err := test.RunAndGetStdOut(cmd)
-// 		t.Log(string(resp))
-// 		require.NoError(t, err, string(resp))
-
-// 		var objects []runtime.Object
-// 		objects, err = getK8SEntities(resp)
-// 		require.NoError(t, err, "should not fail on decode")
-// 		require.NotEmpty(t, objects)
-
-// 		for i := range objects {
-// 			object := objects[i]
-
-// 			if instance, ok := object.(*akov2.AtlasStreamInstance); ok {
-// 				assert.Equal(
-// 					t,
-// 					&akov2.AtlasStreamInstance{
-// 						TypeMeta: metav1.TypeMeta{
-// 							Kind:       "AtlasStreamInstance",
-// 							APIVersion: "atlas.mongodb.com/v1",
-// 						},
-// 						ObjectMeta: metav1.ObjectMeta{
-// 							Name: resources.NormalizeAtlasName(
-// 								fmt.Sprintf("%s-%s", generator.projectName, generator.streamInstanceName),
-// 								resources.AtlasNameToKubernetesName(),
-// 							),
-// 							Namespace: targetNamespace,
-// 							Labels: map[string]string{
-// 								features.ResourceVersion: features.LatestOperatorMajorVersion,
-// 							},
-// 						},
-// 						Spec: akov2.AtlasStreamInstanceSpec{
-// 							Name: generator.streamInstanceName,
-// 							Config: akov2.Config{
-// 								Provider: "AWS",
-// 								Region:   "VIRGINIA_USA",
-// 								Tier:     "SP30",
-// 							},
-// 							Project: akov2common.ResourceRefNamespaced{
-// 								Name:      resources.NormalizeAtlasName(generator.projectName, resources.AtlasNameToKubernetesName()),
-// 								Namespace: targetNamespace,
-// 							},
-// 							ConnectionRegistry: []akov2common.ResourceRefNamespaced{
-// 								{
-// 									Name: resources.NormalizeAtlasName(
-// 										fmt.Sprintf("%s-%s-%s", generator.projectName, generator.streamInstanceName, generator.streamConnectionName),
-// 										resources.AtlasNameToKubernetesName(),
-// 									),
-// 									Namespace: targetNamespace,
-// 								},
-// 							},
-// 						},
-// 						Status: akov2status.AtlasStreamInstanceStatus{
-// 							Common: akoapi.Common{
-// 								Conditions: []akoapi.Condition{},
-// 							},
-// 						},
-// 					},
-// 					instance,
-// 				)
-// 			}
-
-// 			if connection, ok := object.(*akov2.AtlasStreamConnection); ok {
-// 				assert.Equal(
-// 					t,
-// 					&akov2.AtlasStreamConnection{
-// 						TypeMeta: metav1.TypeMeta{
-// 							Kind:       "AtlasStreamConnection",
-// 							APIVersion: "atlas.mongodb.com/v1",
-// 						},
-// 						ObjectMeta: metav1.ObjectMeta{
-// 							Name: resources.NormalizeAtlasName(
-// 								fmt.Sprintf("%s-%s-%s", generator.projectName, generator.streamInstanceName, generator.streamConnectionName),
-// 								resources.AtlasNameToKubernetesName(),
-// 							),
-// 							Namespace: targetNamespace,
-// 							Labels: map[string]string{
-// 								features.ResourceVersion: features.LatestOperatorMajorVersion,
-// 							},
-// 						},
-// 						Spec: akov2.AtlasStreamConnectionSpec{
-// 							Name:           generator.streamConnectionName,
-// 							ConnectionType: "Kafka",
-// 							KafkaConfig: &akov2.StreamsKafkaConnection{
-// 								Authentication: akov2.StreamsKafkaAuthentication{
-// 									Mechanism: "SCRAM-256",
-// 									Credentials: akov2common.ResourceRefNamespaced{
-// 										Name: resources.NormalizeAtlasName(
-// 											fmt.Sprintf("%s-%s-%s-userpass", generator.projectName, generator.streamInstanceName, generator.streamConnectionName),
-// 											resources.AtlasNameToKubernetesName(),
-// 										),
-// 										Namespace: targetNamespace,
-// 									},
-// 								},
-// 								BootstrapServers: "example.com:8080,fraud.example.com:8000",
-// 								Security: akov2.StreamsKafkaSecurity{
-// 									Protocol: "PLAINTEXT",
-// 								},
-// 								Config: map[string]string{"auto.offset.reset": "earliest"},
-// 							},
-// 						},
-// 						Status: akov2status.AtlasStreamConnectionStatus{
-// 							Common: akoapi.Common{
-// 								Conditions: []akoapi.Condition{},
-// 							},
-// 						},
-// 					},
-// 					connection,
-// 				)
-// 			}
-
-// 			if secret, ok := object.(*corev1.Secret); ok && strings.Contains(secret.Name, "userpass") {
-// 				assert.Equal(
-// 					t,
-// 					&corev1.Secret{
-// 						TypeMeta: metav1.TypeMeta{
-// 							Kind:       "Secret",
-// 							APIVersion: "v1",
-// 						},
-// 						ObjectMeta: metav1.ObjectMeta{
-// 							Name: resources.NormalizeAtlasName(
-// 								fmt.Sprintf("%s-%s-%s-userpass", generator.projectName, generator.streamInstanceName, generator.streamConnectionName),
-// 								resources.AtlasNameToKubernetesName(),
-// 							),
-// 							Namespace: targetNamespace,
-// 							Labels: map[string]string{
-// 								secrets.TypeLabelKey: secrets.CredLabelVal,
-// 							},
-// 						},
-// 						Data: map[string][]byte{secrets.UsernameField: []byte("admin"), secrets.PasswordField: []byte("")},
-// 					},
-// 					secret,
-// 				)
-// 			}
-// 		}
-// 	})
-// }
+func TestEmptyProject(t *testing.T) {
+	s := InitialSetup(t)
+	cliPath := s.cliPath
+	generator := s.generator
+	expectedProject := s.expectedProject
+
+	t.Run("Generate valid resources of ONE project", func(t *testing.T) {
+		cmd := exec.Command(cliPath,
+			"kubernetes",
+			"config",
+			"generate",
+			"--projectId",
+			generator.projectID,
+			"--orgId", "", // Empty org id does not make it fail
+			"--targetNamespace",
+			targetNamespace,
+			"--includeSecrets")
+		cmd.Env = os.Environ()
+
+		resp, err := test.RunAndGetStdOut(cmd)
+		t.Log(string(resp))
+		require.NoError(t, err, string(resp))
+
+		var objects []runtime.Object
+		objects, err = getK8SEntities(resp)
+		require.NoError(t, err, "should not fail on decode")
+		require.NotEmpty(t, objects)
+
+		checkProject(t, objects, expectedProject)
+		secret, found := findSecret(objects)
+		require.True(t, found, "Secret is not found in results")
+		assert.Equal(t, targetNamespace, secret.Namespace)
+	})
+}
+
+func TestProjectWithNonDefaultSettings(t *testing.T) {
+	s := InitialSetup(t)
+	cliPath := s.cliPath
+	generator := s.generator
+	expectedProject := s.expectedProject
+	expectedProject.Spec.Settings.IsCollectDatabaseSpecificsStatisticsEnabled = pointer.Get(false)
+
+	t.Run("Change project settings and generate", func(t *testing.T) {
+		cmd := exec.Command(cliPath,
+			projectsEntity,
+			settingsEntity,
+			"update",
+			"--disableCollectDatabaseSpecificsStatistics",
+			"-o=json",
+			"--projectId",
+			generator.projectID)
+		cmd.Env = os.Environ()
+		settingsResp, err := test.RunAndGetStdOut(cmd)
+		require.NoError(t, err, string(settingsResp))
+
+		cmd = exec.Command(cliPath,
+			"kubernetes",
+			"config",
+			"generate",
+			"--projectId",
+			generator.projectID,
+			"--targetNamespace",
+			targetNamespace,
+			"--includeSecrets")
+		cmd.Env = os.Environ()
+
+		resp, err := test.RunAndGetStdOut(cmd)
+		t.Log(string(resp))
+		require.NoError(t, err, string(resp))
+
+		var objects []runtime.Object
+		objects, err = getK8SEntities(resp)
+		require.NoError(t, err)
+		require.NotEmpty(t, objects)
+		checkProject(t, objects, expectedProject)
+	})
+}
+
+func TestProjectWithNonDefaultAlertConf(t *testing.T) {
+	dictionary := resources.AtlasNameToKubernetesName()
+	s := InitialSetup(t)
+	cliPath := s.cliPath
+	generator := s.generator
+	expectedProject := s.expectedProject
+
+	newAlertConfig := akov2.AlertConfiguration{
+		Threshold:       &akov2.Threshold{},
+		MetricThreshold: &akov2.MetricThreshold{},
+		EventTypeName:   "HOST_DOWN",
+		Enabled:         true,
+		Notifications: []akov2.Notification{
+			{
+				TypeName:     group,
+				IntervalMin:  intervalMin,
+				DelayMin:     pointer.Get(delayMin),
+				SMSEnabled:   pointer.Get(false),
+				EmailEnabled: pointer.Get(true),
+				APITokenRef: akov2common.ResourceRefNamespaced{
+					Name:      resources.NormalizeAtlasName(expectedProject.Name+"-api-token-0", dictionary),
+					Namespace: targetNamespace,
+				},
+				DatadogAPIKeyRef: akov2common.ResourceRefNamespaced{
+					Name:      resources.NormalizeAtlasName(expectedProject.Name+"-datadog-api-key-0", dictionary),
+					Namespace: targetNamespace,
+				},
+				OpsGenieAPIKeyRef: akov2common.ResourceRefNamespaced{
+					Name:      resources.NormalizeAtlasName(expectedProject.Name+"-ops-genie-api-key-0", dictionary),
+					Namespace: targetNamespace,
+				},
+				ServiceKeyRef: akov2common.ResourceRefNamespaced{
+					Name:      resources.NormalizeAtlasName(expectedProject.Name+"-service-key-0", dictionary),
+					Namespace: targetNamespace,
+				},
+				VictorOpsSecretRef: akov2common.ResourceRefNamespaced{
+					Name:      resources.NormalizeAtlasName(expectedProject.Name+"-victor-ops-credentials-0", dictionary),
+					Namespace: targetNamespace,
+				},
+			},
+		},
+		Matchers: []akov2.Matcher{
+			{
+				FieldName: "HOSTNAME",
+				Operator:  "CONTAINS",
+				Value:     "some-name",
+			},
+		},
+	}
+	expectedProject.Spec.AlertConfigurations = []akov2.AlertConfiguration{
+		newAlertConfig,
+	}
+
+	t.Run("Change project alert config and generate", func(t *testing.T) {
+		cmd := exec.Command(cliPath,
+			alertsEntity,
+			configEntity,
+			"create",
+			"--projectId",
+			generator.projectID,
+			"--event",
+			newAlertConfig.EventTypeName,
+			fmt.Sprintf("--enabled=%t", newAlertConfig.Enabled),
+			"--notificationType",
+			newAlertConfig.Notifications[0].TypeName,
+			"--notificationIntervalMin",
+			strconv.Itoa(newAlertConfig.Notifications[0].IntervalMin),
+			"--notificationDelayMin",
+			strconv.Itoa(*newAlertConfig.Notifications[0].DelayMin),
+			fmt.Sprintf("--notificationSmsEnabled=%v", pointer.GetOrZero(newAlertConfig.Notifications[0].SMSEnabled)),
+			fmt.Sprintf("--notificationEmailEnabled=%v", pointer.GetOrZero(newAlertConfig.Notifications[0].EmailEnabled)),
+			"--matcherFieldName",
+			newAlertConfig.Matchers[0].FieldName,
+			"--matcherOperator",
+			newAlertConfig.Matchers[0].Operator,
+			"--matcherValue",
+			newAlertConfig.Matchers[0].Value,
+			"-o=json")
+		cmd.Env = os.Environ()
+		alertConfigResp, err := test.RunAndGetStdOut(cmd)
+		require.NoError(t, err, string(alertConfigResp))
+
+		cmd = exec.Command(cliPath,
+			"kubernetes",
+			"config",
+			"generate",
+			"--projectId",
+			generator.projectID,
+			"--targetNamespace",
+			targetNamespace,
+			"--includeSecrets")
+		cmd.Env = os.Environ()
+
+		resp, err := test.RunAndGetStdOut(cmd)
+		t.Log(string(resp))
+		require.NoError(t, err, string(resp))
+
+		var objects []runtime.Object
+		objects, err = getK8SEntities(resp)
+		require.NoError(t, err)
+		require.NotEmpty(t, objects)
+		checkProject(t, objects, expectedProject)
+	})
+}
+
+func TestProjectWithAccessList(t *testing.T) {
+	s := InitialSetup(t)
+	cliPath := s.cliPath
+	generator := s.generator
+	expectedProject := s.expectedProject
+
+	entry := "192.168.0.10"
+	newIPAccess := akov2project.IPAccessList{
+		IPAddress: entry,
+		Comment:   "test",
+	}
+	expectedProject.Spec.ProjectIPAccessList = []akov2project.IPAccessList{
+		newIPAccess,
+	}
+
+	t.Run("Add access list to the project", func(t *testing.T) {
+		cmd := exec.Command(cliPath,
+			accessListEntity,
+			"create",
+			newIPAccess.IPAddress,
+			"--comment",
+			newIPAccess.Comment,
+			"--projectId",
+			generator.projectID,
+			"--type",
+			"ipAddress",
+			"-o=json")
+		cmd.Env = os.Environ()
+		accessListResp, err := test.RunAndGetStdOut(cmd)
+		require.NoError(t, err, string(accessListResp))
+
+		cmd = exec.Command(cliPath,
+			"kubernetes",
+			"config",
+			"generate",
+			"--projectId",
+			generator.projectID,
+			"--targetNamespace",
+			targetNamespace,
+			"--includeSecrets")
+		cmd.Env = os.Environ()
+
+		resp, err := test.RunAndGetStdOut(cmd)
+		t.Log(string(resp))
+		require.NoError(t, err, string(resp))
+
+		var objects []runtime.Object
+		objects, err = getK8SEntities(resp)
+		require.NoError(t, err, "should not fail on decode")
+		require.NotEmpty(t, objects)
+		checkProject(t, objects, expectedProject)
+	})
+}
+
+func TestProjectWithAccessRole(t *testing.T) {
+	s := InitialSetup(t)
+	cliPath := s.cliPath
+	generator := s.generator
+	expectedProject := s.expectedProject
+
+	newIPAccess := akov2.CloudProviderAccessRole{
+		ProviderName: string(akov2provider.ProviderAWS),
+	}
+	expectedProject.Spec.CloudProviderAccessRoles = []akov2.CloudProviderAccessRole{
+		newIPAccess,
+	}
+
+	t.Run("Add access role to the project", func(t *testing.T) {
+		cmd := exec.Command(cliPath,
+			cloudProvidersEntity,
+			accessRolesEntity,
+			awsEntity,
+			"create",
+			"--projectId",
+			generator.projectID,
+			"-o=json")
+		cmd.Env = os.Environ()
+		accessRoleResp, err := test.RunAndGetStdOut(cmd)
+		require.NoError(t, err, string(accessRoleResp))
+
+		cmd = exec.Command(cliPath,
+			"kubernetes",
+			"config",
+			"generate",
+			"--projectId",
+			generator.projectID,
+			"--targetNamespace",
+			targetNamespace,
+			"--includeSecrets")
+		cmd.Env = os.Environ()
+
+		resp, err := test.RunAndGetStdOut(cmd)
+		t.Log(string(resp))
+		require.NoError(t, err, string(resp))
+
+		var objects []runtime.Object
+		objects, err = getK8SEntities(resp)
+		require.NoError(t, err)
+		require.NotEmpty(t, objects)
+		checkProject(t, objects, expectedProject)
+	})
+}
+
+func TestProjectWithCustomRole(t *testing.T) {
+	s := InitialSetup(t)
+	cliPath := s.cliPath
+	generator := s.generator
+	expectedProject := s.expectedProject
+
+	newCustomRole := akov2.CustomRole{
+		Name: "test-role",
+		Actions: []akov2.Action{
+			{
+				Name: "FIND",
+				Resources: []akov2.Resource{
+					{
+						Database:   pointer.Get("test-db"),
+						Collection: pointer.Get(""),
+						Cluster:    pointer.Get(false),
+					},
+				},
+			},
+		},
+	}
+	expectedProject.Spec.CustomRoles = []akov2.CustomRole{
+		newCustomRole,
+	}
+
+	t.Run("Add custom role to the project", func(t *testing.T) {
+		cmd := exec.Command(cliPath,
+			customDBRoleEntity,
+			"create",
+			newCustomRole.Name,
+			"--privilege",
+			fmt.Sprintf("%s@%s", newCustomRole.Actions[0].Name, *newCustomRole.Actions[0].Resources[0].Database),
+			"--projectId",
+			generator.projectID,
+			"-o=json")
+		cmd.Env = os.Environ()
+		dbRoleResp, err := test.RunAndGetStdOut(cmd)
+		require.NoError(t, err, string(dbRoleResp))
+
+		cmd = exec.Command(cliPath,
+			"kubernetes",
+			"config",
+			"generate",
+			"--projectId",
+			generator.projectID,
+			"--targetNamespace",
+			targetNamespace,
+			"--includeSecrets")
+		cmd.Env = os.Environ()
+
+		resp, err := test.RunAndGetStdOut(cmd)
+		t.Log(string(resp))
+		require.NoError(t, err, string(resp))
+
+		var objects []runtime.Object
+		objects, err = getK8SEntities(resp)
+		require.NoError(t, err, "should not fail on decode")
+		require.NotEmpty(t, objects)
+		expectedProject.Spec.CustomRoles = nil
+		verifyCustomRole(t, objects, &akov2.AtlasCustomRole{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "AtlasCustomRole",
+				APIVersion: "atlas.mongodb.com/v1",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      resources.NormalizeAtlasName(fmt.Sprintf("%s-custom-role-%s", expectedProject.Name, newCustomRole.Name), resources.AtlasNameToKubernetesName()),
+				Namespace: expectedProject.Namespace,
+				Labels: map[string]string{
+					"mongodb.com/atlas-resource-version": features.LatestOperatorMajorVersion,
+				},
+			},
+			Spec: akov2.AtlasCustomRoleSpec{
+				ProjectRef: &akov2common.ResourceRefNamespaced{
+					Name:      expectedProject.Name,
+					Namespace: expectedProject.Namespace,
+				},
+				Role: akov2.CustomRole{
+					Name: "test-role",
+					Actions: []akov2.Action{
+						{
+							Name: "FIND",
+							Resources: []akov2.Resource{
+								{
+									Database:   pointer.Get("test-db"),
+									Collection: pointer.Get(""),
+									Cluster:    pointer.Get(false),
+								},
+							},
+						},
+					},
+				},
+			},
+			Status: akov2status.AtlasCustomRoleStatus{
+				Common: akoapi.Common{
+					Conditions: []akoapi.Condition{},
+				},
+			},
+		},
+		)
+		checkProject(t, objects, expectedProject)
+	})
+}
+
+func verifyCustomRole(t *testing.T, objects []runtime.Object, expectedRole *akov2.AtlasCustomRole) {
+	t.Helper()
+	var role *akov2.AtlasCustomRole
+	for i := range objects {
+		d, ok := objects[i].(*akov2.AtlasCustomRole)
+		if ok {
+			role = d
+			break
+		}
+	}
+	assert.Equal(t, expectedRole, role)
+}
+
+func TestProjectWithIntegration(t *testing.T) {
+	s := InitialSetup(t)
+	cliPath := s.cliPath
+	generator := s.generator
+	expectedProject := s.expectedProject
+
+	datadogKey := "00000000000000000000000000000012"
+	newIntegration := akov2project.Integration{
+		Type:   datadogEntity,
+		Region: "US", // it's a default value
+		APIKeyRef: akov2common.ResourceRefNamespaced{
+			Namespace: targetNamespace,
+			Name:      fmt.Sprintf("%s-integration-%s", generator.projectID, strings.ToLower(datadogEntity)),
+		},
+	}
+	expectedProject.Spec.Integrations = []akov2project.Integration{
+		newIntegration,
+	}
+
+	t.Run("Add integration to the project", func(t *testing.T) {
+		cmd := exec.Command(cliPath,
+			integrationsEntity,
+			"create",
+			datadogEntity,
+			"--apiKey",
+			datadogKey,
+			"--projectId",
+			generator.projectID,
+			"-o=json")
+		cmd.Env = os.Environ()
+		_, err := test.RunAndGetStdOut(cmd)
+		require.NoError(t, err)
+
+		cmd = exec.Command(cliPath,
+			"kubernetes",
+			"config",
+			"generate",
+			"--projectId",
+			generator.projectID,
+			"--targetNamespace",
+			targetNamespace,
+			"--includeSecrets")
+		cmd.Env = os.Environ()
+
+		resp, err := test.RunAndGetStdOut(cmd)
+		t.Log(string(resp))
+		require.NoError(t, err, string(resp))
+
+		var objects []runtime.Object
+
+		objects, err = getK8SEntities(resp)
+		require.NoError(t, err, "should not fail on decode")
+		require.NotEmpty(t, objects)
+
+		checkProject(t, objects, expectedProject)
+		assert.Len(t, objects, 4, "should have 4 objects in the output: project, integration secret, atlas secret, federated-auth secret")
+		integrationSecret := objects[1].(*corev1.Secret)
+		password, ok := integrationSecret.Data["password"]
+		assert.True(t, ok, "should have password field in the integration secret")
+		assert.True(t, compareStingsWithHiddenPart(datadogKey, string(password), uint8('*')), "should have correct password in the integration secret")
+	})
+}
+
+func TestProjectWithMaintenanceWindow(t *testing.T) {
+	s := InitialSetup(t)
+	cliPath := s.cliPath
+	generator := s.generator
+	expectedProject := s.expectedProject
+	newMaintenanceWindow := akov2project.MaintenanceWindow{
+		DayOfWeek: 1,
+		HourOfDay: 1,
+	}
+	expectedProject.Spec.MaintenanceWindow = newMaintenanceWindow
+	expectedProject.Spec.AlertConfigurations = defaultMaintenanceWindowAlertConfigs()
+
+	t.Run("Add integration to the project", func(t *testing.T) {
+		cmd := exec.Command(cliPath,
+			maintenanceEntity,
+			"update",
+			"--dayOfWeek",
+			strconv.Itoa(newMaintenanceWindow.DayOfWeek),
+			"--hourOfDay",
+			strconv.Itoa(newMaintenanceWindow.HourOfDay),
+			"--projectId",
+			generator.projectID,
+			"-o=json")
+		cmd.Env = os.Environ()
+		_, err := test.RunAndGetStdOut(cmd)
+		require.NoError(t, err)
+
+		cmd = exec.Command(cliPath,
+			"kubernetes",
+			"config",
+			"generate",
+			"--projectId",
+			generator.projectID,
+			"--targetNamespace",
+			targetNamespace,
+			"--includeSecrets")
+		cmd.Env = os.Environ()
+
+		resp, err := test.RunAndGetStdOut(cmd)
+		t.Log(string(resp))
+		require.NoError(t, err, string(resp))
+
+		var objects []runtime.Object
+		objects, err = getK8SEntities(resp)
+		require.NoError(t, err, "should not fail on decode")
+		require.NotEmpty(t, objects)
+		checkProject(t, objects, expectedProject)
+	})
+}
+
+func TestProjectWithNetworkPeering(t *testing.T) {
+	s := InitialSetup(t)
+	cliPath := s.cliPath
+	generator := s.generator
+	expectedProject := s.expectedProject
+
+	atlasCidrBlock := "10.8.0.0/18"
+	networkPeer := akov2.NetworkPeer{
+		ProviderName: akov2provider.ProviderGCP,
+		NetworkName:  "test-network",
+		GCPProjectID: "test-project-gcp",
+	}
+	expectedProject.Spec.NetworkPeers = []akov2.NetworkPeer{
+		networkPeer,
+	}
+
+	t.Run("Add network peer to the project", func(t *testing.T) {
+		cmd := exec.Command(cliPath,
+			networkingEntity,
+			networkPeeringEntity,
+			"create",
+			gcpEntity,
+			"--atlasCidrBlock",
+			atlasCidrBlock,
+			"--network",
+			networkPeer.NetworkName,
+			"--gcpProjectId",
+			networkPeer.GCPProjectID,
+			"--projectId",
+			generator.projectID,
+			"-o=json")
+		cmd.Env = os.Environ()
+		resp, err := test.RunAndGetStdOut(cmd)
+		require.NoError(t, err, string(resp))
+		t.Cleanup(func() {
+			deleteAllNetworkPeers(t, cliPath, generator.projectID, gcpEntity)
+		})
+		var createdNetworkPeer atlasv2.BaseNetworkPeeringConnectionSettings
+		err = json.Unmarshal(resp, &createdNetworkPeer)
+		require.NoError(t, err)
+		expectedProject.Spec.NetworkPeers[0].ContainerID = createdNetworkPeer.ContainerId
+
+		cmd = exec.Command(cliPath,
+			"kubernetes",
+			"config",
+			"generate",
+			"--projectId",
+			generator.projectID,
+			"--targetNamespace",
+			targetNamespace,
+			"--includeSecrets")
+		cmd.Env = os.Environ()
+
+		resp, err = test.RunAndGetStdOut(cmd)
+		t.Log(string(resp))
+		require.NoError(t, err, string(resp))
+
+		var objects []runtime.Object
+		objects, err = getK8SEntities(resp)
+		require.NoError(t, err, "should not fail on decode")
+		require.NotEmpty(t, objects)
+		checkProject(t, objects, expectedProject)
+	})
+}
+
+func TestProjectWithPrivateEndpoint_Azure(t *testing.T) {
+	s := InitialSetup(t)
+	s.generator.generatePrivateEndpoint(azureEntity, "northeurope")
+
+	credentialName := resources.NormalizeAtlasName(s.generator.projectName+credSuffixTest, resources.AtlasNameToKubernetesName())
+	expected := []runtime.Object{
+		defaultTestProject(s.generator.projectName, targetNamespace, expectedLabels, false, nil),
+		defaultTestAtlasConnSecret(credentialName, targetNamespace),
+		&akov2.AtlasPrivateEndpoint{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "AtlasPrivateEndpoint",
+				APIVersion: "atlas.mongodb.com/v1",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      resources.NormalizeAtlasName(strings.ToLower(s.generator.projectName)+"-pe-azure-europenorth", resources.AtlasNameToKubernetesName()),
+				Namespace: targetNamespace,
+				Labels:    expectedLabels,
+			},
+			Spec: akov2.AtlasPrivateEndpointSpec{
+				Provider: "AZURE",
+				Region:   "EUROPE_NORTH",
+				Project: &akov2common.ResourceRefNamespaced{
+					Name:      strings.ToLower(s.generator.projectName),
+					Namespace: targetNamespace,
+				},
+			},
+			Status: akov2status.AtlasPrivateEndpointStatus{
+				Common: akoapi.Common{
+					Conditions: []akoapi.Condition{},
+				},
+			},
+		},
+	}
+
+	t.Run("Add network peer to the project", func(t *testing.T) {
+		cmd := exec.Command(s.cliPath, //nolint:gosec
+			"kubernetes",
+			"config",
+			"generate",
+			"--projectId",
+			s.generator.projectID,
+			"--targetNamespace",
+			targetNamespace)
+		cmd.Env = os.Environ()
+
+		resp, err := test.RunAndGetStdOut(cmd)
+		t.Log(string(resp))
+		require.NoError(t, err, string(resp))
+
+		var objects []runtime.Object
+		objects, err = getK8SEntities(resp)
+		objects = filtered(objects).byKind(globalKinds...)
+		require.NoError(t, err, "should not fail on decode but got:\n"+string(resp))
+		require.NotEmpty(t, objects)
+		require.Equal(t, expected, objects)
+	})
+}
+
+func TestProjectAndTeams(t *testing.T) {
+	s := InitialSetupWithTeam(t)
+	cliPath := s.cliPath
+	generator := s.generator
+	expectedProject := s.expectedProject
+
+	teamRole := "GROUP_OWNER"
+
+	t.Run("Add team to project", func(t *testing.T) {
+		expectedTeam := referenceTeam(generator.teamName, targetNamespace, []akov2.TeamUser{
+			akov2.TeamUser(generator.teamUser),
+		}, generator.projectName, expectedLabels)
+
+		expectedProject.Spec.Teams = []akov2.Team{
+			{
+				TeamRef: akov2common.ResourceRefNamespaced{
+					Namespace: targetNamespace,
+					Name:      expectedTeam.Name,
+				},
+				Roles: []akov2.TeamRole{
+					akov2.TeamRole(teamRole),
+				},
+			},
+		}
+
+		cmd := exec.Command(cliPath,
+			projectsEntity,
+			teamsEntity,
+			"add",
+			generator.teamID,
+			"--role",
+			teamRole,
+			"--projectId",
+			generator.projectID,
+			"-o=json")
+		cmd.Env = os.Environ()
+		resp, err := test.RunAndGetStdOut(cmd)
+		require.NoError(t, err, string(resp))
+
+		cmd = exec.Command(cliPath,
+			"kubernetes",
+			"config",
+			"generate",
+			"--projectId",
+			generator.projectID,
+			"--targetNamespace",
+			targetNamespace,
+			"--includeSecrets")
+		cmd.Env = os.Environ()
+
+		resp, err = test.RunAndGetStdOut(cmd)
+		t.Log(string(resp))
+		require.NoError(t, err, string(resp))
+
+		var objects []runtime.Object
+		objects, err = getK8SEntities(resp)
+		require.NoError(t, err, "should not fail on decode")
+		require.NotEmpty(t, objects)
+		checkProject(t, objects, expectedProject)
+		t.Run("Team is created", func(t *testing.T) {
+			for _, obj := range objects {
+				if team, ok := obj.(*akov2.AtlasTeam); ok {
+					assert.Equal(t, expectedTeam, team)
+				}
+			}
+		})
+	})
+}
+
+func TestProjectWithStreamsProcessing(t *testing.T) {
+	s := InitialSetup(t)
+	s.generator.generateStreamsInstance("test-instance")
+	s.generator.generateStreamsConnection("test-connection")
+
+	cliPath := s.cliPath
+	generator := s.generator
+
+	t.Run("should export streams instance and connection resources", func(t *testing.T) {
+		cmd := exec.Command(cliPath,
+			"kubernetes",
+			"config",
+			"generate",
+			"--projectId",
+			generator.projectID,
+			"--targetNamespace",
+			targetNamespace,
+			"--includeSecrets")
+		cmd.Env = os.Environ()
+
+		resp, err := test.RunAndGetStdOut(cmd)
+		t.Log(string(resp))
+		require.NoError(t, err, string(resp))
+
+		var objects []runtime.Object
+		objects, err = getK8SEntities(resp)
+		require.NoError(t, err, "should not fail on decode")
+		require.NotEmpty(t, objects)
+
+		for i := range objects {
+			object := objects[i]
+
+			if instance, ok := object.(*akov2.AtlasStreamInstance); ok {
+				assert.Equal(
+					t,
+					&akov2.AtlasStreamInstance{
+						TypeMeta: metav1.TypeMeta{
+							Kind:       "AtlasStreamInstance",
+							APIVersion: "atlas.mongodb.com/v1",
+						},
+						ObjectMeta: metav1.ObjectMeta{
+							Name: resources.NormalizeAtlasName(
+								fmt.Sprintf("%s-%s", generator.projectName, generator.streamInstanceName),
+								resources.AtlasNameToKubernetesName(),
+							),
+							Namespace: targetNamespace,
+							Labels: map[string]string{
+								features.ResourceVersion: features.LatestOperatorMajorVersion,
+							},
+						},
+						Spec: akov2.AtlasStreamInstanceSpec{
+							Name: generator.streamInstanceName,
+							Config: akov2.Config{
+								Provider: "AWS",
+								Region:   "VIRGINIA_USA",
+								Tier:     "SP30",
+							},
+							Project: akov2common.ResourceRefNamespaced{
+								Name:      resources.NormalizeAtlasName(generator.projectName, resources.AtlasNameToKubernetesName()),
+								Namespace: targetNamespace,
+							},
+							ConnectionRegistry: []akov2common.ResourceRefNamespaced{
+								{
+									Name: resources.NormalizeAtlasName(
+										fmt.Sprintf("%s-%s-%s", generator.projectName, generator.streamInstanceName, generator.streamConnectionName),
+										resources.AtlasNameToKubernetesName(),
+									),
+									Namespace: targetNamespace,
+								},
+							},
+						},
+						Status: akov2status.AtlasStreamInstanceStatus{
+							Common: akoapi.Common{
+								Conditions: []akoapi.Condition{},
+							},
+						},
+					},
+					instance,
+				)
+			}
+
+			if connection, ok := object.(*akov2.AtlasStreamConnection); ok {
+				assert.Equal(
+					t,
+					&akov2.AtlasStreamConnection{
+						TypeMeta: metav1.TypeMeta{
+							Kind:       "AtlasStreamConnection",
+							APIVersion: "atlas.mongodb.com/v1",
+						},
+						ObjectMeta: metav1.ObjectMeta{
+							Name: resources.NormalizeAtlasName(
+								fmt.Sprintf("%s-%s-%s", generator.projectName, generator.streamInstanceName, generator.streamConnectionName),
+								resources.AtlasNameToKubernetesName(),
+							),
+							Namespace: targetNamespace,
+							Labels: map[string]string{
+								features.ResourceVersion: features.LatestOperatorMajorVersion,
+							},
+						},
+						Spec: akov2.AtlasStreamConnectionSpec{
+							Name:           generator.streamConnectionName,
+							ConnectionType: "Kafka",
+							KafkaConfig: &akov2.StreamsKafkaConnection{
+								Authentication: akov2.StreamsKafkaAuthentication{
+									Mechanism: "SCRAM-256",
+									Credentials: akov2common.ResourceRefNamespaced{
+										Name: resources.NormalizeAtlasName(
+											fmt.Sprintf("%s-%s-%s-userpass", generator.projectName, generator.streamInstanceName, generator.streamConnectionName),
+											resources.AtlasNameToKubernetesName(),
+										),
+										Namespace: targetNamespace,
+									},
+								},
+								BootstrapServers: "example.com:8080,fraud.example.com:8000",
+								Security: akov2.StreamsKafkaSecurity{
+									Protocol: "PLAINTEXT",
+								},
+								Config: map[string]string{"auto.offset.reset": "earliest"},
+							},
+						},
+						Status: akov2status.AtlasStreamConnectionStatus{
+							Common: akoapi.Common{
+								Conditions: []akoapi.Condition{},
+							},
+						},
+					},
+					connection,
+				)
+			}
+
+			if secret, ok := object.(*corev1.Secret); ok && strings.Contains(secret.Name, "userpass") {
+				assert.Equal(
+					t,
+					&corev1.Secret{
+						TypeMeta: metav1.TypeMeta{
+							Kind:       "Secret",
+							APIVersion: "v1",
+						},
+						ObjectMeta: metav1.ObjectMeta{
+							Name: resources.NormalizeAtlasName(
+								fmt.Sprintf("%s-%s-%s-userpass", generator.projectName, generator.streamInstanceName, generator.streamConnectionName),
+								resources.AtlasNameToKubernetesName(),
+							),
+							Namespace: targetNamespace,
+							Labels: map[string]string{
+								secrets.TypeLabelKey: secrets.CredLabelVal,
+							},
+						},
+						Data: map[string][]byte{secrets.UsernameField: []byte("admin"), secrets.PasswordField: []byte("")},
+					},
+					secret,
+				)
+			}
+		}
+	})
+}
 
 func referenceTeam(name, namespace string, users []akov2.TeamUser, projectName string, labels map[string]string) *akov2.AtlasTeam {
 	dictionary := resources.AtlasNameToKubernetesName()
