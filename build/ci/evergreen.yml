@@ -227,19 +227,19 @@ tasks:
           MCLI_SERVICE: cloud
           E2E_TAGS: atlas,cli
   - name: atlas_kubernetes_generate_e2e
-    tags: ["e2e","atlas","kubernetes", "assigned_to_jira_team_cloudp_kubernetes_atlas"]
+    tags: ["e2e","required","kubernetes", "assigned_to_jira_team_cloudp_kubernetes_atlas"]
     must_have_test_results: true
     commands:
       - func: "install gotestsum"
-      # - func: "e2e test"
-      #   vars:
-      #     MCLI_ORG_ID: ${atlas_org_id}
-      #     MCLI_PROJECT_ID: ${atlas_project_id}
-      #     MCLI_PRIVATE_API_KEY: ${atlas_private_api_key}
-      #     MCLI_PUBLIC_API_KEY: ${atlas_public_api_key}
-      #     MCLI_OPS_MANAGER_URL: ${mcli_ops_manager_url}
-      #     MCLI_SERVICE: cloud
-      #     E2E_TAGS: atlas,cluster,kubernetes,generate
+      - func: "e2e test"
+        vars:
+          MCLI_ORG_ID: ${atlas_org_id}
+          MCLI_PROJECT_ID: ${atlas_project_id}
+          MCLI_PRIVATE_API_KEY: ${atlas_private_api_key}
+          MCLI_PUBLIC_API_KEY: ${atlas_public_api_key}
+          MCLI_OPS_MANAGER_URL: ${mcli_ops_manager_url}
+          MCLI_SERVICE: cloud
+          E2E_TAGS: kubernetes,generate
   - name: atlas_kubernetes_apply_e2e
     tags: [ "e2e","atlas","kubernetes", "assigned_to_jira_team_cloudp_kubernetes_atlas" ]
     must_have_test_results: true
@@ -267,7 +267,7 @@ tasks:
           MCLI_PUBLIC_API_KEY: ${atlas_public_api_key}
           MCLI_OPS_MANAGER_URL: ${mcli_ops_manager_url}
           MCLI_SERVICE: cloud
-          E2E_TAGS: kubernetes
+          E2E_TAGS: kubernetes,install
 buildvariants:
   - name: code_health
     display_name: "Code Health"
