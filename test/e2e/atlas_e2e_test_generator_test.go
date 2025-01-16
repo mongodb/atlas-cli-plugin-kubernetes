@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build e2e || kubernetes
+//go:build e2e || install || generate || apply
 
 package e2e
 
@@ -67,6 +67,11 @@ func (g *atlasE2ETestGenerator) Logf(format string, args ...any) {
 func newAtlasE2ETestGenerator(t *testing.T) *atlasE2ETestGenerator {
 	t.Helper()
 	return &atlasE2ETestGenerator{t: t}
+}
+
+func newAtlasE2ETestGeneratorWithBackup(t *testing.T) *atlasE2ETestGenerator {
+	t.Helper()
+	return &atlasE2ETestGenerator{t: t, enableBackup: true}
 }
 
 func (g *atlasE2ETestGenerator) generateTeam(prefix string) {
