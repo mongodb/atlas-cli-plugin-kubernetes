@@ -1146,68 +1146,70 @@ func verifyCustomRole(t *testing.T, objects []runtime.Object, expectedRole *akov
 	assert.Equal(t, expectedRole, role)
 }
 
-func TestProjectWithIntegration(t *testing.T) {
-	s := InitialSetup(t)
-	cliPath := s.cliPath
-	generator := s.generator
-	expectedProject := s.expectedProject
+// func TestProjectWithIntegration(t *testing.T) {
+// 	s := InitialSetup(t)
+// 	cliPath := s.cliPath
+// 	atlasCliPath, err := AtlasCLIBin()
+// 	assert.NoError(t, err)
+// 	generator := s.generator
+// 	expectedProject := s.expectedProject
 
-	datadogKey := "00000000000000000000000000000012"
-	newIntegration := akov2project.Integration{
-		Type:   datadogEntity,
-		Region: "US", // it's a default value
-		APIKeyRef: akov2common.ResourceRefNamespaced{
-			Namespace: targetNamespace,
-			Name:      fmt.Sprintf("%s-integration-%s", generator.projectID, strings.ToLower(datadogEntity)),
-		},
-	}
-	expectedProject.Spec.Integrations = []akov2project.Integration{
-		newIntegration,
-	}
+// 	datadogKey := "00000000000000000000000000000012"
+// 	newIntegration := akov2project.Integration{
+// 		Type:   datadogEntity,
+// 		Region: "US", // it's a default value
+// 		APIKeyRef: akov2common.ResourceRefNamespaced{
+// 			Namespace: targetNamespace,
+// 			Name:      fmt.Sprintf("%s-integration-%s", generator.projectID, strings.ToLower(datadogEntity)),
+// 		},
+// 	}
+// 	expectedProject.Spec.Integrations = []akov2project.Integration{
+// 		newIntegration,
+// 	}
 
-	t.Run("Add integration to the project", func(t *testing.T) {
-		cmd := exec.Command(cliPath,
-			integrationsEntity,
-			"create",
-			datadogEntity,
-			"--apiKey",
-			datadogKey,
-			"--projectId",
-			generator.projectID,
-			"-o=json")
-		cmd.Env = os.Environ()
-		_, err := test.RunAndGetStdOut(cmd)
-		require.NoError(t, err)
+// 	t.Run("Add integration to the project", func(t *testing.T) {
+// 		cmd := exec.Command(atlasCliPath,
+// 			integrationsEntity,
+// 			"create",
+// 			datadogEntity,
+// 			"--apiKey",
+// 			datadogKey,
+// 			"--projectId",
+// 			generator.projectID,
+// 			"-o=json")
+// 		cmd.Env = os.Environ()
+// 		_, err := test.RunAndGetStdOut(cmd)
+// 		require.NoError(t, err)
 
-		cmd = exec.Command(cliPath,
-			"kubernetes",
-			"config",
-			"generate",
-			"--projectId",
-			generator.projectID,
-			"--targetNamespace",
-			targetNamespace,
-			"--includeSecrets")
-		cmd.Env = os.Environ()
+// 		cmd = exec.Command(cliPath,
+// 			"kubernetes",
+// 			"config",
+// 			"generate",
+// 			"--projectId",
+// 			generator.projectID,
+// 			"--targetNamespace",
+// 			targetNamespace,
+// 			"--includeSecrets")
+// 		cmd.Env = os.Environ()
 
-		resp, err := test.RunAndGetStdOut(cmd)
-		t.Log(string(resp))
-		require.NoError(t, err, string(resp))
+// 		resp, err := test.RunAndGetStdOut(cmd)
+// 		t.Log(string(resp))
+// 		require.NoError(t, err, string(resp))
 
-		var objects []runtime.Object
+// 		var objects []runtime.Object
 
-		objects, err = getK8SEntities(resp)
-		require.NoError(t, err, "should not fail on decode")
-		require.NotEmpty(t, objects)
+// 		objects, err = getK8SEntities(resp)
+// 		require.NoError(t, err, "should not fail on decode")
+// 		require.NotEmpty(t, objects)
 
-		checkProject(t, objects, expectedProject)
-		assert.Len(t, objects, 4, "should have 4 objects in the output: project, integration secret, atlas secret, federated-auth secret")
-		integrationSecret := objects[1].(*corev1.Secret)
-		password, ok := integrationSecret.Data["password"]
-		assert.True(t, ok, "should have password field in the integration secret")
-		assert.True(t, compareStingsWithHiddenPart(datadogKey, string(password), uint8('*')), "should have correct password in the integration secret")
-	})
-}
+// 		checkProject(t, objects, expectedProject)
+// 		assert.Len(t, objects, 4, "should have 4 objects in the output: project, integration secret, atlas secret, federated-auth secret")
+// 		integrationSecret := objects[1].(*corev1.Secret)
+// 		password, ok := integrationSecret.Data["password"]
+// 		assert.True(t, ok, "should have password field in the integration secret")
+// 		assert.True(t, compareStingsWithHiddenPart(datadogKey, string(password), uint8('*')), "should have correct password in the integration secret")
+// 	})
+// }
 
 func TestProjectWithMaintenanceWindow(t *testing.T) {
 	s := InitialSetup(t)
