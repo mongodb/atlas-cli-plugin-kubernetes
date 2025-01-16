@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build e2e || (kubernetes && generate)
+//go:build e2e || generate
 
 package e2e
 

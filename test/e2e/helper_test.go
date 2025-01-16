@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//go:build e2e || kubernetes
+//go:build e2e || install || generate || apply
 
 package e2e
 
@@ -35,34 +35,19 @@ import (
 )
 
 const (
-	eventsEntity                  = "events"
 	clustersEntity                = "clusters"
-	processesEntity               = "processes"
-	metricsEntity                 = "metrics"
-	searchEntity                  = "search"
-	indexEntity                   = "index"
-	nodesEntity                   = "nodes"
 	datafederationEntity          = "datafederation"
-	datalakePipelineEntity        = "datalakepipeline"
 	alertsEntity                  = "alerts"
 	configEntity                  = "settings"
 	dbusersEntity                 = "dbusers"
-	certsEntity                   = "certs"
 	privateEndpointsEntity        = "privateendpoints"
-	queryLimitsEntity             = "querylimits"
-	onlineArchiveEntity           = "onlineArchives"
 	projectEntity                 = "project"
 	orgEntity                     = "org"
-	invitationsEntity             = "invitations"
 	maintenanceEntity             = "maintenanceWindows"
 	integrationsEntity            = "integrations"
-	securityEntity                = "security"
-	ldapEntity                    = "ldap"
 	awsEntity                     = "aws"
 	azureEntity                   = "azure"
 	gcpEntity                     = "gcp"
-	customDNSEntity               = "customDns"
-	logsEntity                    = "logs"
 	cloudProvidersEntity          = "cloudProviders"
 	accessRolesEntity             = "accessRoles"
 	customDBRoleEntity            = "customDbRoles"
