@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build e2e || (kubernetes && gen)
+//go:build e2e || (kubernetes && generate)
 
 package e2e
 
@@ -29,17 +29,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator/features"
-	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator/resources"
-	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator/secrets"
-	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/pointer"
-	"github.com/mongodb/atlas-cli-plugin-kubernetes/test"
-	akoapi "github.com/mongodb/mongodb-atlas-kubernetes/v2/pkg/api"
-	akov2 "github.com/mongodb/mongodb-atlas-kubernetes/v2/pkg/api/v1"
-	akov2common "github.com/mongodb/mongodb-atlas-kubernetes/v2/pkg/api/v1/common"
-	akov2project "github.com/mongodb/mongodb-atlas-kubernetes/v2/pkg/api/v1/project"
-	akov2provider "github.com/mongodb/mongodb-atlas-kubernetes/v2/pkg/api/v1/provider"
-	akov2status "github.com/mongodb/mongodb-atlas-kubernetes/v2/pkg/api/v1/status"
+	akoapi "github.com/mongodb/mongodb-atlas-kubernetes/v2/api"
+	akov2 "github.com/mongodb/mongodb-atlas-kubernetes/v2/api/v1"
+	akov2common "github.com/mongodb/mongodb-atlas-kubernetes/v2/api/v1/common"
+	akov2project "github.com/mongodb/mongodb-atlas-kubernetes/v2/api/v1/project"
+	akov2provider "github.com/mongodb/mongodb-atlas-kubernetes/v2/api/v1/provider"
+	akov2status "github.com/mongodb/mongodb-atlas-kubernetes/v2/api/v1/status"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	atlasv2 "go.mongodb.org/atlas-sdk/v20241113004/admin"
@@ -48,6 +43,12 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/kubernetes/scheme"
+
+	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator/features"
+	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator/resources"
+	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator/secrets"
+	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/pointer"
+	"github.com/mongodb/atlas-cli-plugin-kubernetes/test"
 )
 
 const targetNamespace = "importer-namespace"
