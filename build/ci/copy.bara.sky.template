@@ -1,0 +1,30 @@
+"""
+Copy definitions
+"""
+
+release_tag = "${TAG}"
+source_url = "https://github.com/cveticm/atlas-cli-plugin-test.git"
+destination_url = "https://github.com/cveticm/docs-atlas-cli-fork.git"
+author = "cveticm <melanija.cvetic@mongodb.com>"
+
+core.workflow(
+    name = "docs-atlas-cli-fork",
+    origin = git.origin(
+        url = source_url,
+        ref = release_tag,
+    ),
+    destination = git.github_pr_destination(
+        url = destination_url,
+        destination_ref = "master",
+        pr_branch = "apix_bot_copybara_pull_request_"+release_tag,
+        title = "Copies Atlas CLI commands for release tag: " + release_tag,
+        body = "Copies Atlas CLI commands from the source repo. See the attached Netlify comment for build log and staging.",
+        integrates = [],
+    ),
+    origin_files = glob(["docs/command/atlas-kubernetes**"]),
+    destination_files = glob(["source/command/atlas-kubernetes**"]),
+    authoring = authoring.pass_thru(author),
+    transformations = [
+        core.move("docs/command", "source/command"),
+    ],
+)
