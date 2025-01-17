@@ -568,181 +568,181 @@ func defaultM0TestClusterWithID(name, region, projectName, projectID, namespace,
 	return deployment
 }
 
-// func TestFederatedAuthTest(t *testing.T) {
-// 	t.Run("PreRequisite Get the federation setting ID", func(t *testing.T) {
-// 		s := InitialSetup(t)
-// 		cliPath := s.cliPath
-// 		cmd := exec.Command(cliPath,
-// 			federatedAuthenticationEntity,
-// 			federationSettingsEntity,
-// 			"describe",
-// 			"-o=json",
-// 		)
+func TestFederatedAuthTest(t *testing.T) {
+	t.Run("PreRequisite Get the federation setting ID", func(t *testing.T) {
+		s := InitialSetup(t)
+		cliPath := s.cliPath
+		cmd := exec.Command(cliPath,
+			federatedAuthenticationEntity,
+			federationSettingsEntity,
+			"describe",
+			"-o=json",
+		)
 
-// 		cmd.Env = os.Environ()
-// 		resp, err := test.RunAndGetStdOut(cmd)
-// 		require.NoError(t, err, string(resp))
+		cmd.Env = os.Environ()
+		resp, err := test.RunAndGetStdOut(cmd)
+		require.NoError(t, err, string(resp))
 
-// 		var settings atlasv2.OrgFederationSettings
-// 		require.NoError(t, json.Unmarshal(resp, &settings))
+		var settings atlasv2.OrgFederationSettings
+		require.NoError(t, json.Unmarshal(resp, &settings))
 
-// 		a := assert.New(t)
-// 		a.NotEmpty(settings)
-// 		federationSettingsID = settings.GetId()
-// 		a.NotEmpty(federationSettingsID, "no federation settings was present")
-// 		identityProviderStatus = settings.GetIdentityProviderStatus()
-// 	})
-// 	t.Run("List SAML IdPs", func(_ *testing.T) {
-// 		if identityProviderStatus != activeStatus {
-// 			s := InitialSetup(t)
-// 			cliPath := s.cliPath
-// 			cmd := exec.Command(cliPath,
-// 				federatedAuthenticationEntity,
-// 				federationSettingsEntity,
-// 				identityProviderEntity,
-// 				"list",
-// 				"--federationSettingsId",
-// 				federationSettingsID,
-// 				"--protocol",
-// 				"SAML",
-// 				"-o=json",
-// 			)
+		a := assert.New(t)
+		a.NotEmpty(settings)
+		federationSettingsID = settings.GetId()
+		a.NotEmpty(federationSettingsID, "no federation settings was present")
+		identityProviderStatus = settings.GetIdentityProviderStatus()
+	})
+	t.Run("List SAML IdPs", func(_ *testing.T) {
+		if identityProviderStatus != activeStatus {
+			s := InitialSetup(t)
+			cliPath := s.cliPath
+			cmd := exec.Command(cliPath,
+				federatedAuthenticationEntity,
+				federationSettingsEntity,
+				identityProviderEntity,
+				"list",
+				"--federationSettingsId",
+				federationSettingsID,
+				"--protocol",
+				"SAML",
+				"-o=json",
+			)
 
-// 			cmd.Env = os.Environ()
-// 			resp, err := test.RunAndGetStdOut(cmd)
-// 			require.NoError(t, err, string(resp))
+			cmd.Env = os.Environ()
+			resp, err := test.RunAndGetStdOut(cmd)
+			require.NoError(t, err, string(resp))
 
-// 			var providers atlasv2.PaginatedFederationIdentityProvider
-// 			require.NoError(t, json.Unmarshal(resp, &providers))
-// 			a := assert.New(t)
-// 			a.True(providers.HasResults())
-// 			providersList := providers.GetResults()
-// 			samlIdentityProviderID = providersList[0].GetOktaIdpId()
-// 		}
-// 	})
-// 	t.Run("PreRequisite Connect SAML IdP", func(t *testing.T) {
-// 		if identityProviderStatus != activeStatus && samlIdentityProviderID != "" {
-// 			s := InitialSetup(t)
-// 			cliPath := s.cliPath
-// 			cmd := exec.Command(cliPath,
-// 				federatedAuthenticationEntity,
-// 				federationSettingsEntity,
-// 				connectedOrgsConfigsEntity,
-// 				"connect",
-// 				"--identityProviderId",
-// 				samlIdentityProviderID,
-// 				"--federationSettingsId",
-// 				federationSettingsID,
-// 				"--protocol",
-// 				"SAML",
-// 				"-o=json",
-// 			)
+			var providers atlasv2.PaginatedFederationIdentityProvider
+			require.NoError(t, json.Unmarshal(resp, &providers))
+			a := assert.New(t)
+			a.True(providers.HasResults())
+			providersList := providers.GetResults()
+			samlIdentityProviderID = providersList[0].GetOktaIdpId()
+		}
+	})
+	t.Run("PreRequisite Connect SAML IdP", func(t *testing.T) {
+		if identityProviderStatus != activeStatus && samlIdentityProviderID != "" {
+			s := InitialSetup(t)
+			cliPath := s.cliPath
+			cmd := exec.Command(cliPath,
+				federatedAuthenticationEntity,
+				federationSettingsEntity,
+				connectedOrgsConfigsEntity,
+				"connect",
+				"--identityProviderId",
+				samlIdentityProviderID,
+				"--federationSettingsId",
+				federationSettingsID,
+				"--protocol",
+				"SAML",
+				"-o=json",
+			)
 
-// 			cmd.Env = os.Environ()
-// 			resp, err := test.RunAndGetStdOut(cmd)
-// 			require.NoError(t, err, string(resp))
+			cmd.Env = os.Environ()
+			resp, err := test.RunAndGetStdOut(cmd)
+			require.NoError(t, err, string(resp))
 
-// 			var config atlasv2.ConnectedOrgConfig
-// 			require.NoError(t, json.Unmarshal(resp, &config))
-// 			assert.NotNil(t, config.GetIdentityProviderId())
-// 		}
-// 	})
-// 	t.Run("Prerequisite Check active SAML configuration", func(t *testing.T) {
-// 		if identityProviderStatus != activeStatus {
-// 			s := InitialSetup(t)
-// 			cliPath := s.cliPath
-// 			cmd := exec.Command(cliPath,
-// 				federatedAuthenticationEntity,
-// 				federationSettingsEntity,
-// 				"describe",
-// 				"-o=json",
-// 			)
+			var config atlasv2.ConnectedOrgConfig
+			require.NoError(t, json.Unmarshal(resp, &config))
+			assert.NotNil(t, config.GetIdentityProviderId())
+		}
+	})
+	t.Run("Prerequisite Check active SAML configuration", func(t *testing.T) {
+		if identityProviderStatus != activeStatus {
+			s := InitialSetup(t)
+			cliPath := s.cliPath
+			cmd := exec.Command(cliPath,
+				federatedAuthenticationEntity,
+				federationSettingsEntity,
+				"describe",
+				"-o=json",
+			)
 
-// 			cmd.Env = os.Environ()
-// 			resp, err := test.RunAndGetStdOut(cmd)
-// 			require.NoError(t, err, string(resp))
+			cmd.Env = os.Environ()
+			resp, err := test.RunAndGetStdOut(cmd)
+			require.NoError(t, err, string(resp))
 
-// 			var settings atlasv2.OrgFederationSettings
-// 			require.NoError(t, json.Unmarshal(resp, &settings))
+			var settings atlasv2.OrgFederationSettings
+			require.NoError(t, json.Unmarshal(resp, &settings))
 
-// 			a := assert.New(t)
-// 			a.NotEmpty(settings)
-// 			federationSettingsID = settings.GetId()
-// 			a.NotEmpty(federationSettingsID, "no federation settings was present")
-// 			a.NotEmpty(settings.IdentityProviderId, "no SAML IdP was found")
-// 			a.Equal(activeStatus, settings.GetIdentityProviderStatus(), "no active SAML IdP present for this federation")
-// 			identityProviderStatus = settings.GetIdentityProviderStatus()
-// 		}
-// 	})
-// 	t.Run("Config generate for federated auth", func(t *testing.T) {
-// 		if identityProviderStatus != activeStatus {
-// 			t.Fatalf("There is no need to check this test since there is no SAML IdP configured and active")
-// 		}
-// 		dictionary := resources.AtlasNameToKubernetesName()
-// 		s := InitialSetup(t)
-// 		cliPath := s.cliPath
-// 		generator := s.generator
-// 		cmd := exec.Command(cliPath,
-// 			"kubernetes",
-// 			"config",
-// 			"generate",
-// 			"--projectId",
-// 			generator.projectID,
-// 			"--targetNamespace",
-// 			targetNamespace,
-// 			"--includeSecrets")
-// 		cmd.Env = os.Environ()
-// 		resp, err := test.RunAndGetStdOut(cmd)
-// 		t.Log(string(resp))
-// 		require.NoError(t, err, string(resp))
-// 		var objects []runtime.Object
-// 		objects, err = getK8SEntities(resp)
+			a := assert.New(t)
+			a.NotEmpty(settings)
+			federationSettingsID = settings.GetId()
+			a.NotEmpty(federationSettingsID, "no federation settings was present")
+			a.NotEmpty(settings.IdentityProviderId, "no SAML IdP was found")
+			a.Equal(activeStatus, settings.GetIdentityProviderStatus(), "no active SAML IdP present for this federation")
+			identityProviderStatus = settings.GetIdentityProviderStatus()
+		}
+	})
+	t.Run("Config generate for federated auth", func(t *testing.T) {
+		if identityProviderStatus != activeStatus {
+			t.Fatalf("There is no need to check this test since there is no SAML IdP configured and active")
+		}
+		dictionary := resources.AtlasNameToKubernetesName()
+		s := InitialSetup(t)
+		cliPath := s.cliPath
+		generator := s.generator
+		cmd := exec.Command(cliPath,
+			"kubernetes",
+			"config",
+			"generate",
+			"--projectId",
+			generator.projectID,
+			"--targetNamespace",
+			targetNamespace,
+			"--includeSecrets")
+		cmd.Env = os.Environ()
+		resp, err := test.RunAndGetStdOut(cmd)
+		t.Log(string(resp))
+		require.NoError(t, err, string(resp))
+		var objects []runtime.Object
+		objects, err = getK8SEntities(resp)
 
-// 		a := assert.New(t)
-// 		a.Equal(&akov2.AtlasFederatedAuth{
-// 			TypeMeta: metav1.TypeMeta{
-// 				Kind:       "AtlasFederatedAuth",
-// 				APIVersion: "atlas.mongodb.com/v1",
-// 			},
-// 			ObjectMeta: metav1.ObjectMeta{
-// 				Name:      resources.NormalizeAtlasName(fmt.Sprintf("%s-%s", s.generator.projectName, federationSettingsID), dictionary),
-// 				Namespace: targetNamespace,
-// 			},
-// 			Spec: akov2.AtlasFederatedAuthSpec{
-// 				ConnectionSecretRef: akov2common.ResourceRefNamespaced{
-// 					Name:      resources.NormalizeAtlasName(s.generator.projectName+credSuffixTest, dictionary),
-// 					Namespace: targetNamespace,
-// 				},
-// 				Enabled:                  true,
-// 				DomainAllowList:          []string{"iam-test-domain-dev.com"},
-// 				PostAuthRoleGrants:       []string{"ORG_OWNER"},
-// 				DomainRestrictionEnabled: pointer.Get(false),
-// 				SSODebugEnabled:          pointer.Get(true),
-// 				RoleMappings:             nil,
-// 			},
-// 			Status: akov2status.AtlasFederatedAuthStatus{
-// 				Common: akoapi.Common{
-// 					Conditions: []akoapi.Condition{},
-// 				},
-// 			},
-// 		}, federatedAuthentification(objects)[0])
-// 		require.NoError(t, err, "should not fail on decode")
-// 		require.NotEmpty(t, objects)
-// 		secret, found := findSecret(objects)
-// 		require.True(t, found, "secret is not found in results")
-// 		a.Equal(targetNamespace, secret.Namespace)
-// 	})
-// }
-// func federatedAuthentification(objects []runtime.Object) []*akov2.AtlasFederatedAuth {
-// 	var ds []*akov2.AtlasFederatedAuth
-// 	for i := range objects {
-// 		d, ok := objects[i].(*akov2.AtlasFederatedAuth)
-// 		if ok {
-// 			ds = append(ds, d)
-// 		}
-// 	}
-// 	return ds
-// }
+		a := assert.New(t)
+		a.Equal(&akov2.AtlasFederatedAuth{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "AtlasFederatedAuth",
+				APIVersion: "atlas.mongodb.com/v1",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      resources.NormalizeAtlasName(fmt.Sprintf("%s-%s", s.generator.projectName, federationSettingsID), dictionary),
+				Namespace: targetNamespace,
+			},
+			Spec: akov2.AtlasFederatedAuthSpec{
+				ConnectionSecretRef: akov2common.ResourceRefNamespaced{
+					Name:      resources.NormalizeAtlasName(s.generator.projectName+credSuffixTest, dictionary),
+					Namespace: targetNamespace,
+				},
+				Enabled:                  true,
+				DomainAllowList:          []string{"iam-test-domain-dev.com"},
+				PostAuthRoleGrants:       []string{"ORG_OWNER"},
+				DomainRestrictionEnabled: pointer.Get(false),
+				SSODebugEnabled:          pointer.Get(true),
+				RoleMappings:             nil,
+			},
+			Status: akov2status.AtlasFederatedAuthStatus{
+				Common: akoapi.Common{
+					Conditions: []akoapi.Condition{},
+				},
+			},
+		}, federatedAuthentification(objects)[0])
+		require.NoError(t, err, "should not fail on decode")
+		require.NotEmpty(t, objects)
+		secret, found := findSecret(objects)
+		require.True(t, found, "secret is not found in results")
+		a.Equal(targetNamespace, secret.Namespace)
+	})
+}
+func federatedAuthentification(objects []runtime.Object) []*akov2.AtlasFederatedAuth {
+	var ds []*akov2.AtlasFederatedAuth
+	for i := range objects {
+		d, ok := objects[i].(*akov2.AtlasFederatedAuth)
+		if ok {
+			ds = append(ds, d)
+		}
+	}
+	return ds
+}
 
 func TestEmptyProject(t *testing.T) {
 	s := InitialSetup(t)
@@ -1146,70 +1146,70 @@ func verifyCustomRole(t *testing.T, objects []runtime.Object, expectedRole *akov
 	assert.Equal(t, expectedRole, role)
 }
 
-// func TestProjectWithIntegration(t *testing.T) {
-// 	s := InitialSetup(t)
-// 	cliPath := s.cliPath
-// 	atlasCliPath, err := AtlasCLIBin()
-// 	assert.NoError(t, err)
-// 	generator := s.generator
-// 	expectedProject := s.expectedProject
+func TestProjectWithIntegration(t *testing.T) {
+	s := InitialSetup(t)
+	cliPath := s.cliPath
+	atlasCliPath, err := AtlasCLIBin()
+	assert.NoError(t, err)
+	generator := s.generator
+	expectedProject := s.expectedProject
 
-// 	datadogKey := "00000000000000000000000000000012"
-// 	newIntegration := akov2project.Integration{
-// 		Type:   datadogEntity,
-// 		Region: "US", // it's a default value
-// 		APIKeyRef: akov2common.ResourceRefNamespaced{
-// 			Namespace: targetNamespace,
-// 			Name:      fmt.Sprintf("%s-integration-%s", generator.projectID, strings.ToLower(datadogEntity)),
-// 		},
-// 	}
-// 	expectedProject.Spec.Integrations = []akov2project.Integration{
-// 		newIntegration,
-// 	}
+	datadogKey := "00000000000000000000000000000012"
+	newIntegration := akov2project.Integration{
+		Type:   datadogEntity,
+		Region: "US", // it's a default value
+		APIKeyRef: akov2common.ResourceRefNamespaced{
+			Namespace: targetNamespace,
+			Name:      fmt.Sprintf("%s-integration-%s", generator.projectID, strings.ToLower(datadogEntity)),
+		},
+	}
+	expectedProject.Spec.Integrations = []akov2project.Integration{
+		newIntegration,
+	}
 
-// 	t.Run("Add integration to the project", func(t *testing.T) {
-// 		cmd := exec.Command(atlasCliPath,
-// 			integrationsEntity,
-// 			"create",
-// 			datadogEntity,
-// 			"--apiKey",
-// 			datadogKey,
-// 			"--projectId",
-// 			generator.projectID,
-// 			"-o=json")
-// 		cmd.Env = os.Environ()
-// 		_, err := test.RunAndGetStdOut(cmd)
-// 		require.NoError(t, err)
+	t.Run("Add integration to the project", func(t *testing.T) {
+		cmd := exec.Command(atlasCliPath,
+			integrationsEntity,
+			"create",
+			datadogEntity,
+			"--apiKey",
+			datadogKey,
+			"--projectId",
+			generator.projectID,
+			"-o=json")
+		cmd.Env = os.Environ()
+		_, err := test.RunAndGetStdOut(cmd)
+		require.NoError(t, err)
 
-// 		cmd = exec.Command(cliPath,
-// 			"kubernetes",
-// 			"config",
-// 			"generate",
-// 			"--projectId",
-// 			generator.projectID,
-// 			"--targetNamespace",
-// 			targetNamespace,
-// 			"--includeSecrets")
-// 		cmd.Env = os.Environ()
+		cmd = exec.Command(cliPath,
+			"kubernetes",
+			"config",
+			"generate",
+			"--projectId",
+			generator.projectID,
+			"--targetNamespace",
+			targetNamespace,
+			"--includeSecrets")
+		cmd.Env = os.Environ()
 
-// 		resp, err := test.RunAndGetStdOut(cmd)
-// 		t.Log(string(resp))
-// 		require.NoError(t, err, string(resp))
+		resp, err := test.RunAndGetStdOut(cmd)
+		t.Log(string(resp))
+		require.NoError(t, err, string(resp))
 
-// 		var objects []runtime.Object
+		var objects []runtime.Object
 
-// 		objects, err = getK8SEntities(resp)
-// 		require.NoError(t, err, "should not fail on decode")
-// 		require.NotEmpty(t, objects)
+		objects, err = getK8SEntities(resp)
+		require.NoError(t, err, "should not fail on decode")
+		require.NotEmpty(t, objects)
 
-// 		checkProject(t, objects, expectedProject)
-// 		assert.Len(t, objects, 4, "should have 4 objects in the output: project, integration secret, atlas secret, federated-auth secret")
-// 		integrationSecret := objects[1].(*corev1.Secret)
-// 		password, ok := integrationSecret.Data["password"]
-// 		assert.True(t, ok, "should have password field in the integration secret")
-// 		assert.True(t, compareStingsWithHiddenPart(datadogKey, string(password), uint8('*')), "should have correct password in the integration secret")
-// 	})
-// }
+		checkProject(t, objects, expectedProject)
+		assert.Len(t, objects, 4, "should have 4 objects in the output: project, integration secret, atlas secret, federated-auth secret")
+		integrationSecret := objects[1].(*corev1.Secret)
+		password, ok := integrationSecret.Data["password"]
+		assert.True(t, ok, "should have password field in the integration secret")
+		assert.True(t, compareStingsWithHiddenPart(datadogKey, string(password), uint8('*')), "should have correct password in the integration secret")
+	})
+}
 
 func TestProjectWithMaintenanceWindow(t *testing.T) {
 	s := InitialSetup(t)
