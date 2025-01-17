@@ -225,7 +225,6 @@ functions:
         shell: bash
         script: |
           ./run-copybara.sh
-
 tasks:
   - name: compile
     tags: ["code_health"]
@@ -303,6 +302,7 @@ tasks:
           E2E_TAGS: install
   - name: copybara test
     tags: [ "e2e","required"]
+    must_have_test_results: true
     commands:
       - func: "build-copybara"
       - command: github.generate_token
@@ -327,6 +327,14 @@ buildvariants:
     display_name: "E2E Tests Required"
     run_on:
       - ubuntu2204-small
+    expansions:
+      <<: *go_linux_version
+    tasks:
+      - name: ".e2e .required"
+  - name: copybara
+    display_name: "Copybara"
+    run_on:
+      - ubuntu2404-small
     expansions:
       <<: *go_linux_version
     tasks:
