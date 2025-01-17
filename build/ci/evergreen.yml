@@ -301,7 +301,7 @@ tasks:
           MCLI_SERVICE: cloud
           E2E_TAGS: install
   - name: copybara
-    tags: [ "copybara"]
+    tags: [ "e2e","required"]
     commands:
       - func: "build-copybara"
       - command: github.generate_token
@@ -330,14 +330,6 @@ buildvariants:
       <<: *go_linux_version
     tasks:
       - name: ".e2e .required"
-  - name: copybara
-    display_name: "Copybara"
-    run_on:
-      - ubuntu2404-small
-    expansions:
-      <<: *go_linux_version
-    tasks:
-      - name: ".copybara"
 patch_aliases:
   - alias: "cleanup"
     variant_tags: ["cleanup cron"]
@@ -352,8 +344,6 @@ github_pr_aliases:
     task_tags: ["e2e", "generic"]
   - variant: "e2e_required"
     task_tags: ["e2e", "required"]
-  - variant: "copybara"
-    task_tags: ["copybara"]
 github_checks_aliases:
  - variant: ".*"
    task: ".*"
