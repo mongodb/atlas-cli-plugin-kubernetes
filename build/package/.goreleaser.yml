@@ -1,0 +1,86 @@
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+project_name: atlas-cli-plugin-kubernetes
+
+version: 2
+
+builds:
+  - <<: &build_defaults
+      env:
+        - CGO_ENABLED=0
+      binary: bin/binary
+      main: ./cmd/plugin
+      ldflags:
+        - -s -w -X github.com/mongodb/atlas-cli-plugin-kubernetes/internal/version.Version={{.Version}} -X github.com/mongodb/atlas-cli-plugin-kubernetes/internal/version.GitCommit={{.FullCommit}}
+    id: linux
+    goos: [linux]
+    goarch: [amd64,arm64]
+  - <<: *build_defaults
+    id: macos
+    goos: [darwin]
+    goarch: [amd64,arm64]
+  - <<: *build_defaults
+    id: windows
+    goos: [windows]
+    goarch: [amd64]
+    goamd64: [v1]
+gomod: # https://goreleaser.com/customization/verifiable_builds/
+  # Proxy a module from proxy.golang.org, making the builds verifiable.
+  # This will only be effective if running against a tag. Snapshots will ignore
+  # this setting.
+  # Notice: for this to work your `build.main` must be a package, not a `.go` file.
+  proxy: false
+  # Sets the `-mod` flag value.
+  #
+  # Since: v1.7
+  mod: mod
+
+archives:
+- id: linux_archives
+  name_template: atlas-cli-plugin-kubernetes_{{ .Version }}_{{ .Os }}_{{- if eq .Arch "amd64" }}x86_64{{- else }}{{ .Arch }}{{ end }}
+  builds: [linux]
+  <<: &archive_defaults
+    files:
+      - README.md
+      - LICENSE
+      - third_party_notices/**/*
+      - src: "./manifest{{ if eq .Os \"windows\" }}.windows{{end}}.yml"
+        dst: ./manifest.yml
+  wrap_in_directory: true
+  format: tar.gz
+- id: macos
+  name_template: atlas-cli-plugin-kubernetes_{{ .Version }}_{{- if eq .Os "darwin" }}macos{{- else }}{{ .Os }}{{ end }}_{{- if eq .Arch "amd64" }}x86_64{{- else }}{{ .Arch }}{{ end }}
+  builds: [macos]
+  <<: *archive_defaults
+  format: zip
+  wrap_in_directory: false
+- id: windows
+  name_template: atlas-cli-plugin-kubernetes_{{ .Version }}_{{ .Os }}_{{- if eq .Arch "amd64" }}x86_64{{- else }}{{ .Arch }}{{ end }}
+  builds: [windows]
+  <<: *archive_defaults
+  wrap_in_directory: false
+  format: zip
+checksum:
+  name_template: checksums.txt
+snapshot:
+  name_template: "{{ .Env.VERSION_GIT }}-next"
+changelog:
+  sort: asc
+  filters:
+    exclude:
+    - '^docs:'
+    - '^test:'
+    - '^task:'
+    - '^build(deps):'
+# signs:
+#   - id: linux_artifacts
+#     signature: "${artifact}.sig"
+#     cmd: "./build/package/linux_notarize.sh"
+#     ids:
+#       - linux_archives
+#       - linux_package
+#       - mongodb-atlas
+#     artifacts: all
+#     output: true
+release:
+  prerelease: auto
+  name_template: "Atlas CLI Plugin Kubernetes {{.Version}}"
