@@ -346,7 +346,7 @@ buildvariants:
       - name: ".e2e .required"
   - name: copybara
     display_name: "Copybara"
-    git_tag_only: true
+    # git_tag_only: true
     run_on:
       - ubuntu2404-small
     expansions:
