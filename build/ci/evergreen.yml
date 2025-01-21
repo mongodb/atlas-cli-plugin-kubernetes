@@ -159,8 +159,8 @@ functions:
           set -Eeou pipefail
           cat <<EOF > expansions.yaml
           home: $HOME
-          tag: $(git tag --list 'atlascli/v*' --sort=-taggerdate | head -1)
-          version: $(git tag --list 'atlascli/v*' --sort=-taggerdate | head -1 | cut -d 'v' -f 2)
+          tag: $(git tag --list 'v*' --sort=-taggerdate | head -1)
+          version: $(git tag --list 'v*' --sort=-taggerdate | head -1 | cut -d 'v' -f 2)
           EOF
     - command: expansions.update
       params:
