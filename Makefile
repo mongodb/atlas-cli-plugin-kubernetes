@@ -12,6 +12,8 @@ else
 	E2E_ATLASCLI_BINARY_PATH=../bin/atlas
 endif
 PLUGIN_BINARY_PATH=./bin/$(PLUGIN_BINARY_NAME)
+MANIFEST_FILE?=manifest.yml
+WIN_MANIFEST_FILE?=manifest.windows.yml
 
 TEST_CMD?=go test
 UNIT_TAGS?=unit
@@ -94,6 +96,22 @@ gen-docs: ## Generate docs for atlascli commands
 check-licenses: ## Check licenses
 	@echo "==> Running lincense checker..."
 	@build/ci/check-licenses.sh
+
+.PHONY: generate-all-manifests
+generate-all-manifests: generate-manifest generate-manifest-windows
+
+.PHONY: generate-manifest
+generate-manifest: ## Generate the manifest file for non-windows OSes
+	@echo "==> Generating non-windows manifest file"
+	printenv
+	BINARY=$(CLI_BINARY_NAME) envsubst < manifest.template.yml > $(MANIFEST_FILE)
+
+.PHONY: generate-manifest-windows
+generate-manifest-windows: ## Generate the manifest file for windows OSes
+	@echo "==> Generating windows manifest file"
+	printenv
+	CLI_BINARY_NAME="${CLI_BINARY_NAME}.exe" MANIFEST_FILE="$(WIN_MANIFEST_FILE)" $(MAKE) generate-manifest
+
 
 .PHONY: help
 .DEFAULT_GOAL := help
