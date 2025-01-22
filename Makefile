@@ -4,11 +4,11 @@ GOCOVERDIR?=$(abspath cov)
 
 PLUGIN_SOURCE_FILES?=./cmd/plugin
 ifeq ($(OS),Windows_NT)
-	PLUGIN_BINARY_NAME=binary.exe
+	PLUGIN_BINARY_NAME=atlas_cli_plugin_kubernetes.exe
 	E2E_ATLASCLI_BINARY_PATH=../bin/atlas.exe
 else
     ATLAS_VERSION?=$(shell git describe --match "atlascli/v*" | cut -d "v" -f 2)
-	PLUGIN_BINARY_NAME=binary
+	PLUGIN_BINARY_NAME=atlas_cli_plugin_kubernetes
 	E2E_ATLASCLI_BINARY_PATH=../bin/atlas
 endif
 PLUGIN_BINARY_PATH=./bin/$(PLUGIN_BINARY_NAME)
@@ -72,7 +72,7 @@ fuzz-normalizer-test: ## Run fuzz test
 .PHONY: build-debug
 build-debug: ## Generate a binary in ./bin for debugging plugin
 	@echo "==> Building kubernetes plugin binary for debugging"
-	go build -gcflags="all=-N -l" -o ./bin/binary ./cmd/plugin
+	go build -gcflags="all=-N -l" -o ./bin/atlas_cli_plugin_kubernetes ./cmd/plugin
 
 .PHONY: e2e-test
 e2e-test: build-debug ## Run E2E tests

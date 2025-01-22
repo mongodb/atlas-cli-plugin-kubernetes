@@ -69,14 +69,7 @@ This will enable compilation for unit and end-to-end tests.
 
 #### Debugging in VSCode
 
-To debug in VSCode, a clone of the AtlasCLI is required. You must build the binary of the kubernetes plugin and copy it to the AtlasCLI plugin file. For example:
-
-``` 
-  make build
-  cp bin/binary ~/Library/Application\ Support/atlascli/plugins/mongodb@atlas-cli-plugin-kubernetes
-```
-
-Then, create a debug configuration for the command with the required arguments in your local clone of the AtlasCLI.
+To debug in VSCode, create a debug configuration for the command with the required arguments in your local clone of the Kubernetes Plugin.
 Run the following commands to create a new launch.json file for the debugger:
 
 ```
@@ -104,6 +97,15 @@ Review and replace the command name and arguments depending on the command you w
     ]
 } 
 ```
+
+_Note:_ If you wish to debug from AtlasCLI, a clone of the AtlasCLI is required. Run 'atlas kubernetes' to trigger the plugin to install. This will enable the kubernetes commands in AtlasCLI and create a plugin file for the plugin. You must build the binary of the kubernetes plugin and copy it to this AtlasCLI plugin file. For example:
+
+``` 
+  make build
+  cp bin/atlas_cli_plugin_kubernetes ~/Library/Application\ Support/atlascli/plugins/mongodb@atlas-cli-plugin-kubernetes
+```
+
+Then, create a debug configuration in the AtlasCLI directory as described above.
 
 ### Contributing New Command Group
 

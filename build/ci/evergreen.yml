@@ -311,7 +311,7 @@ github_pr_aliases:
     task_tags: ["e2e", "required"]
 git_tag_aliases:
   - git_tag: "v*"
-    variant: "^release_atlascliplugin"
+    variant: "^release"
     task: ".*"
 github_checks_aliases:
  - variant: ".*"

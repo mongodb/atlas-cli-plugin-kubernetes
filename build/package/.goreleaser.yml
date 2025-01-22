@@ -48,7 +48,7 @@ archives:
   wrap_in_directory: true
   format: tar.gz
 - id: macos
-  name_template: atlas-cli-plugin-kubernetes_{{ .Version }}_{{- if eq .Os "darwin" }}macos{{- else }}{{ .Os }}{{ end }}_{{- if eq .Arch "amd64" }}x86_64{{- else }}{{ .Arch }}{{ end }}
+  name_template: atlas-cli-plugin-kubernetes_{{ .Version }}_{{ .Os }}_{{- if eq .Arch "amd64" }}x86_64{{- else }}{{ .Arch }}{{ end }}
   builds: [macos]
   <<: *archive_defaults
   format: zip
@@ -61,26 +61,6 @@ archives:
   format: zip
 checksum:
   name_template: checksums.txt
-snapshot:
-  name_template: "{{ .Env.VERSION_GIT }}-next"
-changelog:
-  sort: asc
-  filters:
-    exclude:
-    - '^docs:'
-    - '^test:'
-    - '^task:'
-    - '^build(deps):'
-# signs:
-#   - id: linux_artifacts
-#     signature: "${artifact}.sig"
-#     cmd: "./build/package/linux_notarize.sh"
-#     ids:
-#       - linux_archives
-#       - linux_package
-#       - mongodb-atlas
-#     artifacts: all
-#     output: true
 release:
   prerelease: auto
-  name_template: "Atlas CLI Plugin Kubernetes {{.Version}}"
+  name_template: "Atlas CLI Plugin Kubernetes v{{.Version}}"
