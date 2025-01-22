@@ -23,7 +23,6 @@ variables:
       GOROOT: ${go_root}
       GOPATH: ${go_base_path}${workdir}
       ADD_PATH: "${go_bin}:${go_base_path}${workdir}/bin:${go_base_path}${workdir}/src/github.com/mongodb/atlas-cli-plugin-kubernetes/bin"
-      GOPROXY: ${go_proxy}
   - &go_options
     add_to_path:
       - ${go_bin}
@@ -31,12 +30,35 @@ variables:
       - ${go_base_path}${workdir}/src/github.com/mongodb/atlas-cli-plugin-kubernetes/bin
     include_expansions_in_env:
       - go_base_path
-      - go_proxy
       - workdir
     working_dir: src/github.com/mongodb/atlas-cli-plugin-kubernetes
     env:
       <<: *go_env
 functions:
+  "install gh-token":
+    - command: shell.exec
+      type: setup
+      params:
+        working_dir: src/github.com/mongodb/atlas-cli-plugin-kubernetes/bin
+        script: |
+          set -Eeou pipefail
+          curl --output gh-token -sfL https://github.com/Link-/gh-token/releases/download/v2.0.1/linux-amd64
+          chmod 755 ./gh-token
+  "install goreleaser":
+    - command: shell.exec
+      type: setup
+      params:
+        working_dir: src/github.com/mongodb/atlas-cli-plugin-kubernetes/bin
+        script: |
+          set -Eeou pipefail
+
+          curl -sfL ${goreleaser_pro_tar_gz} | tar zx
+  "generate notices":
+    - command: subprocess.exec
+      type: test
+      params:
+        <<: *go_options
+        binary: build/package/generate-notices.sh
   "build-copybara":
     - command: subprocess.exec
       params:
@@ -73,6 +95,16 @@ functions:
         script: |
           ./run-copybara.sh
 tasks:
+  - name: package_goreleaser
+    tags: ["packaging"]
+    depends_on:
+      - name: compile
+        variant: "code_health"
+    commands:
+      - func: "generate notices"
+      - func: "install goreleaser"
+      - func: "install gh-token"
+      - func: "package"
   - name: copybara
     commands:
       - func: "build-copybara"
@@ -95,6 +127,17 @@ tasks:
           gh_token: ${cloud_docs_token}
           workflow: cloud-docs
 buildvariants:
+  - name: release
+    display_name: "Release AtlasCLI Plugin Kubernetes (goreleaser)"
+    git_tag_only: true
+    run_on:
+      - rhel90-small
+    expansions:
+      <<: *go_linux_version
+      server_version: "4.4.0-rc3"
+      package_name: "atlas-cli-plugin-kubernetes"
+    tasks:
+      - name: package_goreleaser
   - name: copybara
     display_name: "Copybara"
     git_tag_only: true
