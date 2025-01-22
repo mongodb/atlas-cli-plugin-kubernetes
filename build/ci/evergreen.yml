@@ -279,6 +279,14 @@ buildvariants:
       <<: *go_linux_version
     tasks:
       - name: .code_health
+  - name: e2e_generic
+    display_name: "E2E Tests Generic"
+    run_on:
+      - rhel80-small
+    expansions:
+      <<: *go_linux_version
+    tasks:
+      - name: ".e2e .generic"
   - name: e2e_required
     display_name: "E2E Tests Required"
     run_on:
