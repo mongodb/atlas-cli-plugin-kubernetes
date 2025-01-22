@@ -23,10 +23,10 @@ core.workflow(
         integrates = [],
     ),
     origin_files = glob(["docs/command/**"]),
-    destination_files = glob(["source/includes/command/**"], exclude = ["source/includes/command/atlas-**"]),
+    destination_files = glob(["source/includes/command/**"], exclude = ["source/includes/command/atlas**"]),
     authoring = authoring.pass_thru(author),
     transformations = [
-        core.move("docs/command", "source/includes/command"),
+        core.move(before = 'docs/command/${x}.txt', after = 'source/includes/command/atlas-${x}.txt', regex_groups = { 'x': '.*'}, overwrite = true)
         core.rename(".txt", ".rst", suffix = True)
     ],
 )
@@ -46,9 +46,9 @@ core.workflow(
         integrates = [],
     ),
     origin_files = glob(["docs/command/**"]),
-    destination_files = glob(["source/command/**"], exclude = ["source/command/atlas-**"]),
+    destination_files = glob(["source/command/**"], exclude = ["source/command/atlas**"]),
     authoring = authoring.pass_thru(author),
     transformations = [
-        core.move("docs/command", "source/command")
+        core.move(before = 'docs/command/${x}.txt', after = 'source/command/atlas-${x}.txt', regex_groups = { 'x': '.*'}, overwrite = true)
     ],
 )
