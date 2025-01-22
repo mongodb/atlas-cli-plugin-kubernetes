@@ -23,9 +23,6 @@ export VERSION=$(git tag --list 'v*' --sort=-taggerdate | head -1 | cut -d 'v' -
 export GITHUB_REPOSITORY_OWNER="mongodb"
 export GITHUB_REPOSITORY_NAME="atlas-cli-plugin-kubernetes"
 
-echo ${repo_owner:?}
-echo ${repo_name:?}
-
 make generate-all-manifests
 
 # avoid race conditions on the notarization step by using `-p 1`
