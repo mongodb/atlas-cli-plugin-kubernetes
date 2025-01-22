@@ -28,7 +28,7 @@ export VERSION_GIT=${version:?}
 # 	./bin/goreleaser --config "build/package/.goreleaser.yml" --clean --release-notes "CHANGELOG.md" -p 1 --snapshot
 # else
 # avoid race conditions on the notarization step by using `-p 1`
-./bin/goreleaser --config "build/package/.goreleaser.yml" --clean --release-notes "CHANGELOG.md" -p 1
+./bin/goreleaser --config "build/package/.goreleaser.yml" --clean -p 1
 # fi
 
 # check that the notarization service signed the mac binaries
