@@ -257,7 +257,7 @@ tasks:
           MCLI_SERVICE: cloud
           E2E_TAGS: apply
   - name: atlas_kubernetes_install_e2e
-    tags: [ "e2e","required","kubernetes", "assigned_to_jira_team_cloudp_kubernetes_atlas" ]
+    tags: [ "e2e","generic","kubernetes", "assigned_to_jira_team_cloudp_kubernetes_atlas" ]
     must_have_test_results: true
     commands:
       - func: "install gotestsum"
