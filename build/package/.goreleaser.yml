@@ -7,7 +7,7 @@ builds:
   - <<: &build_defaults
       env:
         - CGO_ENABLED=0
-      binary: bin/binary
+      binary: atlas-cli-plugin-kubernetes
       main: ./cmd/plugin
       ldflags:
         - -s -w -X github.com/mongodb/atlas-cli-plugin-kubernetes/internal/version.Version={{.Version}} -X github.com/mongodb/atlas-cli-plugin-kubernetes/internal/version.GitCommit={{.FullCommit}}
