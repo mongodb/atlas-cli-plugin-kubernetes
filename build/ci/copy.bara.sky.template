@@ -23,10 +23,10 @@ core.workflow(
         integrates = [],
     ),
     origin_files = glob(["docs/command/kubernetes*"]),
-    destination_files = glob(["source/includes/command/**"]),
+    destination_files = glob(["source/includes/command/atlas-kuberentes*"]),
     authoring = authoring.pass_thru(author),
     transformations = [
-        core.move("docs/command", "source/includes/command/atlas-"),
+        core.move("docs/command", "source/includes/command"),
         core.rename(".txt", ".rst", suffix = True)
     ],
 )
@@ -46,9 +46,9 @@ core.workflow(
         integrates = [],
     ),
     origin_files = glob(["docs/command/kubernetes*"]),
-    destination_files = glob(["source/command/**"]),
+    destination_files = glob(["source/command/atlas-kubernetes*"]),
     authoring = authoring.pass_thru(author),
     transformations = [
-        core.move("docs/command", "source/command/atlas-"),
+        core.move("docs/command", "source/command"),
     ],
 )
