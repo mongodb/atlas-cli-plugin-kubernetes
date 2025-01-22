@@ -1,0 +1,106 @@
+# Copyright 2025 MongoDB Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+variables:
+  - &go_linux_version
+      go_root: "/opt/golang/go1.23"
+      go_bin: "/opt/golang/go1.23/bin"
+      go_base_path: ""
+  - &go_env
+      XDG_CONFIG_HOME: ${go_base_path}${workdir}
+      GO111MODULE: "on"
+      GOROOT: ${go_root}
+      GOPATH: ${go_base_path}${workdir}
+      ADD_PATH: "${go_bin}:${go_base_path}${workdir}/bin:${go_base_path}${workdir}/src/github.com/mongodb/atlas-cli-plugin-kubernetes/bin"
+      GOPROXY: ${go_proxy}
+  - &go_options
+    add_to_path:
+      - ${go_bin}
+      - ${go_base_path}${workdir}/bin
+      - ${go_base_path}${workdir}/src/github.com/mongodb/atlas-cli-plugin-kubernetes/bin
+    include_expansions_in_env:
+      - go_base_path
+      - go_proxy
+      - workdir
+    working_dir: src/github.com/mongodb/atlas-cli-plugin-kubernetes
+    env:
+      <<: *go_env
+functions:
+  "build-copybara":
+    - command: subprocess.exec
+      params:
+        <<: *go_options
+        binary: git
+        args:
+          - clone
+          - --depth=1
+          - https://github.com/google/copybara
+          - ${workdir}/copybara
+    - command: subprocess.exec
+      params:
+        <<: *go_options
+        binary: docker
+        args:
+          - build
+          - -t
+          - google/copybara
+          - ${workdir}/copybara
+  "run-copybara":
+    - command: shell.exec
+      params:
+        <<: *go_options
+        env:
+          <<: *go_env
+          TAG: ${tag}
+          GH_TOKEN: ${gh_token}
+          WORKFLOW: ${workflow}
+          EVERGREEN_USER: ${evergreen_user}
+          EVERGREEN_API_KEY: ${evergreen_api_key}
+          DOCS_SLACK_CHANNEL: ${docs_slack_channel}
+        working_dir: src/github.com/mongodb/atlas-cli-plugin-kubernetes/build/ci
+        shell: bash
+        script: |
+          ./run-copybara.sh
+tasks:
+  - name: copybara
+    commands:
+      - func: "build-copybara"
+      - command: github.generate_token
+        params:
+          expansion_name: docs_atlas_cli_token
+          owner: mongodb
+          repo: docs-atlas-cli
+      - func: "run-copybara"
+        vars:
+          gh_token: ${docs_atlas_cli_token}
+          workflow: docs-atlas-cli
+      - command: github.generate_token
+        params:
+          expansion_name: cloud_docs_token
+          owner: 10gen
+          repo: cloud-docs
+      - func: "run-copybara"
+        vars:
+          gh_token: ${cloud_docs_token}
+          workflow: cloud-docs
+buildvariants:
+  - name: copybara
+    display_name: "Copybara"
+    git_tag_only: true
+    run_on:
+      - ubuntu2404-small
+    expansions:
+      <<: *go_linux_version
+    tasks:
+      - name: copybara

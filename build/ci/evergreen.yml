@@ -16,6 +16,8 @@ exec_timeout_secs: 4200 # automatically fail any task if it takes longer than 1h
 stepback: true
 command_type: system
 pre_error_fails_task: true
+include:
+  - filename: build/ci/release.yml
 
 variables:
   - &go_linux_version
@@ -159,8 +161,8 @@ functions:
           set -Eeou pipefail
           cat <<EOF > expansions.yaml
           home: $HOME
-          tag: $(git tag --list 'atlascli/v*' --sort=-taggerdate | head -1)
-          version: $(git tag --list 'atlascli/v*' --sort=-taggerdate | head -1 | cut -d 'v' -f 2)
+          tag: $(git tag --list 'v*' --sort=-taggerdate | head -1)
+          version: $(git tag --list 'v*' --sort=-taggerdate | head -1 | cut -d 'v' -f 2)
           EOF
     - command: expansions.update
       params:
@@ -255,7 +257,7 @@ tasks:
           MCLI_SERVICE: cloud
           E2E_TAGS: apply
   - name: atlas_kubernetes_install_e2e
-    tags: [ "e2e","required","kubernetes", "assigned_to_jira_team_cloudp_kubernetes_atlas" ]
+    tags: [ "e2e","generic","kubernetes", "assigned_to_jira_team_cloudp_kubernetes_atlas" ]
     must_have_test_results: true
     commands:
       - func: "install gotestsum"
@@ -277,6 +279,14 @@ buildvariants:
       <<: *go_linux_version
     tasks:
       - name: .code_health
+  - name: e2e_generic
+    display_name: "E2E Tests Generic"
+    run_on:
+      - rhel80-small
+    expansions:
+      <<: *go_linux_version
+    tasks:
+      - name: ".e2e .generic"
   - name: e2e_required
     display_name: "E2E Tests Required"
     run_on:

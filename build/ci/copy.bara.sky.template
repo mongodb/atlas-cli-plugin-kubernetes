@@ -1,0 +1,53 @@
+"""
+Copy definitions
+"""
+
+release_tag = "${TAG}"
+source_url = "https://github.com/mongodb/atlas-cli-plugin-kubernetes.git"
+destination_url = "https://github.com/10gen/cloud-docs.git"
+destination_url_cli_docs = "https://github.com/mongodb/docs-atlas-cli.git"
+author = "apix-bot[bot] <168195273+apix-bot[bot]@users.noreply.github.com>"
+
+core.workflow(
+    name = "cloud-docs",
+    origin = git.origin(
+        url = source_url,
+        ref = release_tag,
+    ),
+    destination = git.github_pr_destination(
+        url = destination_url,
+        destination_ref = "master",
+        pr_branch = "apix_bot_copybara_pull_request_"+release_tag,
+        title = "Copies Atlas CLI Kubernetes Plugin commands for release tag: " + release_tag,
+        body = "Copies Atlas CLI Kubernetes Plugin commands from the source repo. See the attached Netlify comment for build log and staging.",
+        integrates = [],
+    ),
+    origin_files = glob(["docs/command/**"]),
+    destination_files = glob(["source/includes/command/**"], exclude = ["source/includes/command/atlas**"]) + glob(["source/includes/command/atlas-kubernetes**"]),
+    authoring = authoring.pass_thru(author),
+    transformations = [
+        core.move(before = 'docs/command/${x}.txt', after = 'source/includes/command/atlas-${x}.rst', regex_groups = { 'x': '.*'}, overwrite = True)
+    ],
+)
+ 
+core.workflow(
+    name = "docs-atlas-cli",
+    origin = git.origin(
+        url = source_url,
+        ref = release_tag,
+    ),
+    destination = git.github_pr_destination(
+        url = destination_url_cli_docs,
+        destination_ref = "master",
+        pr_branch = "apix_bot_copybara_pull_request_"+release_tag,
+        title = "Copies Atlas CLI Kubernetes Plugin commands for release tag: " + release_tag,
+        body = "Copies Atlas CLI Kubernetes Plugin commands from the source repo. See the attached Netlify comment for build log and staging.",
+        integrates = [],
+    ),
+    origin_files = glob(["docs/command/**"]),
+    destination_files = glob(["source/command/**"], exclude = ["source/command/atlas**"]) + glob(["source/command/atlas-kubernetes**"]),
+    authoring = authoring.pass_thru(author),
+    transformations = [
+        core.move(before = 'docs/command/${x}.txt', after = 'source/command/atlas-${x}.txt', regex_groups = { 'x': '.*'}, overwrite = True)
+    ],
+)
