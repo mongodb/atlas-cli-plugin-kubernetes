@@ -4,14 +4,16 @@ GOCOVERDIR?=$(abspath cov)
 
 PLUGIN_SOURCE_FILES?=./cmd/plugin
 ifeq ($(OS),Windows_NT)
-	PLUGIN_BINARY_NAME=binary.exe
+	PLUGIN_BINARY_NAME=atlas_cli_plugin_kubernetes.exe
 	E2E_ATLASCLI_BINARY_PATH=../bin/atlas.exe
 else
     ATLAS_VERSION?=$(shell git describe --match "atlascli/v*" | cut -d "v" -f 2)
-	PLUGIN_BINARY_NAME=binary
+	PLUGIN_BINARY_NAME=atlas_cli_plugin_kubernetes
 	E2E_ATLASCLI_BINARY_PATH=../bin/atlas
 endif
 PLUGIN_BINARY_PATH=./bin/$(PLUGIN_BINARY_NAME)
+MANIFEST_FILE?=manifest.yml
+WIN_MANIFEST_FILE?=manifest.windows.yml
 
 TEST_CMD?=go test
 UNIT_TAGS?=unit
@@ -70,7 +72,7 @@ fuzz-normalizer-test: ## Run fuzz test
 .PHONY: build-debug
 build-debug: ## Generate a binary in ./bin for debugging plugin
 	@echo "==> Building kubernetes plugin binary for debugging"
-	go build -gcflags="all=-N -l" -o ./bin/binary ./cmd/plugin
+	go build -gcflags="all=-N -l" -o ./bin/atlas_cli_plugin_kubernetes ./cmd/plugin
 
 .PHONY: e2e-test
 e2e-test: build-debug ## Run E2E tests
@@ -94,6 +96,22 @@ gen-docs: ## Generate docs for atlascli commands
 check-licenses: ## Check licenses
 	@echo "==> Running lincense checker..."
 	@build/ci/check-licenses.sh
+
+.PHONY: generate-all-manifests
+generate-all-manifests: generate-manifest generate-manifest-windows
+
+.PHONY: generate-manifest
+generate-manifest: ## Generate the manifest file for non-windows OSes
+	@echo "==> Generating non-windows manifest file"
+	printenv
+	BINARY=$(CLI_BINARY_NAME) envsubst < manifest.template.yml > $(MANIFEST_FILE)
+
+.PHONY: generate-manifest-windows
+generate-manifest-windows: ## Generate the manifest file for windows OSes
+	@echo "==> Generating windows manifest file"
+	printenv
+	CLI_BINARY_NAME="${CLI_BINARY_NAME}.exe" MANIFEST_FILE="$(WIN_MANIFEST_FILE)" $(MAKE) generate-manifest
+
 
 .PHONY: help
 .DEFAULT_GOAL := help

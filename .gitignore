@@ -21,6 +21,8 @@ coverage.html
 
 # We don't want to commit the 3rd party notices
 third_party_notices/
+manifest.yml
+manifest.windows.yml
 
 # Evergreen generated files
 .gocache/
