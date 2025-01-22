@@ -20,21 +20,19 @@ export GOROOT="${GOROOT:?}"
 # export NOTARY_SERVICE_URL=${notary_service_url:?}
 # export MACOS_NOTARY_KEY=${notary_service_key_id:?}
 # export MACOS_NOTARY_SECRET=${notary_service_secret:?}
-# export GORELEASER_KEY=${goreleaser_key:?}
-export VERSION_GIT
+export GORELEASER_KEY=${goreleaser_key:?}
+export VERSION_GIT=${version:?}
 
-VERSION_GIT="$(git tag --list "v*" --sort=taggerdate | cut -d "v" -f 2)"
-
-if [[ "${unstable-}" == "-unstable" ]]; then
-	# avoid race conditions on the notarization step by using `-p 1`
-	./bin/goreleaser --config "build/package/.goreleaser.yml" --clean --release-notes "CHANGELOG.md" -p 1 --snapshot
-else
-	# avoid race conditions on the notarization step by using `-p 1`
-	./bin/goreleaser --config "build/package/.goreleaser.yml" --clean --release-notes "CHANGELOG.md" -p 1
-fi
+# if [[ "${unstable-}" == "-unstable" ]]; then
+# 	# avoid race conditions on the notarization step by using `-p 1`
+# 	./bin/goreleaser --config "build/package/.goreleaser.yml" --clean --release-notes "CHANGELOG.md" -p 1 --snapshot
+# else
+# avoid race conditions on the notarization step by using `-p 1`
+./bin/goreleaser --config "build/package/.goreleaser.yml" --clean --release-notes "CHANGELOG.md" -p 1
+# fi
 
 # check that the notarization service signed the mac binaries
-# SIGNED_FILE_NAME=mongodb-atlas-cli_macos_signed.zip
+# SIGNED_FILE_NAME=atlas-cli-plugin-kubernetes_macos_signed.zip
 # if [[ -f "dist/$SIGNED_FILE_NAME" ]]; then
 # 	echo "$SIGNED_FILE_NAME exists. The Mac notarization service has run."
 # else
