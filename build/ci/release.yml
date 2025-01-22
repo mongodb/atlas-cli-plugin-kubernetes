@@ -59,6 +59,23 @@ functions:
       params:
         <<: *go_options
         binary: build/package/generate-notices.sh
+  "package":
+    - command: github.generate_token
+      params:
+        expansion_name: github_token
+    - command: subprocess.exec
+      type: test
+      params:
+        <<: *go_options
+        env:
+          <<: *go_env
+          GITHUB_TOKEN: ${github_token}
+        include_expansions_in_env:
+          - go_base_path
+          - workdir
+          - goreleaser_key
+          - version
+        binary: build/package/package.sh
   "build-copybara":
     - command: subprocess.exec
       params:
