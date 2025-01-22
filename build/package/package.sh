@@ -19,6 +19,14 @@ set -Eeou pipefail
 export GOROOT="${GOROOT:?}"
 export GORELEASER_KEY=${goreleaser_key:?}
 export VERSION_GIT=${version:?}
+export VERSION=${version:?}
+export GITHUB_REPOSITORY_OWNER: ${repo_owner:?}
+export GITHUB_REPOSITORY_NAME: ${repo_name:?}
+
+echo ${repo_owner:?}
+echo ${repo_name:?}
+
+make generate-all-manifests
 
 # avoid race conditions on the notarization step by using `-p 1`
 ./bin/goreleaser --config "build/package/.goreleaser.yml" --clean -p 1
