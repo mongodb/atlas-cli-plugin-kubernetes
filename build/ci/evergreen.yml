@@ -16,6 +16,8 @@ exec_timeout_secs: 4200 # automatically fail any task if it takes longer than 1h
 stepback: true
 command_type: system
 pre_error_fails_task: true
+include:
+  - filename: build/ci/release.yml
 
 variables:
   - &go_linux_version
@@ -193,41 +195,6 @@ functions:
         binary: make
         args:
           - otel
-  "build-copybara":
-    - command: subprocess.exec
-      params:
-        <<: *go_options
-        binary: git
-        args:
-          - clone
-          - --depth=1
-          - https://github.com/google/copybara
-          - ${workdir}/copybara
-    - command: subprocess.exec
-      params:
-        <<: *go_options
-        binary: docker
-        args:
-          - build
-          - -t
-          - google/copybara
-          - ${workdir}/copybara
-  "run-copybara":
-    - command: shell.exec
-      params:
-        <<: *go_options
-        env:
-          <<: *go_env
-          TAG: ${tag}
-          GH_TOKEN: ${gh_token}
-          WORKFLOW: ${workflow}
-          EVERGREEN_USER: ${evergreen_user}
-          EVERGREEN_API_KEY: ${evergreen_api_key}
-          DOCS_SLACK_CHANNEL: ${docs_slack_channel}
-        working_dir: src/github.com/mongodb/atlas-cli-plugin-kubernetes/build/ci
-        shell: bash
-        script: |
-          ./run-copybara.sh
 tasks:
   - name: compile
     tags: ["code_health"]
@@ -303,30 +270,6 @@ tasks:
           MCLI_OPS_MANAGER_URL: ${mcli_ops_manager_url}
           MCLI_SERVICE: cloud
           E2E_TAGS: install
-  - name: copybara
-    # depends_on:
-    #   - name: XXX
-    #     variant: XXX
-    commands:
-      - func: "build-copybara"
-      - command: github.generate_token
-        params:
-          expansion_name: docs_atlas_cli_token
-          owner: mongodb
-          repo: docs-atlas-cli
-      - func: "run-copybara"
-        vars:
-          gh_token: ${docs_atlas_cli_token}
-          workflow: docs-atlas-cli
-      - command: github.generate_token
-        params:
-          expansion_name: cloud_docs_token
-          owner: 10gen
-          repo: cloud-docs
-      - func: "run-copybara"
-        vars:
-          gh_token: ${cloud_docs_token}
-          workflow: cloud-docs
 buildvariants:
   - name: code_health
     display_name: "Code Health"
@@ -344,15 +287,6 @@ buildvariants:
       <<: *go_linux_version
     tasks:
       - name: ".e2e .required"
-  - name: copybara
-    display_name: "Copybara"
-    # git_tag_only: true
-    run_on:
-      - ubuntu2404-small
-    expansions:
-      <<: *go_linux_version
-    tasks:
-      - name: copybara
 patch_aliases:
   - alias: "cleanup"
     variant_tags: ["cleanup cron"]
