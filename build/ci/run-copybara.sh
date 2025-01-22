@@ -54,7 +54,7 @@ cat <<EOF > .gitconfig
     helper = store
 EOF
 
-envsubst < copy.bara.sky.template > copy.bara.sky
+envsubst '$TAG' < copy.bara.sky.template > copy.bara.sky
 
 echo "https://x-access-token:${GH_TOKEN:?}@github.com" > .git-credentials
 echo "https://x-access-token:${GH_TOKEN:?}@api.github.com" >> .git-credentials
