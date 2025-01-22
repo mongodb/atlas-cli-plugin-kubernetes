@@ -28,7 +28,7 @@ core.workflow(
     transformations = [
         core.move("docs/command", "source/includes/command"),
         core.rename(".txt", ".rst", suffix = True),
-        core.remove("source/includes/command/atlas-kubernetes*")
+        core.remove(glob(["source/includes/command/atlas-kubernetes*"]))
     ],
 )
  
@@ -51,6 +51,6 @@ core.workflow(
     authoring = authoring.pass_thru(author),
     transformations = [
         core.move("docs/command", "source/command"),
-        core.remove("source/command/atlas-kubernetes*")
+        core.remove(glob(["source/command/atlas-kubernetes*"]))
     ],
 )
