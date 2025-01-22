@@ -74,9 +74,6 @@ functions:
           ./run-copybara.sh
 tasks:
   - name: copybara
-    # depends_on:
-    #   - name: XXX
-    #     variant: XXX
     commands:
       - func: "build-copybara"
       - command: github.generate_token
