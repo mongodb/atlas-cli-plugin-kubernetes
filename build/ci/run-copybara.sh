@@ -54,6 +54,8 @@ cat <<EOF > .gitconfig
     helper = store
 EOF
 
+# required to ignore other vars
+# shellcheck disable=SC2016
 envsubst '$TAG' < copy.bara.sky.template > copy.bara.sky
 
 echo "https://x-access-token:${GH_TOKEN:?}@github.com" > .git-credentials
