@@ -22,11 +22,11 @@ core.workflow(
         body = "[TEST DO NOT MERGE] Copies Atlas CLI Kubernetes Plugin commands from the source repo. See the attached Netlify comment for build log and staging.",
         integrates = [],
     ),
-    origin_files = glob(["docs/command/**"], exclude = ["docs/command/atlas-completion**"]),
+    origin_files = glob(["docs/command/kubernetes*"]),
     destination_files = glob(["source/includes/command/**"]),
     authoring = authoring.pass_thru(author),
     transformations = [
-        core.move("docs/command", "source/includes/command"),
+        core.move("docs/command", "source/includes/command/atlas-"),
         core.rename(".txt", ".rst", suffix = True)
     ],
 )
@@ -45,10 +45,10 @@ core.workflow(
         body = "[TEST DO NOT MERGE] Copies Atlas CLI Kubernetes Plugin commands from the source repo. See the attached Netlify comment for build log and staging.",
         integrates = [],
     ),
-    origin_files = glob(["docs/command/**"]),
+    origin_files = glob(["docs/command/kubernetes*"]),
     destination_files = glob(["source/command/**"]),
     authoring = authoring.pass_thru(author),
     transformations = [
-        core.move("docs/command", "source/command"),
+        core.move("docs/command", "source/command/atlas-"),
     ],
 )
