@@ -69,5 +69,7 @@ func mockAtlasBuilder() *cobra.Command {
 	}
 
 	cmd.AddCommand(kubernetes.Builder())
+	// PersistentFlags used to generate 'Inherited Options'
+	cmd.PersistentFlags().StringP("profile", "P", "", "Name of the profile to use from your configuration file. To learn about profiles for the Atlas CLI, see https://dochub.mongodb.org/core/atlas-cli-save-connection-settings.")
 	return cmd
 }
