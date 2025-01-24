@@ -35,12 +35,12 @@ core.workflow(
     name = "docs-atlas-cli",
     origin = git.origin(
         url = source_url,
-        ref = release_tag,
+        ref = branch,
     ),
     destination = git.github_pr_destination(
         url = destination_url_cli_docs,
         destination_ref = "master",
-        pr_branch = "apix_bot_copybara_pull_request_"+release_tag,
+        pr_branch = "apix_bot_copybara_pull_request_test",
         title = "Test",
         body = "This PR is a test from Atlas CLI Kubernetes Plugin. DO NOT MERGE.",        integrates = [],
     ),
