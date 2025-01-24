@@ -123,9 +123,9 @@ tasks:
       - func: "install gh-token"
       - func: "package"
   - name: copybara
-    depends_on:
-      - name: package_goreleaser
-        variant: release
+    # depends_on:
+    #   - name: package_goreleaser
+    #     variant: release
     commands:
       - func: "build-copybara"
       - command: github.generate_token
@@ -160,7 +160,7 @@ buildvariants:
       - name: package_goreleaser
   - name: copybara
     display_name: "Copybara"
-    git_tag_only: true
+    # git_tag_only: true
     run_on:
       - ubuntu2404-small
     expansions:
