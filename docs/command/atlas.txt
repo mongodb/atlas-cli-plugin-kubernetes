@@ -1,0 +1,43 @@
+.. _atlas:
+
+=====
+atlas
+=====
+
+.. default-domain:: mongodb
+
+.. contents:: On this page
+   :local:
+   :backlinks: none
+   :depth: 1
+   :class: singlecol
+
+
+
+Options
+-------
+
+.. list-table::
+   :header-rows: 1
+   :widths: 20 10 10 60
+
+   * - Name
+     - Type
+     - Required
+     - Description
+   * - -h, --help
+     - 
+     - false
+     - help for atlas
+
+Related Commands
+----------------
+
+* :ref:`atlas-kubernetes` - Manage Kubernetes resources.
+
+
+.. toctree::
+   :titlesonly:
+
+   kubernetes </command/atlas-kubernetes>
+

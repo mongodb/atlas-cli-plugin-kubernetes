@@ -1,8 +1,8 @@
-.. _kubernetes-config-apply:
+.. _atlas-kubernetes-config-apply:
 
-=======================
-kubernetes config apply
-=======================
+=============================
+atlas kubernetes config apply
+=============================
 
 .. default-domain:: mongodb
 
@@ -22,7 +22,7 @@ Syntax
 .. code-block::
    :caption: Command Syntax
 
-   kubernetes config apply [options]
+   atlas kubernetes config apply [options]
 
 .. Code end marker, please don't delete this comment
 

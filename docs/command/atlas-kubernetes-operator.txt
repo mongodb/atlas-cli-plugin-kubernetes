@@ -1,8 +1,8 @@
-.. _kubernetes-operator:
+.. _atlas-kubernetes-operator:
 
-===================
-kubernetes operator
-===================
+=========================
+atlas kubernetes operator
+=========================
 
 .. default-domain:: mongodb
 
@@ -35,11 +35,11 @@ Options
 Related Commands
 ----------------
 
-* :ref:`kubernetes-operator-install` - Install Atlas Kubernetes Operator to a cluster.
+* :ref:`atlas-kubernetes-operator-install` - Install Atlas Kubernetes Operator to a cluster.
 
 
 .. toctree::
    :titlesonly:
 
-   install </command/kubernetes-operator-install>
+   install </command/atlas-kubernetes-operator-install>
 

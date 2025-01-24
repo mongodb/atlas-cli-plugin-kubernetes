@@ -1,8 +1,8 @@
-.. _kubernetes:
+.. _atlas-kubernetes:
 
-==========
-kubernetes
-==========
+================
+atlas kubernetes
+================
 
 .. default-domain:: mongodb
 
@@ -35,13 +35,13 @@ Options
 Related Commands
 ----------------
 
-* :ref:`kubernetes-config` - Manage Kubernetes configuration resources.
-* :ref:`kubernetes-operator` - Manage Atlas Kubernetes Operator.
+* :ref:`atlas-kubernetes-config` - Manage Kubernetes configuration resources.
+* :ref:`atlas-kubernetes-operator` - Manage Atlas Kubernetes Operator.
 
 
 .. toctree::
    :titlesonly:
 
-   config </command/kubernetes-config>
-   operator </command/kubernetes-operator>
+   config </command/atlas-kubernetes-config>
+   operator </command/atlas-kubernetes-operator>
 

@@ -1,8 +1,8 @@
-.. _kubernetes-config-generate:
+.. _atlas-kubernetes-config-generate:
 
-==========================
-kubernetes config generate
-==========================
+================================
+atlas kubernetes config generate
+================================
 
 .. default-domain:: mongodb
 
@@ -22,7 +22,7 @@ Syntax
 .. code-block::
    :caption: Command Syntax
 
-   kubernetes config generate [options]
+   atlas kubernetes config generate [options]
 
 .. Code end marker, please don't delete this comment
 

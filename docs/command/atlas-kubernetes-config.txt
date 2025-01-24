@@ -1,8 +1,8 @@
-.. _kubernetes-config:
+.. _atlas-kubernetes-config:
 
-=================
-kubernetes config
-=================
+=======================
+atlas kubernetes config
+=======================
 
 .. default-domain:: mongodb
 
@@ -35,13 +35,13 @@ Options
 Related Commands
 ----------------
 
-* :ref:`kubernetes-config-apply` - Generate and apply Kubernetes configuration resources for use with Atlas Kubernetes Operator.
-* :ref:`kubernetes-config-generate` - Generate Kubernetes configuration resources for use with Atlas Kubernetes Operator.
+* :ref:`atlas-kubernetes-config-apply` - Generate and apply Kubernetes configuration resources for use with Atlas Kubernetes Operator.
+* :ref:`atlas-kubernetes-config-generate` - Generate Kubernetes configuration resources for use with Atlas Kubernetes Operator.
 
 
 .. toctree::
    :titlesonly:
 
-   apply </command/kubernetes-config-apply>
-   generate </command/kubernetes-config-generate>
+   apply </command/atlas-kubernetes-config-apply>
+   generate </command/atlas-kubernetes-config-generate>
 
