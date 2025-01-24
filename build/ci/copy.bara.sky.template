@@ -50,6 +50,5 @@ core.workflow(
     authoring = authoring.pass_thru(author),
     transformations = [
         core.move("docs/command", "source/command"),
-        core.rename(".txt", ".rst", suffix = True)
     ],
 )
