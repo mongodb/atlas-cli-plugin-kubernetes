@@ -22,7 +22,7 @@ core.workflow(
         body = "This is a test, please close this PR. Copies Atlas CLI Kubernetes Plugin commands from the source repo. See the attached Netlify comment for build log and staging.",
         integrates = [],
     ),
-    origin_files = glob(["docs/command/atlas-kubernetes**"]),
+    origin_files = glob(["docs/command/**"]),
     destination_files = glob(["source/includes/command/atlas-kubernetes**"]),
     authoring = authoring.pass_thru(author),
     transformations = [
@@ -45,7 +45,7 @@ core.workflow(
         body = "This is a test, please close this PR. Copies Atlas CLI Kubernetes Plugin commands from the source repo. See the attached Netlify comment for build log and staging.",
         integrates = [],
     ),
-    origin_files = glob(["docs/command/atlas-kubernetes**"]),
+    origin_files = glob(["docs/command/**"]),
     destination_files = glob(["source/command/atlas-kubernetes**"]),
     authoring = authoring.pass_thru(author),
     transformations = [
