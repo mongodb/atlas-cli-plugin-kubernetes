@@ -1,8 +1,8 @@
-.. _kubernetes-config-apply:
+.. _atlas-kubernetes-config-apply:
 
-=======================
-kubernetes config apply
-=======================
+=============================
+atlas kubernetes config apply
+=============================
 
 .. default-domain:: mongodb
 
@@ -22,7 +22,7 @@ Syntax
 .. code-block::
    :caption: Command Syntax
 
-   kubernetes config apply [options]
+   atlas kubernetes config apply [options]
 
 .. Code end marker, please don't delete this comment
 
@@ -69,6 +69,22 @@ Options
      - string
      - false
      - Namespaces to use for generated kubernetes entities
+
+Inherited Options
+-----------------
+
+.. list-table::
+   :header-rows: 1
+   :widths: 20 10 10 60
+
+   * - Name
+     - Type
+     - Required
+     - Description
+   * - -P, --profile
+     - string
+     - false
+     - Name of the profile to use from your configuration file. To learn about profiles for the Atlas CLI, see https://dochub.mongodb.org/core/atlas-cli-save-connection-settings.
 
 Examples
 --------

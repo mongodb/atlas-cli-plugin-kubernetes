@@ -41,11 +41,35 @@ func main() {
 		log.Fatal(err)
 	}
 
-	pluginBuilder := kubernetes.Builder()
+	pluginBuilder := mockAtlasBuilder()
 
 	setDisableAutoGenTag(pluginBuilder)
 
 	if err := cobra2snooty.GenTreeDocs(pluginBuilder, "./docs/command"); err != nil {
 		log.Fatal(err)
 	}
+
+	filePath := "./docs/command/atlas.txt"
+
+	err := os.Remove(filePath)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+}
+
+// mockAtlasBuilder provides a root command to the kubernetes tasks.
+// This ensures that docs generated follow the same structure as in
+// AtlasCLI.
+func mockAtlasBuilder() *cobra.Command {
+	const use = "atlas"
+
+	cmd := &cobra.Command{
+		Use: use,
+	}
+
+	cmd.AddCommand(kubernetes.Builder())
+	// PersistentFlags used to generate 'Inherited Options'
+	cmd.PersistentFlags().StringP("profile", "P", "", "Name of the profile to use from your configuration file. To learn about profiles for the Atlas CLI, see https://dochub.mongodb.org/core/atlas-cli-save-connection-settings.")
+	return cmd
 }
