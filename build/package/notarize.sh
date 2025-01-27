@@ -16,7 +16,7 @@
 
 set -Eeou pipefail
 
-# linux_notarize generates the detached sign of the Linux binaries via garasign-gpg.
+# notarize generates the detached sign of all packages via garasign-gpg.
 # This depends on binaries being generated in a goreleaser manner and gon being set up.
 # goreleaser should already take care of calling this script as a part of a custom publisher.
 

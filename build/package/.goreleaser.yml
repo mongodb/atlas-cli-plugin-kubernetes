@@ -6,7 +6,7 @@ version: 2
 before:
   hooks:
     - go mod tidy
-    - curl https://pgp.mongodb.com/atlas-cli.asc -o atlas-cli.asc ## TODO download sig pub keykey
+    - curl https://pgp.mongodb.com/atlas-cli.asc -o atlas-cli.asc
 
 builds:
   - <<: &build_defaults
@@ -23,11 +23,6 @@ builds:
     id: macos
     goos: [darwin]
     goarch: [amd64,arm64]
-    # hooks:
-    #   # This will notarize Apple binaries and replace goreleaser bins with the notarized ones
-    #   post:
-    #     - cmd: ./build/package/mac_notarize.sh
-    #       output: true
   - <<: *build_defaults
     id: windows
     goos: [windows]
@@ -74,27 +69,13 @@ checksum:
 signs:
   - id: all_artifacts
     signature: "${artifact}.sig"
-    cmd: "./build/package/linux_notarize.sh"
+    cmd: "./build/package/notarize.sh"
     ids:
       - linux
       - macos
       - windows
     artifacts: all
     output: true
-  # - id: macos_artifacts
-  #   signature: "${artifact}.sig"
-  #   cmd: "./build/package/macos_notarize.sh" ## TODO actually sign package not binary
-  #   ids:
-  #     - macos
-  #   artifacts: all
-  #   output: true
-  # - id: windows_artifacts
-  #   signature: "${artifact}.sig"
-  #   cmd: "./build/package/windows_notarize.sh" ## TODO actually sign package not binary
-  #   ids:
-  #     - windows
-  #   artifacts: all
-  #   output: true
 release:
   prerelease: auto
   name_template: "Atlas CLI Plugin Kubernetes v{{.Version}}"
