@@ -16,7 +16,7 @@ require (
 	github.com/mongodb-labs/cobra2snooty v0.18.2
 	github.com/mongodb/atlas-cli-core v0.0.0-20250102164103-49387c8ee633
 	github.com/mongodb/mongodb-atlas-kubernetes/v2 v2.6.1
-	github.com/spf13/afero v1.11.0
+	github.com/spf13/afero v1.12.0
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/viper v1.19.0
 	github.com/stretchr/testify v1.10.0
