@@ -17,6 +17,10 @@
 set -Eeou pipefail
 
 export GOROOT="${GOROOT:?}"
+
+export NOTARY_SERVICE_URL=${notary_service_url:?}
+export MACOS_NOTARY_KEY=${notary_service_key_id:?}
+export MACOS_NOTARY_SECRET=${notary_service_secret:?}
 export GORELEASER_KEY=${goreleaser_key:?}
 export VERSION_GIT=${version:?}
 VERSION=$(git tag --list 'v*' --sort=-taggerdate | head -1 | cut -d 'v' -f 2)
@@ -28,3 +32,12 @@ make generate-all-manifests
 
 # avoid race conditions on the notarization step by using `-p 1`
 ./bin/goreleaser release --config "build/package/.goreleaser.yml" --clean -p 1
+
+# # check that the notarization service signed the mac binaries
+# SIGNED_FILE_NAME=atlas-cli-plugin-kubernetes_macos_signed.zip
+# if [[ -f "dist/$SIGNED_FILE_NAME" ]]; then
+# 	echo "$SIGNED_FILE_NAME exists. The Mac notarization service has run."
+# else
+# 	echo "ERROR: $SIGNED_FILE_NAME does not exist. The Mac notarization service has not run."
+# 	exit 1 # ERROR
+# fi

@@ -53,6 +53,18 @@ functions:
           set -Eeou pipefail
 
           curl -sfL ${goreleaser_pro_tar_gz} | tar zx
+  # "install macos notarization service":
+  #   - command: shell.exec
+  #     type: setup
+  #     params:
+  #       working_dir: src/github.com/mongodb/atlas-cli-plugin-kubernetes
+  #       include_expansions_in_env:
+  #         - notary_service_url
+  #       script: |
+  #         set -Eeou pipefail
+  #         curl "${notary_service_url}" --output macos-notary.zip
+  #         unzip -u macos-notary.zip
+  #         chmod 755 ./linux_amd64/macnotary
   "generate notices":
     - command: subprocess.exec
       type: test
@@ -69,10 +81,17 @@ functions:
         <<: *go_options
         env:
           <<: *go_env
+          ARTIFACTORY_USERNAME: ${artifactory_username}
+          ARTIFACTORY_PASSWORD: ${artifactory_password}
+          GRS_USERNAME: ${garasign_username}
+          GRS_PASSWORD: ${garasign_password}
           GITHUB_TOKEN: ${github_token}
         include_expansions_in_env:
           - go_base_path
           - workdir
+          - notary_service_key_id
+          - notary_service_secret
+          - notary_service_url
           - goreleaser_key
           - version
         binary: build/package/package.sh
@@ -120,6 +139,7 @@ tasks:
     commands:
       - func: "generate notices"
       - func: "install goreleaser"
+      # - func: "install macos notarization service"
       - func: "install gh-token"
       - func: "package"
   - name: copybara
@@ -149,7 +169,7 @@ tasks:
 buildvariants:
   - name: release
     display_name: "Release AtlasCLI Plugin Kubernetes (goreleaser)"
-    git_tag_only: true
+    # git_tag_only: true
     run_on:
       - rhel90-small
     expansions:
