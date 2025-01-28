@@ -20,9 +20,9 @@ set -Eeou pipefail
 # This depends on binaries being generated in a goreleaser manner and gon being set up.
 # goreleaser should already take care of calling this script as a hook.
 
-if [[ -f "./dist/macos_darwin_amd64_v1/bin/atlas-cli-plugin-kubernetes" && -f "./dist/macos_darwin_arm64/bin/atlas-cli-plugin-kubernetes" && ! -f "./dist/atlas-cli-plugin-kubernetes_macos_signed.zip" ]]; then
+if [[ -f "./dist/macos_darwin_amd64_v1/atlas-cli-plugin-kubernetes" && -f "./dist/macos_darwin_arm64/atlas-cli-plugin-kubernetes" && ! -f "./dist/atlas-cli-plugin-kubernetes_macos_signed.zip" ]]; then
 	echo "notarizing macOs binaries"
-	zip -r ./dist/atlas-cli-plugin-kubernetes_amd64_arm64_bin.zip ./dist/macos_darwin_amd64_v1/bin/atlas-cli-plugin-kubernetes ./dist/macos_darwin_arm64/bin/atlas-cli-plugin-kubernetes # The Notarization Service takes an archive as input
+	zip -r ./dist/atlas-cli-plugin-kubernetes_amd64_arm64_bin.zip ./dist/macos_darwin_amd64_v1/atlas-cli-plugin-kubernetes ./dist/macos_darwin_arm64/atlas-cli-plugin-kubernetes # The Notarization Service takes an archive as input
 	./linux_amd64/macnotary \
 		-f ./dist/atlas-cli-plugin-kubernetes_amd64_arm64_bin.zip \
 		-m notarizeAndSign -u https://dev.macos-notary.build.10gen.cc/api \
@@ -30,6 +30,6 @@ if [[ -f "./dist/macos_darwin_amd64_v1/bin/atlas-cli-plugin-kubernetes" && -f ".
 		-o ./dist/atlas-cli-plugin-kubernetes_macos_signed.zip
 
 	echo "replacing original files"
-	unzip -oj ./dist/atlas-cli-plugin-kubernetes_macos_signed.zip dist/macos_darwin_amd64_v1/bin/atlas-cli-plugin-kubernetes -d ./dist/macos_darwin_amd64_v1/bin/
-	unzip -oj ./dist/atlas-cli-plugin-kubernetes_macos_signed.zip dist/macos_darwin_arm64/bin/atlas-cli-plugin-kubernetes -d ./dist/macos_darwin_arm64/bin/
+	unzip -oj ./dist/atlas-cli-plugin-kubernetes_macos_signed.zip dist/macos_darwin_amd64_v1/atlas-cli-plugin-kubernetes -d ./dist/macos_darwin_amd64_v1/
+	unzip -oj ./dist/atlas-cli-plugin-kubernetes_macos_signed.zip dist/macos_darwin_arm64/atlas-cli-plugin-kubernetes -d ./dist/macos_darwin_arm64/
 fi
