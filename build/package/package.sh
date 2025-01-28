@@ -32,3 +32,12 @@ make generate-all-manifests
 
 # avoid race conditions on the notarization step by using `-p 1`
 ./bin/goreleaser release --config "build/package/.goreleaser.yml" --clean -p 1
+
+# check that the notarization service signed the mac binaries
+SIGNED_FILE_NAME=mongodb-atlas-cli_macos_signed.zip
+if [[ -f "dist/$SIGNED_FILE_NAME" ]]; then
+	echo "$SIGNED_FILE_NAME exists. The Mac notarization service has run."
+else
+	echo "ERROR: $SIGNED_FILE_NAME does not exist. The Mac notarization service has not run."
+	exit 1 # ERROR
+fi
