@@ -85,6 +85,7 @@ functions:
           ARTIFACTORY_PASSWORD: ${artifactory_password}
           GRS_USERNAME: ${garasign_username}
           GRS_PASSWORD: ${garasign_password}
+          AUTHENTICODE_KEY_NAME: ${authenticode_key_name}
           GITHUB_TOKEN: ${github_token}
         include_expansions_in_env:
           - go_base_path
