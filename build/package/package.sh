@@ -34,7 +34,7 @@ make generate-all-manifests
 ./bin/goreleaser release --config "build/package/.goreleaser.yml" --clean -p 1
 
 # check that the notarization service signed the mac binaries
-SIGNED_FILE_NAME=mongodb-atlas-cli_macos_signed.zip
+SIGNED_FILE_NAME=atlas-cli-plugin-kubernetes_macos_signed.zip
 if [[ -f "dist/$SIGNED_FILE_NAME" ]]; then
 	echo "$SIGNED_FILE_NAME exists. The Mac notarization service has run."
 else
