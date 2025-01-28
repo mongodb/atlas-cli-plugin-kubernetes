@@ -69,10 +69,17 @@ functions:
         <<: *go_options
         env:
           <<: *go_env
+          ARTIFACTORY_USERNAME: ${artifactory_username}
+          ARTIFACTORY_PASSWORD: ${artifactory_password}
+          GRS_USERNAME: ${garasign_username}
+          GRS_PASSWORD: ${garasign_password}
           GITHUB_TOKEN: ${github_token}
         include_expansions_in_env:
           - go_base_path
           - workdir
+          - notary_service_key_id
+          - notary_service_secret
+          - notary_service_url
           - goreleaser_key
           - version
         binary: build/package/package.sh
