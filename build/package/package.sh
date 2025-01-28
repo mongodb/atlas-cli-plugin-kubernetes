@@ -17,6 +17,10 @@
 set -Eeou pipefail
 
 export GOROOT="${GOROOT:?}"
+
+export NOTARY_SERVICE_URL=${notary_service_url:?}
+export MACOS_NOTARY_KEY=${notary_service_key_id:?}
+export MACOS_NOTARY_SECRET=${notary_service_secret:?}
 export GORELEASER_KEY=${goreleaser_key:?}
 export VERSION_GIT=${version:?}
 VERSION=$(git tag --list 'v*' --sort=-taggerdate | head -1 | cut -d 'v' -f 2)

@@ -15,5 +15,6 @@ git push origin "v1.0.0"
 
 This will do the following things:
 1. The [evergreen](build/ci/release.yml) release task will run after a tag event from main.
-2. If everything goes smoothly, the release will be published in the [releases page](https://github.com/mongodb/atlas-cli-plugin-kubernetes/releases).
-3. The [evergreen](build/ci/release.yml) copybara task will automatically open a PR on docs repositories with any document changes for the docs team to review and merge. 
+2. This task signs all packages and includes both them and the public key in the release.
+3. If everything goes smoothly, the release will be published in the [releases page](https://github.com/mongodb/atlas-cli-plugin-kubernetes/releases).
+4. The [evergreen](build/ci/release.yml) copybara task will automatically open a PR on docs repositories with any document changes for the docs team to review and merge. 

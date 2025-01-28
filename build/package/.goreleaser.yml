@@ -3,6 +3,11 @@ project_name: atlas-cli-plugin-kubernetes
 
 version: 2
 
+before:
+  hooks:
+    - go mod tidy
+    - curl https://pgp.mongodb.com/atlas-cli.asc -o atlas-cli.asc
+
 builds:
   - <<: &build_defaults
       env:
@@ -35,7 +40,7 @@ gomod: # https://goreleaser.com/customization/verifiable_builds/
   mod: mod
 
 archives:
-- id: linux_archives
+- id: linux
   name_template: atlas-cli-plugin-kubernetes_{{ .Version }}_{{ .Os }}_{{- if eq .Arch "amd64" }}x86_64{{- else }}{{ .Arch }}{{ end }}
   builds: [linux]
   <<: &archive_defaults
@@ -61,6 +66,18 @@ archives:
   format: zip
 checksum:
   name_template: checksums.txt
+signs:
+  - id: all_artifacts
+    signature: "${artifact}.sig"
+    cmd: "./build/package/notarize.sh"
+    ids:
+      - linux
+      - macos
+      - windows
+    artifacts: all
+    output: true
 release:
   prerelease: auto
   name_template: "Atlas CLI Plugin Kubernetes v{{.Version}}"
+  extra_files:
+    - glob: ./*.asc
