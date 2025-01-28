@@ -20,7 +20,7 @@ VERSION_GIT="$(git tag --list "v*" --sort=taggerdate | tail -1 | cut -d "v" -f 2
 
 EXE_FILE="./dist/windows_windows_amd64_v1/atlas-cli-plugin-kubernetes.exe"
 
-if [[ -f "$EXE_FILE"]]; then
+if [[ -f "$EXE_FILE" ]]; then
 	echo "${ARTIFACTORY_PASSWORD}" | podman login --password-stdin --username "${ARTIFACTORY_USERNAME}" artifactory.corp.mongodb.com
 
 	echo "GRS_CONFIG_USER1_USERNAME=${GRS_USERNAME}" > .env
