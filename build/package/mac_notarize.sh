@@ -26,7 +26,7 @@ if [[ -f "./dist/macos_darwin_amd64_v1/atlas-cli-plugin-kubernetes" && -f "./dis
 	./linux_amd64/macnotary \
 		-f ./dist/atlas-cli-plugin-kubernetes_amd64_arm64_bin.zip \
 		-m notarizeAndSign -u https://dev.macos-notary.build.10gen.cc/api \
-		-b com.mongodb.atlas-cli-plugin-kubernetes \ 
+		-b com.mongodb.atlas-cli-plugin-kubernetes \
 		-o ./dist/atlas-cli-plugin-kubernetes_macos_signed.zip
 
 	echo "replacing original files"
