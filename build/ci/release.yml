@@ -57,7 +57,7 @@ functions:
     - command: shell.exec
       type: setup
       params:
-        working_dir: src/github.com/mongodb/mongodb-atlas-cli
+        working_dir: src/github.com/mongodb/atlas-cli-plugin-kubernetes
         include_expansions_in_env:
           - notary_service_url
         script: |
