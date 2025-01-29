@@ -53,6 +53,18 @@ functions:
           set -Eeou pipefail
 
           curl -sfL ${goreleaser_pro_tar_gz} | tar zx
+  "install macos notarization service":
+    - command: shell.exec
+      type: setup
+      params:
+        working_dir: src/github.com/mongodb/atlas-cli-plugin-kubernetes
+        include_expansions_in_env:
+          - notary_service_url
+        script: |
+          set -Eeou pipefail
+          curl "${notary_service_url}" --output macos-notary.zip
+          unzip -u macos-notary.zip
+          chmod 755 ./linux_amd64/macnotary
   "generate notices":
     - command: subprocess.exec
       type: test
@@ -73,6 +85,7 @@ functions:
           ARTIFACTORY_PASSWORD: ${artifactory_password}
           GRS_USERNAME: ${garasign_username}
           GRS_PASSWORD: ${garasign_password}
+          AUTHENTICODE_KEY_NAME: ${authenticode_key_name}
           GITHUB_TOKEN: ${github_token}
         include_expansions_in_env:
           - go_base_path
@@ -127,6 +140,7 @@ tasks:
     commands:
       - func: "generate notices"
       - func: "install goreleaser"
+      - func: "install macos notarization service"
       - func: "install gh-token"
       - func: "package"
   - name: copybara
