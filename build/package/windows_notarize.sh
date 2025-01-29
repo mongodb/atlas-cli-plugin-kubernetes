@@ -16,8 +16,6 @@
 
 set -Eeou pipefail
 
-VERSION_GIT="$(git tag --list "v*" --sort=taggerdate | tail -1 | cut -d "v" -f 2)"
-
 EXE_FILE="./dist/windows_windows_amd64_v1/atlas-cli-plugin-kubernetes.exe"
 
 if [[ -f "$EXE_FILE" ]]; then

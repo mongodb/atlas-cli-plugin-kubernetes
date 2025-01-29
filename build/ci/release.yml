@@ -134,9 +134,9 @@ functions:
 tasks:
   - name: package_goreleaser
     tags: ["packaging"]
-    # depends_on:
-    #   - name: compile
-    #     variant: "code_health"
+    depends_on:
+      - name: compile
+        variant: "code_health"
     commands:
       - func: "generate notices"
       - func: "install goreleaser"
@@ -170,7 +170,7 @@ tasks:
 buildvariants:
   - name: release
     display_name: "Release AtlasCLI Plugin Kubernetes (goreleaser)"
-    # git_tag_only: true
+    git_tag_only: true
     run_on:
       - rhel90-small
     expansions:
