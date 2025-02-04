@@ -77,24 +77,13 @@ functions:
           - MCLI_SERVICE
           - TEST_CMD
           - E2E_TAGS
-          - E2E_TEST_BUCKET
-          - E2E_CLOUD_ROLE_ID
           - MCLI_OPS_MANAGER_URL
           - OM_VERSION
           - LOCAL_KEY
           - KMIP_CA
           - KMIP_CERT
-          - GCP_CREDENTIALS
-          - AWS_ACCESS_KEY
-          - AWS_SECRET_ACCESS_KEY
-          - AZURE_TENANT_ID
-          - AZURE_CLIENT_ID
-          - AZURE_CLIENT_SECRET
           - E2E_TIMEOUT
-          - E2E_SERVERLESS_INSTANCE_NAME
-          - E2E_FLEX_INSTANCE_NAME
           - E2E_PARALLEL
-          - IDENTITY_PROVIDER_ID
           - revision
         env:
           <<: *go_env
