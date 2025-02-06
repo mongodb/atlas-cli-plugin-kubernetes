@@ -41,7 +41,7 @@ func TestWithCommandPath(t *testing.T) {
 	rootCmd.AddCommand(testCmd)
 
 	e := newEvent(withCommandPath(testCmd))
-	assert.Equal(t, "root-test", e.Properties["command"])
+	assert.Equal(t, "atlasroot-test", e.Properties["command"])
 }
 
 func TestWithCommandPathAndAlias(t *testing.T) {
@@ -58,7 +58,7 @@ func TestWithCommandPathAndAlias(t *testing.T) {
 	e := newEvent(withCommandPath(calledCmd))
 
 	a := assert.New(t)
-	a.Equal("root-test", e.Properties["command"])
+	a.Equal("atlasroot-test", e.Properties["command"])
 	a.Equal("t", e.Properties["alias"])
 }
 
