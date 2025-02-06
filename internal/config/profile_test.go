@@ -17,11 +17,14 @@
 package config
 
 import (
+	"fmt"
 	"os"
 	"path"
 	"testing"
 
+	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestCLIConfigHome(t *testing.T) {
@@ -186,6 +189,82 @@ func Test_getConfigHostname(t *testing.T) {
 			actualHostName := getConfigHostnameFromEnvs()
 
 			assert.Equal(t, expectedHostName, actualHostName)
+		})
+	}
+}
+
+func TestProfile_Rename(t *testing.T) {
+	tests := []struct {
+		name    string
+		wantErr require.ErrorAssertionFunc
+	}{
+		{
+			name:    "default",
+			wantErr: require.NoError,
+		},
+		{
+			name:    "default-123",
+			wantErr: require.NoError,
+		},
+		{
+			name:    "default-test",
+			wantErr: require.NoError,
+		},
+		{
+			name:    "default.123",
+			wantErr: require.Error,
+		},
+		{
+			name:    "default.test",
+			wantErr: require.Error,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			p := &Profile{
+				name: tt.name,
+				fs:   afero.NewMemMapFs(),
+			}
+			tt.wantErr(t, p.Rename(tt.name), fmt.Sprintf("Rename(%v)", tt.name))
+		})
+	}
+}
+
+func TestProfile_SetName(t *testing.T) {
+	tests := []struct {
+		name    string
+		wantErr require.ErrorAssertionFunc
+	}{
+		{
+			name:    "default",
+			wantErr: require.NoError,
+		},
+		{
+			name:    "default-123",
+			wantErr: require.NoError,
+		},
+		{
+			name:    "default-test",
+			wantErr: require.NoError,
+		},
+		{
+			name:    "default.123",
+			wantErr: require.Error,
+		},
+		{
+			name:    "default.test",
+			wantErr: require.Error,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			p := &Profile{
+				name: tt.name,
+				fs:   afero.NewMemMapFs(),
+			}
+			tt.wantErr(t, p.SetName(tt.name), fmt.Sprintf("SetName(%v)", tt.name))
 		})
 	}
 }

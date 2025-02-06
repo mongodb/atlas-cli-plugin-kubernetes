@@ -18,6 +18,7 @@ const (
 	OrgID                                 = "orgId"                         // OrgID flag to use an Organization ID
 	ProjectID                             = "projectId"                     // ProjectID flag to use a project ID
 	ClusterName                           = "clusterName"                   // ClusterName flag
+	Output                                = "output"                        // Output flag
 	OperatorIncludeSecrets                = "includeSecrets"                // OperatorIncludeSecrets flag
 	OperatorTargetNamespace               = "targetNamespace"               // OperatorTargetNamespace flag
 	OperatorWatchNamespace                = "watchNamespace"                // OperatorTargetNamespace flag
