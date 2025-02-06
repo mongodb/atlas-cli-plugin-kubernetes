@@ -15,11 +15,16 @@
 package kubernetes
 
 import (
+	"errors"
 	"log"
+	"os"
+	"syscall"
 
 	coreConfig "github.com/mongodb/atlas-cli-core/config"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/cli/kubernetes/config"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/cli/kubernetes/operator"
+	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/sighandle"
+	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/telemetry"
 
 	"github.com/spf13/cobra"
 )
@@ -31,14 +36,29 @@ func Builder() *cobra.Command {
 		Use:   use,
 		Short: "Manage Kubernetes resources.",
 		Long:  `This command provides access to Kubernetes features within Atlas.`,
-		PersistentPreRun: func(_ *cobra.Command, _ []string) {
+		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			err := coreConfig.LoadAtlasCLIConfig()
 			if err != nil {
 				log.Fatalf("Failed to load Atlas CLI config: %v", err)
 			}
+			telemetry.StartTrackingCommand(cmd, args)
+			handleSignal()
+		},
+		PersistentPostRun: func(_ *cobra.Command, _ []string) {
+			telemetry.FinishTrackingCommand(telemetry.TrackOptions{})
 		},
 	}
 
 	cmd.AddCommand(config.Builder(), operator.Builder())
 	return cmd
+}
+
+func handleSignal() {
+	sighandle.Notify(func(sig os.Signal) {
+		telemetry.FinishTrackingCommand(telemetry.TrackOptions{
+			Err:    errors.New(sig.String()),
+			Signal: sig.String(),
+		})
+		os.Exit(1)
+	}, os.Interrupt, syscall.SIGTERM)
 }

@@ -112,6 +112,13 @@ func WithBaseURL(configURL string) Option {
 	}
 }
 
+func Telemetry() Option {
+	return func(s *Store) error {
+		s.telemetry = true
+		return nil
+	}
+}
+
 // CredentialsGetter interface for how to get credentials when Store must be authenticated.
 type CredentialsGetter interface {
 	PublicAPIKey() string
@@ -252,6 +259,15 @@ func baseURLOption(c ServiceGetter) Option {
 		return WithBaseURL(cloudGovServiceURL)
 	}
 	return nil
+}
+
+// UnauthenticatedPreset is the default Option when connecting to the public API without authentication.
+func UnauthenticatedPreset(c ServiceGetter) Option {
+	options := []Option{Service(c.Service())}
+	if option := baseURLOption(c); option != nil {
+		options = append(options, option)
+	}
+	return Options(options...)
 }
 
 // New returns a new Store based on the given list of Option.
