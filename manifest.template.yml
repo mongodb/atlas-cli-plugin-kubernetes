@@ -2,9 +2,9 @@ name: atlas-cli-plugin-kubernetes
 description: Root command of the Kubernetes plugin to manage Kubernetes resources.
 version: $VERSION
 github:
-    owner: $GITHUB_REPOSITORY_OWNER
-    name: $GITHUB_REPOSITORY_NAME
+    owner: mongodb
+    name: atlas-cli-plugin-kubernetes
 binary: atlas-cli-plugin-kubernetes
 commands: 
     kubernetes: 
-        description: This command provides access to Kubernetes features within Atlas.
+        description: Manage Kubernetes resources.

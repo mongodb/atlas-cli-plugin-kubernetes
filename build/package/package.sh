@@ -25,8 +25,6 @@ export GORELEASER_KEY=${goreleaser_key:?}
 export VERSION_GIT=${version:?}
 VERSION=$(git tag --list 'v*' --sort=-taggerdate | head -1 | cut -d 'v' -f 2)
 export VERSION
-export GITHUB_REPOSITORY_OWNER="mongodb"
-export GITHUB_REPOSITORY_NAME="atlas-cli-plugin-kubernetes"
 
 make generate-all-manifests
 
