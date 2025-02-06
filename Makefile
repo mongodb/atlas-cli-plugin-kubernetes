@@ -4,11 +4,11 @@ GOCOVERDIR?=$(abspath cov)
 
 PLUGIN_SOURCE_FILES?=./cmd/plugin
 ifeq ($(OS),Windows_NT)
-	PLUGIN_BINARY_NAME=atlas_cli_plugin_kubernetes.exe
+	PLUGIN_BINARY_NAME=atlas-cli-plugin-kubernetes.exe
 	E2E_ATLASCLI_BINARY_PATH=../bin/atlas.exe
 else
     ATLAS_VERSION?=$(shell git describe --match "atlascli/v*" | cut -d "v" -f 2)
-	PLUGIN_BINARY_NAME=atlas_cli_plugin_kubernetes
+	PLUGIN_BINARY_NAME=atlas-cli-plugin-kubernetes
 	E2E_ATLASCLI_BINARY_PATH=../bin/atlas
 endif
 PLUGIN_BINARY_PATH=./bin/$(PLUGIN_BINARY_NAME)
