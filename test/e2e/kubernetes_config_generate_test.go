@@ -1429,7 +1429,7 @@ func TestProjectWithNetworkPeering(t *testing.T) {
 		resp, err := test.RunAndGetStdOut(cmd)
 		require.NoError(t, err, string(resp))
 		t.Cleanup(func() {
-			deleteAllNetworkPeers(t, cliPath, generator.projectID, gcpEntity)
+			deleteAllNetworkPeers(t, generator.projectID, gcpEntity)
 		})
 		var createdNetworkPeer atlasv2.BaseNetworkPeeringConnectionSettings
 		err = json.Unmarshal(resp, &createdNetworkPeer)

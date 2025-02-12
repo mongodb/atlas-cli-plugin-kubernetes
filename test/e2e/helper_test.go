@@ -501,8 +501,9 @@ func createProjectWithoutAlertSettings(projectName string) (string, error) {
 	return project.GetId(), nil
 }
 
-func deleteAllNetworkPeers(t *testing.T, cliPath, projectID, provider string) {
+func deleteAllNetworkPeers(t *testing.T, projectID, provider string) {
 	t.Helper()
+	cliPath, err := AtlasCLIBin()
 	cmd := exec.Command(cliPath,
 		networkingEntity,
 		networkPeeringEntity,
