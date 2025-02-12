@@ -116,6 +116,10 @@ func InitialSetupWithTeam(t *testing.T) KubernetesConfigGenerateProjectSuite {
 	require.NoError(t, err)
 	s.cliPath = cliPath
 
+	atlasCliPath, err := AtlasCLIBin()
+	require.NoError(t, err)
+	s.atlasCliPath = atlasCliPath
+
 	// always register atlas entities
 	require.NoError(t, akov2.AddToScheme(scheme.Scheme))
 	return s
@@ -321,7 +325,7 @@ func TestExportIPAccessList(t *testing.T) {
 	credentialName := resources.NormalizeAtlasName(s.generator.projectName+credSuffixTest, resources.AtlasNameToKubernetesName())
 
 	// #nosec G204
-	cmd := exec.Command(s.cliPath,
+	cmd := exec.Command(s.atlasCliPath,
 		accessListEntity,
 		"create",
 		expectedSubresource[1].IPAddress,
@@ -335,7 +339,7 @@ func TestExportIPAccessList(t *testing.T) {
 	require.NoError(t, err, string(accessListResp))
 
 	// #nosec G204
-	cmd = exec.Command(s.cliPath,
+	cmd = exec.Command(s.atlasCliPath,
 		accessListEntity,
 		"create",
 		expectedSubresource[0].CIDRBlock,
