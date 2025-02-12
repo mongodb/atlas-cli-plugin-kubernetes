@@ -72,7 +72,7 @@ fuzz-normalizer-test: ## Run fuzz test
 .PHONY: build-debug
 build-debug: ## Generate a binary in ./bin for debugging plugin
 	@echo "==> Building kubernetes plugin binary for debugging"
-	go build -gcflags="all=-N -l" -o ./bin/atlas_cli_plugin_kubernetes ./cmd/plugin
+	go build -gcflags="all=-N -l" -o ./bin/atlas-cli-plugin-kubernetes ./cmd/plugin
 
 .PHONY: e2e-test
 e2e-test: build-debug ## Run E2E tests

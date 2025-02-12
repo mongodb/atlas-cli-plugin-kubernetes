@@ -86,7 +86,7 @@ const (
 	e2eDefaultClusterProvider = "AWS"
 )
 
-func deployServerlessInstanceForProject(projectID string) (string, error) {
+func deployFlexClusterForProject(projectID string) (string, error) {
 	cliPath, err := AtlasCLIBin()
 	if err != nil {
 		return "", err
@@ -95,30 +95,23 @@ func deployServerlessInstanceForProject(projectID string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	tier := e2eTier()
-	region, err := newAvailableRegion(projectID, tier, e2eDefaultClusterProvider)
-	if err != nil {
-		return "", err
-	}
 	args := []string{
-		serverlessEntity,
+		clustersEntity,
 		"create",
 		clusterName,
-		"--region", region,
-		"--provider", e2eDefaultClusterProvider,
+		"--region", "US_EAST_1",
+		"--provider", "AWS",
 	}
-
 	if projectID != "" {
 		args = append(args, "--projectId", projectID)
 	}
 	create := exec.Command(cliPath, args...)
 	create.Env = os.Environ()
 	if resp, err := test.RunAndGetStdOut(create); err != nil {
-		return "", fmt.Errorf("error creating serverless instance %w: %s", err, string(resp))
+		return "", fmt.Errorf("error creating flex cluster (%s): %w - %s", clusterName, err, string(resp))
 	}
-
 	watchArgs := []string{
-		serverlessEntity,
+		clustersEntity,
 		"watch",
 		clusterName,
 	}
@@ -128,51 +121,9 @@ func deployServerlessInstanceForProject(projectID string) (string, error) {
 	watch := exec.Command(cliPath, watchArgs...)
 	watch.Env = os.Environ()
 	if resp, err := test.RunAndGetStdOut(watch); err != nil {
-		return "", fmt.Errorf("error watching serverless instance %w: %s", err, string(resp))
+		return "", fmt.Errorf("error watching cluster %w: %s", err, string(resp))
 	}
 	return clusterName, nil
-}
-
-func watchServerlessInstanceForProject(projectID, clusterName string) error {
-	cliPath, err := AtlasCLIBin()
-	if err != nil {
-		return err
-	}
-
-	watchArgs := []string{
-		serverlessEntity,
-		"watch",
-		clusterName,
-	}
-	if projectID != "" {
-		watchArgs = append(watchArgs, "--projectId", projectID)
-	}
-	watchCmd := exec.Command(cliPath, watchArgs...)
-	watchCmd.Env = os.Environ()
-	if resp, err := test.RunAndGetStdOut(watchCmd); err != nil {
-		return fmt.Errorf("error watching serverless instance %w: %s", err, string(resp))
-	}
-	return nil
-}
-
-func deleteServerlessInstanceForProject(t *testing.T, cliPath, projectID, clusterName string) {
-	t.Helper()
-
-	args := []string{
-		serverlessEntity,
-		"delete",
-		clusterName,
-		"--force",
-	}
-	if projectID != "" {
-		args = append(args, "--projectId", projectID)
-	}
-	deleteCmd := exec.Command(cliPath, args...)
-	deleteCmd.Env = os.Environ()
-	resp, err := test.RunAndGetStdOut(deleteCmd)
-	require.NoError(t, err, string(resp))
-
-	_ = watchServerlessInstanceForProject(projectID, clusterName)
 }
 
 func deployClusterForProject(projectID, tier, mDBVersion string, enableBackup bool) (string, string, error) {
@@ -550,8 +501,9 @@ func createProjectWithoutAlertSettings(projectName string) (string, error) {
 	return project.GetId(), nil
 }
 
-func deleteAllNetworkPeers(t *testing.T, cliPath, projectID, provider string) {
+func deleteAllNetworkPeers(t *testing.T, projectID, provider string) {
 	t.Helper()
+	cliPath, err := AtlasCLIBin()
 	cmd := exec.Command(cliPath,
 		networkingEntity,
 		networkPeeringEntity,

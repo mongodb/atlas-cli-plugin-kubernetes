@@ -1,4 +1,4 @@
-// Copyright 2024 MongoDB Inc
+// Copyright 2025 MongoDB Inc
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
+//go:build unit
 
 //nolint:all
 package project
@@ -162,9 +164,11 @@ func TestBuildCustomRoles(t *testing.T) {
 								},
 							},
 						},
-						ProjectRef: &akov2common.ResourceRefNamespaced{
-							Name:      projectName,
-							Namespace: targetNamespace,
+						ProjectDualReference: akov2.ProjectDualReference{
+							ProjectRef: &akov2common.ResourceRefNamespaced{
+								Name:      projectName,
+								Namespace: targetNamespace,
+							},
 						},
 					},
 					Status: akov2status.AtlasCustomRoleStatus{},
@@ -246,7 +250,9 @@ func TestBuildCustomRoles(t *testing.T) {
 								},
 							},
 						},
-						ExternalProjectIDRef: &akov2.ExternalProjectReference{ID: projectID},
+						ProjectDualReference: akov2.ProjectDualReference{
+							ExternalProjectRef: &akov2.ExternalProjectReference{ID: projectID},
+						},
 					},
 					Status: akov2status.AtlasCustomRoleStatus{},
 				},

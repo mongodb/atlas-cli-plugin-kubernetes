@@ -1,4 +1,4 @@
-// Copyright 2024 MongoDB Inc
+// Copyright 2025 MongoDB Inc
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import (
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator/project"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator/resources"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator/streamsprocessing"
+	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/pointer"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store"
 	"go.mongodb.org/atlas-sdk/v20241113004/admin"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -66,7 +67,6 @@ type Patcher interface {
 
 var (
 	ErrServerless             = errors.New("serverless instance error")
-	ErrClusterNotFound        = errors.New("cluster not found")
 	ErrNoCloudManagerClusters = errors.New("can not get 'advanced clusters' object")
 )
 
@@ -276,6 +276,28 @@ func (e *ConfigExporter) exportProject() ([]runtime.Object, string, error) {
 		}
 	}
 
+	if e.featureValidator.IsResourceSupported(features.ResourceAtlasIPAccessList) {
+		ipAccessList, isEmpty, err := project.BuildIPAccessList(
+			e.dataProvider,
+			project.IPAccessListRequest{
+				ProjectName:         projectData.Project.Name,
+				ProjectID:           e.projectID,
+				TargetNamespace:     e.targetNamespace,
+				Version:             e.operatorVersion,
+				Credentials:         credentialsName,
+				IndependentResource: e.independentResources,
+				Dictionary:          e.dictionaryForAtlasNames,
+			},
+		)
+		if err != nil {
+			return nil, "", err
+		}
+
+		if !isEmpty {
+			r = append(r, ipAccessList)
+		}
+	}
+
 	// DB users
 	usersData, relatedSecrets, err := dbusers.BuildDBUsers(
 		e.dataProvider,
@@ -336,8 +358,16 @@ func (e *ConfigExporter) exportDeployments(projectName string) ([]runtime.Object
 			continue
 		}
 
-		// Try serverless cluster next
-		serverlessCluster, err := deployment.BuildServerlessDeployments(e.dataProvider, e.featureValidator, e.projectID, projectName, deploymentName, e.targetNamespace, e.dictionaryForAtlasNames, e.operatorVersion)
+		// Try flex  cluster next
+		if flexCluster, err := deployment.BuildFlexDeployments(e.dataProvider, e.projectID, projectName, deploymentName, e.targetNamespace, e.dictionaryForAtlasNames, e.operatorVersion); err == nil {
+			if flexCluster != nil {
+				result = append(result, flexCluster)
+			}
+			continue
+		}
+
+		// Try serverless cluster last
+		serverlessCluster, err := deployment.BuildServerlessDeployments(e.dataProvider, e.projectID, projectName, deploymentName, e.targetNamespace, e.dictionaryForAtlasNames, e.operatorVersion)
 		if err == nil {
 			if serverlessCluster != nil {
 				result = append(result, serverlessCluster)
@@ -346,11 +376,33 @@ func (e *ConfigExporter) exportDeployments(projectName string) ([]runtime.Object
 		}
 		return nil, fmt.Errorf("%w: %s(%s), e: %w", ErrServerless, deploymentName, e.projectID, err)
 	}
+
 	return result, nil
 }
 
 func fetchClusterNames(clustersProvider store.AllClustersLister, projectID string) ([]string, error) {
 	result := make([]string, 0, DefaultClustersCount)
+
+	flexResult := make(map[string]struct{}, DefaultClustersCount)
+	flexClusters, err := clustersProvider.ListFlexClusters(
+		&admin.ListFlexClustersApiParams{
+			GroupId:      projectID,
+			ItemsPerPage: pointer.Get(maxClusters),
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, cluster := range flexClusters.GetResults() {
+		if reflect.ValueOf(cluster).IsZero() {
+			continue
+		}
+
+		result = append(result, cluster.GetName())
+		flexResult[cluster.GetName()] = struct{}{}
+	}
+
 	clusters, err := clustersProvider.ProjectClusters(projectID, &store.ListOptions{ItemsPerPage: maxClusters})
 	if err != nil {
 		return nil, err
@@ -364,6 +416,12 @@ func fetchClusterNames(clustersProvider store.AllClustersLister, projectID strin
 		if reflect.ValueOf(cluster).IsZero() {
 			continue
 		}
+
+		// Deduplicate non-migrated instances
+		if _, ok := flexResult[cluster.GetName()]; ok {
+			continue
+		}
+
 		result = append(result, cluster.GetName())
 	}
 
@@ -377,6 +435,11 @@ func fetchClusterNames(clustersProvider store.AllClustersLister, projectID strin
 	}
 
 	for _, cluster := range serverlessInstances.GetResults() {
+		// Deduplicate non-migrated instances
+		if _, ok := flexResult[cluster.GetName()]; ok {
+			continue
+		}
+
 		result = append(result, *cluster.Name)
 	}
 

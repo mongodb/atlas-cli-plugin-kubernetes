@@ -1,4 +1,4 @@
-// Copyright 2022 MongoDB Inc
+// Copyright 2025 MongoDB Inc
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -198,9 +198,11 @@ func TestBuildDBUsers(t *testing.T) {
 				},
 			},
 			Spec: akov2.AtlasDatabaseUserSpec{
-				Project: &akov2common.ResourceRefNamespaced{
-					Name:      resources.NormalizeAtlasName(projectName, dictionary),
-					Namespace: targetNamespace,
+				ProjectDualReference: akov2.ProjectDualReference{
+					ProjectRef: &akov2common.ResourceRefNamespaced{
+						Name:      resources.NormalizeAtlasName(projectName, dictionary),
+						Namespace: targetNamespace,
+					},
 				},
 				DatabaseName:    user.DatabaseName,
 				DeleteAfterDate: user.DeleteAfterDate.Format(timeFormatISO8601),
