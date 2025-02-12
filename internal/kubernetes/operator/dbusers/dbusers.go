@@ -1,4 +1,4 @@
-// Copyright 2022 MongoDB Inc
+// Copyright 2025 MongoDB Inc
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -116,7 +116,7 @@ func setReference(dbUser *akov2.AtlasDatabaseUser, independentResource bool, pro
 		}
 		return dbUser
 	}
-	dbUser.Spec.Project = &akov2common.ResourceRefNamespaced{
+	dbUser.Spec.ProjectRef = &akov2common.ResourceRefNamespaced{
 		Name:      projectName,
 		Namespace: namespace,
 	}

@@ -1,4 +1,4 @@
-// Copyright 2024 MongoDB Inc
+// Copyright 2025 MongoDB Inc
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -84,16 +84,14 @@ func BuildPrivateEndpointCustomResources(
 		}
 
 		if request.IndependentResource {
-			resource.Spec.ExternalProject = &akov2.ExternalProjectReference{
+			resource.Spec.ExternalProjectRef = &akov2.ExternalProjectReference{
 				ID: request.ProjectID,
 			}
-			resource.Spec.LocalCredentialHolder = akoapi.LocalCredentialHolder{
-				ConnectionSecret: &akoapi.LocalObjectReference{
-					Name: resources.NormalizeAtlasName(request.Credentials, request.Dictionary),
-				},
+			resource.Spec.ConnectionSecret = &akoapi.LocalObjectReference{
+				Name: resources.NormalizeAtlasName(request.Credentials, request.Dictionary),
 			}
 		} else {
-			resource.Spec.Project = &akov2common.ResourceRefNamespaced{
+			resource.Spec.ProjectRef = &akov2common.ResourceRefNamespaced{
 				Name:      request.ProjectName,
 				Namespace: request.TargetNamespace,
 			}

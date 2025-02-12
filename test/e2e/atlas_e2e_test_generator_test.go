@@ -40,7 +40,7 @@ type atlasE2ETestGenerator struct {
 	projectName          string
 	clusterName          string
 	clusterRegion        string
-	serverlessName       string
+	flexName             string
 	teamName             string
 	teamID               string
 	teamUser             string
@@ -347,7 +347,7 @@ func deleteKeys(t *testing.T, toDelete map[string]struct{}) {
 	}
 }
 
-func (g *atlasE2ETestGenerator) generateServerlessCluster() {
+func (g *atlasE2ETestGenerator) generateFlexCluster() {
 	g.t.Helper()
 
 	if g.projectID == "" {
@@ -355,16 +355,14 @@ func (g *atlasE2ETestGenerator) generateServerlessCluster() {
 	}
 
 	var err error
-	g.serverlessName, err = deployServerlessInstanceForProject(g.projectID)
+	g.flexName, err = deployFlexClusterForProject(g.projectID)
 	if err != nil {
-		g.t.Errorf("unexpected error deploying serverless instance: %v", err)
+		g.t.Fatalf("unexpected error deploying flex cluster: %v", err)
 	}
-	g.t.Logf("serverlessName=%s", g.serverlessName)
+	g.t.Logf("flexClusterName=%s", g.flexName)
 
 	g.t.Cleanup(func() {
-		cliPath, err := AtlasCLIBin()
-		require.NoError(g.t, err)
-		deleteServerlessInstanceForProject(g.t, cliPath, g.projectID, g.serverlessName)
+		_ = deleteClusterForProject(g.projectID, g.flexName)
 	})
 }
 

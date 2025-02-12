@@ -10,6 +10,7 @@ import (
 	gomock "github.com/golang/mock/gomock"
 	store "github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store"
 	admin "go.mongodb.org/atlas-sdk/v20240530005/admin"
+	admin0 "go.mongodb.org/atlas-sdk/v20241113004/admin"
 )
 
 // MockClusterLister is a mock of ClusterLister interface.
@@ -33,6 +34,21 @@ func NewMockClusterLister(ctrl *gomock.Controller) *MockClusterLister {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockClusterLister) EXPECT() *MockClusterListerMockRecorder {
 	return m.recorder
+}
+
+// ListFlexClusters mocks base method.
+func (m *MockClusterLister) ListFlexClusters(arg0 *admin0.ListFlexClustersApiParams) (*admin0.PaginatedFlexClusters20241113, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListFlexClusters", arg0)
+	ret0, _ := ret[0].(*admin0.PaginatedFlexClusters20241113)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListFlexClusters indicates an expected call of ListFlexClusters.
+func (mr *MockClusterListerMockRecorder) ListFlexClusters(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListFlexClusters", reflect.TypeOf((*MockClusterLister)(nil).ListFlexClusters), arg0)
 }
 
 // ProjectClusters mocks base method.
@@ -86,6 +102,21 @@ func (m *MockClusterDescriber) AtlasCluster(arg0, arg1 string) (*admin.AdvancedC
 func (mr *MockClusterDescriberMockRecorder) AtlasCluster(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AtlasCluster", reflect.TypeOf((*MockClusterDescriber)(nil).AtlasCluster), arg0, arg1)
+}
+
+// FlexCluster mocks base method.
+func (m *MockClusterDescriber) FlexCluster(arg0, arg1 string) (*admin0.FlexClusterDescription20241113, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FlexCluster", arg0, arg1)
+	ret0, _ := ret[0].(*admin0.FlexClusterDescription20241113)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FlexCluster indicates an expected call of FlexCluster.
+func (mr *MockClusterDescriberMockRecorder) FlexCluster(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FlexCluster", reflect.TypeOf((*MockClusterDescriber)(nil).FlexCluster), arg0, arg1)
 }
 
 // MockAtlasClusterConfigurationOptionsDescriber is a mock of AtlasClusterConfigurationOptionsDescriber interface.

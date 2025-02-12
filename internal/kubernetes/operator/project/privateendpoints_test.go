@@ -1,4 +1,4 @@
-// Copyright 2024 MongoDB Inc
+// Copyright 2025 MongoDB Inc
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -84,9 +84,11 @@ func TestBuildPrivateEndpoints(t *testing.T) {
 						},
 					},
 					Spec: akov2.AtlasPrivateEndpointSpec{
-						Project: &akov2common.ResourceRefNamespaced{
-							Name:      projectName,
-							Namespace: targetNamespace,
+						ProjectDualReference: akov2.ProjectDualReference{
+							ProjectRef: &akov2common.ResourceRefNamespaced{
+								Name:      projectName,
+								Namespace: targetNamespace,
+							},
 						},
 						Provider: "AWS",
 						Region:   "US_EAST_1",
@@ -110,9 +112,11 @@ func TestBuildPrivateEndpoints(t *testing.T) {
 						},
 					},
 					Spec: akov2.AtlasPrivateEndpointSpec{
-						Project: &akov2common.ResourceRefNamespaced{
-							Name:      projectName,
-							Namespace: targetNamespace,
+						ProjectDualReference: akov2.ProjectDualReference{
+							ProjectRef: &akov2common.ResourceRefNamespaced{
+								Name:      projectName,
+								Namespace: targetNamespace,
+							},
 						},
 						Provider: "AZURE",
 						Region:   "EUROPE_NORTH",
@@ -136,9 +140,11 @@ func TestBuildPrivateEndpoints(t *testing.T) {
 						},
 					},
 					Spec: akov2.AtlasPrivateEndpointSpec{
-						Project: &akov2common.ResourceRefNamespaced{
-							Name:      projectName,
-							Namespace: targetNamespace,
+						ProjectDualReference: akov2.ProjectDualReference{
+							ProjectRef: &akov2common.ResourceRefNamespaced{
+								Name:      projectName,
+								Namespace: targetNamespace,
+							},
 						},
 						Provider: "GCP",
 						Region:   "SOUTH_AMERICA_EAST_1",
@@ -211,10 +217,10 @@ func TestBuildPrivateEndpoints(t *testing.T) {
 						},
 					},
 					Spec: akov2.AtlasPrivateEndpointSpec{
-						ExternalProject: &akov2.ExternalProjectReference{
-							ID: projectID,
-						},
-						LocalCredentialHolder: akoapi.LocalCredentialHolder{
+						ProjectDualReference: akov2.ProjectDualReference{
+							ExternalProjectRef: &akov2.ExternalProjectReference{
+								ID: projectID,
+							},
 							ConnectionSecret: &akoapi.LocalObjectReference{
 								Name: credentialName,
 							},
@@ -246,10 +252,10 @@ func TestBuildPrivateEndpoints(t *testing.T) {
 						},
 					},
 					Spec: akov2.AtlasPrivateEndpointSpec{
-						ExternalProject: &akov2.ExternalProjectReference{
-							ID: projectID,
-						},
-						LocalCredentialHolder: akoapi.LocalCredentialHolder{
+						ProjectDualReference: akov2.ProjectDualReference{
+							ExternalProjectRef: &akov2.ExternalProjectReference{
+								ID: projectID,
+							},
 							ConnectionSecret: &akoapi.LocalObjectReference{
 								Name: credentialName,
 							},
@@ -282,10 +288,10 @@ func TestBuildPrivateEndpoints(t *testing.T) {
 						},
 					},
 					Spec: akov2.AtlasPrivateEndpointSpec{
-						ExternalProject: &akov2.ExternalProjectReference{
-							ID: projectID,
-						},
-						LocalCredentialHolder: akoapi.LocalCredentialHolder{
+						ProjectDualReference: akov2.ProjectDualReference{
+							ExternalProjectRef: &akov2.ExternalProjectReference{
+								ID: projectID,
+							},
 							ConnectionSecret: &akoapi.LocalObjectReference{
 								Name: credentialName,
 							},
