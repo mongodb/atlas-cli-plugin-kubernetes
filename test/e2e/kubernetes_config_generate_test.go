@@ -98,6 +98,7 @@ type KubernetesConfigGenerateProjectSuite struct {
 	generator       *atlasE2ETestGenerator
 	expectedProject *akov2.AtlasProject
 	cliPath         string
+	atlasCliPath    string
 }
 
 const projectPrefix = "Kubernetes-"
@@ -111,7 +112,7 @@ func InitialSetupWithTeam(t *testing.T) KubernetesConfigGenerateProjectSuite {
 	s.generator.generateEmptyProject(projectPrefix + s.generator.projectName)
 	s.expectedProject = referenceProject(s.generator.projectName, targetNamespace, expectedLabels)
 
-	cliPath, err := AtlasCLIBin()
+	cliPath, err := PluginBin()
 	require.NoError(t, err)
 	s.cliPath = cliPath
 
@@ -127,9 +128,13 @@ func InitialSetup(t *testing.T) KubernetesConfigGenerateProjectSuite {
 	s.generator.generateEmptyProject(projectPrefix + s.generator.projectName)
 	s.expectedProject = referenceProject(s.generator.projectName, targetNamespace, expectedLabels)
 
-	cliPath, err := AtlasCLIBin()
+	cliPath, err := PluginBin()
 	require.NoError(t, err)
 	s.cliPath = cliPath
+
+	atlasCliPath, err := AtlasCLIBin()
+	require.NoError(t, err)
+	s.atlasCliPath = atlasCliPath
 
 	// always register atlas entities
 	require.NoError(t, akov2.AddToScheme(scheme.Scheme))
@@ -177,7 +182,7 @@ func TestExportIndependentOrNot(t *testing.T) {
 			title:                "Exported without independentResources uses Kubernetes references",
 			independentResources: false,
 			expected: []runtime.Object{
-				defaultTestProject(generator.projectName, "", expectedLabels, expectAlertConfigs, nil),
+				defaultTestProject(generator.projectName, "", expectedLabels, expectAlertConfigs),
 				defaultTestAtlasConnSecret(credentialName, ""),
 				defaultTestUser(generator.dbUser, generator.projectName, ""),
 				defaultM0TestCluster(generator.clusterName, generator.clusterRegion, generator.projectName, ""),
@@ -187,7 +192,7 @@ func TestExportIndependentOrNot(t *testing.T) {
 			title:                "Exported with independentResources uses IDs were supported",
 			independentResources: true,
 			expected: []runtime.Object{
-				defaultTestProject(generator.projectName, "", expectedLabels, expectAlertConfigs, nil),
+				defaultTestProject(generator.projectName, "", expectedLabels, expectAlertConfigs),
 				defaultTestAtlasConnSecret(credentialName, ""),
 				defaultTestUserWithID(generator.dbUser, generator.projectName, generator.projectID, "", credentialName),
 				defaultM0TestClusterWithID(
@@ -246,7 +251,10 @@ func TestExportPrivateEndpoint(t *testing.T) {
 			independentResources: false,
 			version:              "2.5.0",
 			expected: []runtime.Object{
-				defaultTestProject(s.generator.projectName, "", map[string]string{features.ResourceVersion: "2.5.0"}, false, expectedPESubresource),
+				expectedWithPrivateEndpoints(
+					defaultTestProject(s.generator.projectName, "", map[string]string{features.ResourceVersion: "2.5.0"}, false),
+					expectedPESubresource,
+				),
 				defaultTestAtlasConnSecret(credentialName, ""),
 			},
 		},
@@ -254,7 +262,7 @@ func TestExportPrivateEndpoint(t *testing.T) {
 			independentResources: false,
 			version:              features.LatestOperatorMajorVersion,
 			expected: []runtime.Object{
-				defaultTestProject(s.generator.projectName, "", expectedLabels, false, nil),
+				defaultTestProject(s.generator.projectName, "", expectedLabels, false),
 				defaultTestAtlasConnSecret(credentialName, ""),
 				defaultPrivateEndpoint(s.generator, false),
 			},
@@ -263,9 +271,120 @@ func TestExportPrivateEndpoint(t *testing.T) {
 			independentResources: true,
 			version:              features.LatestOperatorMajorVersion,
 			expected: []runtime.Object{
-				defaultTestProject(s.generator.projectName, "", expectedLabels, false, nil),
+				defaultTestProject(s.generator.projectName, "", expectedLabels, false),
 				defaultTestAtlasConnSecret(credentialName, ""),
 				defaultPrivateEndpoint(s.generator, true),
+			},
+		},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			operatorVersion := tc.version
+			cmdArgs := []string{
+				"kubernetes",
+				"config",
+				"generate",
+				"--projectId",
+				s.generator.projectID,
+				"--operatorVersion",
+				operatorVersion,
+			}
+			if tc.independentResources {
+				cmdArgs = append(cmdArgs, "--independentResources")
+			}
+			cmd := exec.Command(s.cliPath, cmdArgs...) //nolint:gosec
+			cmd.Env = os.Environ()
+			resp, err := cmd.CombinedOutput()
+			require.NoError(t, err, string(resp))
+
+			var objects []runtime.Object
+			objects, err = getK8SEntities(resp)
+			objects = filtered(objects).byKind(globalKinds...)
+			require.NoError(t, err, "should not fail on decode but got:\n"+string(resp))
+			require.NotEmpty(t, objects)
+			require.Equal(t, tc.expected, objects)
+		})
+	}
+}
+
+func TestExportIPAccessList(t *testing.T) {
+	s := InitialSetup(t)
+
+	expectedSubresource := []akov2project.IPAccessList{
+		{
+			CIDRBlock: "10.1.1.0/24",
+		},
+		{
+			IPAddress: "192.168.100.233",
+		},
+	}
+	credentialName := resources.NormalizeAtlasName(s.generator.projectName+credSuffixTest, resources.AtlasNameToKubernetesName())
+
+	// #nosec G204
+	cmd := exec.Command(s.cliPath,
+		accessListEntity,
+		"create",
+		expectedSubresource[1].IPAddress,
+		"--projectId",
+		s.generator.projectID,
+		"--type",
+		"ipAddress",
+		"-o=json")
+	cmd.Env = os.Environ()
+	accessListResp, err := test.RunAndGetStdOut(cmd)
+	require.NoError(t, err, string(accessListResp))
+
+	// #nosec G204
+	cmd = exec.Command(s.cliPath,
+		accessListEntity,
+		"create",
+		expectedSubresource[0].CIDRBlock,
+		"--projectId",
+		s.generator.projectID,
+		"--type",
+		"cidrBlock",
+		"-o=json")
+	cmd.Env = os.Environ()
+	accessListResp, err = test.RunAndGetStdOut(cmd)
+	require.NoError(t, err, string(accessListResp))
+
+	tests := map[string]struct {
+		independentResources bool
+		version              string
+		expected             []runtime.Object
+	}{
+		"should export sub-resource for version without support for separate resource": {
+			independentResources: false,
+			version:              "2.6.0",
+			expected: []runtime.Object{
+				expectedWithIPAccessList(
+					defaultTestProject(
+						s.generator.projectName,
+						"",
+						map[string]string{features.ResourceVersion: "2.6.0"},
+						false,
+					),
+					expectedSubresource,
+				),
+				defaultTestAtlasConnSecret(credentialName, ""),
+			},
+		},
+		"should export separate resource with internal reference for version with support": {
+			independentResources: false,
+			version:              features.LatestOperatorMajorVersion,
+			expected: []runtime.Object{
+				defaultTestProject(s.generator.projectName, "", expectedLabels, false),
+				defaultTestAtlasConnSecret(credentialName, ""),
+				defaultIPAccessList(s.generator, false),
+			},
+		},
+		"should export separate resource with external reference for version with support": {
+			independentResources: true,
+			version:              features.LatestOperatorMajorVersion,
+			expected: []runtime.Object{
+				defaultTestProject(s.generator.projectName, "", expectedLabels, false),
+				defaultTestAtlasConnSecret(credentialName, ""),
+				defaultIPAccessList(s.generator, true),
 			},
 		},
 	}
@@ -338,6 +457,63 @@ func defaultPrivateEndpoint(generator *atlasE2ETestGenerator, independent bool) 
 	return pe
 }
 
+func expectedWithPrivateEndpoints(p *akov2.AtlasProject, pes []akov2.PrivateEndpoint) *akov2.AtlasProject {
+	p.Spec.PrivateEndpoints = pes
+
+	return p
+}
+
+func defaultIPAccessList(generator *atlasE2ETestGenerator, independent bool) *akov2.AtlasIPAccessList {
+	ial := &akov2.AtlasIPAccessList{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "AtlasIPAccessList",
+			APIVersion: "atlas.mongodb.com/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   resources.NormalizeAtlasName(strings.ToLower(generator.projectName)+"-ip-access-list", resources.AtlasNameToKubernetesName()),
+			Labels: expectedLabels,
+		},
+		Spec: akov2.AtlasIPAccessListSpec{
+			Entries: []akov2.IPAccessEntry{
+				{
+					CIDRBlock: "10.1.1.0/24",
+				},
+				{
+					IPAddress: "192.168.100.233",
+				},
+			},
+		},
+		Status: akov2status.AtlasIPAccessListStatus{
+			Common: akoapi.Common{
+				Conditions: []akoapi.Condition{},
+			},
+		},
+	}
+
+	if independent {
+		ial.Spec.ProjectDualReference = akov2.ProjectDualReference{
+			ExternalProjectRef: &akov2.ExternalProjectReference{
+				ID: generator.projectID,
+			},
+			ConnectionSecret: &akoapi.LocalObjectReference{
+				Name: resources.NormalizeAtlasName(strings.ToLower(generator.projectName)+"-credentials", resources.AtlasNameToKubernetesName()),
+			},
+		}
+	} else {
+		ial.Spec.ProjectRef = &akov2common.ResourceRefNamespaced{
+			Name: strings.ToLower(generator.projectName),
+		}
+	}
+
+	return ial
+}
+
+func expectedWithIPAccessList(p *akov2.AtlasProject, ial []akov2project.IPAccessList) *akov2.AtlasProject {
+	p.Spec.ProjectIPAccessList = ial
+
+	return p
+}
+
 type filtered []runtime.Object
 
 func (f filtered) byKind(kinds ...string) []runtime.Object {
@@ -352,7 +528,7 @@ func (f filtered) byKind(kinds ...string) []runtime.Object {
 	return result
 }
 
-func defaultTestProject(name, namespace string, labels map[string]string, alertConfigs bool, privateEndpoints []akov2.PrivateEndpoint) *akov2.AtlasProject {
+func defaultTestProject(name, namespace string, labels map[string]string, alertConfigs bool) *akov2.AtlasProject {
 	project := &akov2.AtlasProject{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "AtlasProject",
@@ -390,10 +566,6 @@ func defaultTestProject(name, namespace string, labels map[string]string, alertC
 		project.Spec.AlertConfigurations = []akov2.AlertConfiguration{
 			defaultAlertConfig(),
 		}
-	}
-
-	if len(privateEndpoints) > 0 {
-		project.Spec.PrivateEndpoints = privateEndpoints
 	}
 
 	return project
@@ -575,8 +747,8 @@ func defaultM0TestClusterWithID(name, region, projectName, projectID, namespace,
 func TestFederatedAuthTest(t *testing.T) {
 	t.Run("PreRequisite Get the federation setting ID", func(t *testing.T) {
 		s := InitialSetup(t)
-		cliPath := s.cliPath
-		cmd := exec.Command(cliPath,
+		atlasCliPath := s.atlasCliPath
+		cmd := exec.Command(atlasCliPath,
 			federatedAuthenticationEntity,
 			federationSettingsEntity,
 			"describe",
@@ -599,8 +771,8 @@ func TestFederatedAuthTest(t *testing.T) {
 	t.Run("List SAML IdPs", func(_ *testing.T) {
 		if identityProviderStatus != activeStatus {
 			s := InitialSetup(t)
-			cliPath := s.cliPath
-			cmd := exec.Command(cliPath,
+			atlasCliPath := s.atlasCliPath
+			cmd := exec.Command(atlasCliPath,
 				federatedAuthenticationEntity,
 				federationSettingsEntity,
 				identityProviderEntity,
@@ -627,8 +799,8 @@ func TestFederatedAuthTest(t *testing.T) {
 	t.Run("PreRequisite Connect SAML IdP", func(t *testing.T) {
 		if identityProviderStatus != activeStatus && samlIdentityProviderID != "" {
 			s := InitialSetup(t)
-			cliPath := s.cliPath
-			cmd := exec.Command(cliPath,
+			atlasCliPath := s.atlasCliPath
+			cmd := exec.Command(atlasCliPath,
 				federatedAuthenticationEntity,
 				federationSettingsEntity,
 				connectedOrgsConfigsEntity,
@@ -654,8 +826,8 @@ func TestFederatedAuthTest(t *testing.T) {
 	t.Run("Prerequisite Check active SAML configuration", func(t *testing.T) {
 		if identityProviderStatus != activeStatus {
 			s := InitialSetup(t)
-			cliPath := s.cliPath
-			cmd := exec.Command(cliPath,
+			atlasCliPath := s.atlasCliPath
+			cmd := exec.Command(atlasCliPath,
 				federatedAuthenticationEntity,
 				federationSettingsEntity,
 				"describe",
@@ -786,12 +958,13 @@ func TestEmptyProject(t *testing.T) {
 func TestProjectWithNonDefaultSettings(t *testing.T) {
 	s := InitialSetup(t)
 	cliPath := s.cliPath
+	atlasCliPath := s.atlasCliPath
 	generator := s.generator
 	expectedProject := s.expectedProject
 	expectedProject.Spec.Settings.IsCollectDatabaseSpecificsStatisticsEnabled = pointer.Get(false)
 
 	t.Run("Change project settings and generate", func(t *testing.T) {
-		cmd := exec.Command(cliPath,
+		cmd := exec.Command(atlasCliPath,
 			projectsEntity,
 			settingsEntity,
 			"update",
@@ -830,6 +1003,7 @@ func TestProjectWithNonDefaultAlertConf(t *testing.T) {
 	dictionary := resources.AtlasNameToKubernetesName()
 	s := InitialSetup(t)
 	cliPath := s.cliPath
+	atlasCliPath := s.atlasCliPath
 	generator := s.generator
 	expectedProject := s.expectedProject
 
@@ -880,7 +1054,7 @@ func TestProjectWithNonDefaultAlertConf(t *testing.T) {
 	}
 
 	t.Run("Change project alert config and generate", func(t *testing.T) {
-		cmd := exec.Command(cliPath,
+		cmd := exec.Command(atlasCliPath,
 			alertsEntity,
 			configEntity,
 			"create",
@@ -931,63 +1105,10 @@ func TestProjectWithNonDefaultAlertConf(t *testing.T) {
 	})
 }
 
-func TestProjectWithAccessList(t *testing.T) {
-	s := InitialSetup(t)
-	cliPath := s.cliPath
-	generator := s.generator
-	expectedProject := s.expectedProject
-
-	entry := "192.168.0.10"
-	newIPAccess := akov2project.IPAccessList{
-		IPAddress: entry,
-		Comment:   "test",
-	}
-	expectedProject.Spec.ProjectIPAccessList = []akov2project.IPAccessList{
-		newIPAccess,
-	}
-
-	t.Run("Add access list to the project", func(t *testing.T) {
-		cmd := exec.Command(cliPath,
-			accessListEntity,
-			"create",
-			newIPAccess.IPAddress,
-			"--comment",
-			newIPAccess.Comment,
-			"--projectId",
-			generator.projectID,
-			"--type",
-			"ipAddress",
-			"-o=json")
-		cmd.Env = os.Environ()
-		accessListResp, err := test.RunAndGetStdOut(cmd)
-		require.NoError(t, err, string(accessListResp))
-
-		cmd = exec.Command(cliPath,
-			"kubernetes",
-			"config",
-			"generate",
-			"--projectId",
-			generator.projectID,
-			"--targetNamespace",
-			targetNamespace,
-			"--includeSecrets")
-		cmd.Env = os.Environ()
-
-		resp, err := test.RunAndGetStdOut(cmd)
-		t.Log(string(resp))
-		require.NoError(t, err, string(resp))
-
-		var objects []runtime.Object
-		objects, err = getK8SEntities(resp)
-		require.NoError(t, err, "should not fail on decode")
-		require.NotEmpty(t, objects)
-		checkProject(t, objects, expectedProject)
-	})
-}
-
 func TestProjectWithAccessRole(t *testing.T) {
 	s := InitialSetup(t)
 	cliPath := s.cliPath
+	atlasCliPath := s.atlasCliPath
 	generator := s.generator
 	expectedProject := s.expectedProject
 
@@ -999,7 +1120,7 @@ func TestProjectWithAccessRole(t *testing.T) {
 	}
 
 	t.Run("Add access role to the project", func(t *testing.T) {
-		cmd := exec.Command(cliPath,
+		cmd := exec.Command(atlasCliPath,
 			cloudProvidersEntity,
 			accessRolesEntity,
 			awsEntity,
@@ -1037,6 +1158,7 @@ func TestProjectWithAccessRole(t *testing.T) {
 func TestProjectWithCustomRole(t *testing.T) {
 	s := InitialSetup(t)
 	cliPath := s.cliPath
+	atlasCliPath := s.atlasCliPath
 	generator := s.generator
 	expectedProject := s.expectedProject
 
@@ -1060,7 +1182,7 @@ func TestProjectWithCustomRole(t *testing.T) {
 	}
 
 	t.Run("Add custom role to the project", func(t *testing.T) {
-		cmd := exec.Command(cliPath,
+		cmd := exec.Command(atlasCliPath,
 			customDBRoleEntity,
 			"create",
 			newCustomRole.Name,
@@ -1155,8 +1277,7 @@ func verifyCustomRole(t *testing.T, objects []runtime.Object, expectedRole *akov
 func TestProjectWithIntegration(t *testing.T) {
 	s := InitialSetup(t)
 	cliPath := s.cliPath
-	atlasCliPath, err := AtlasCLIBin()
-	assert.NoError(t, err)
+	atlasCliPath := s.atlasCliPath
 	generator := s.generator
 	expectedProject := s.expectedProject
 
@@ -1220,6 +1341,7 @@ func TestProjectWithIntegration(t *testing.T) {
 func TestProjectWithMaintenanceWindow(t *testing.T) {
 	s := InitialSetup(t)
 	cliPath := s.cliPath
+	atlasCliPath := s.atlasCliPath
 	generator := s.generator
 	expectedProject := s.expectedProject
 	newMaintenanceWindow := akov2project.MaintenanceWindow{
@@ -1230,7 +1352,7 @@ func TestProjectWithMaintenanceWindow(t *testing.T) {
 	expectedProject.Spec.AlertConfigurations = defaultMaintenanceWindowAlertConfigs()
 
 	t.Run("Add integration to the project", func(t *testing.T) {
-		cmd := exec.Command(cliPath,
+		cmd := exec.Command(atlasCliPath,
 			maintenanceEntity,
 			"update",
 			"--dayOfWeek",
@@ -1270,6 +1392,7 @@ func TestProjectWithMaintenanceWindow(t *testing.T) {
 func TestProjectWithNetworkPeering(t *testing.T) {
 	s := InitialSetup(t)
 	cliPath := s.cliPath
+	atlasCliPath := s.atlasCliPath
 	generator := s.generator
 	expectedProject := s.expectedProject
 
@@ -1284,7 +1407,7 @@ func TestProjectWithNetworkPeering(t *testing.T) {
 	}
 
 	t.Run("Add network peer to the project", func(t *testing.T) {
-		cmd := exec.Command(cliPath,
+		cmd := exec.Command(atlasCliPath,
 			networkingEntity,
 			networkPeeringEntity,
 			"create",
@@ -1338,7 +1461,7 @@ func TestProjectWithPrivateEndpoint_Azure(t *testing.T) {
 
 	credentialName := resources.NormalizeAtlasName(s.generator.projectName+credSuffixTest, resources.AtlasNameToKubernetesName())
 	expected := []runtime.Object{
-		defaultTestProject(s.generator.projectName, targetNamespace, expectedLabels, false, nil),
+		defaultTestProject(s.generator.projectName, targetNamespace, expectedLabels, false),
 		defaultTestAtlasConnSecret(credentialName, targetNamespace),
 		&akov2.AtlasPrivateEndpoint{
 			TypeMeta: metav1.TypeMeta{
@@ -1395,6 +1518,7 @@ func TestProjectWithPrivateEndpoint_Azure(t *testing.T) {
 func TestProjectAndTeams(t *testing.T) {
 	s := InitialSetupWithTeam(t)
 	cliPath := s.cliPath
+	atlasCliPath := s.atlasCliPath
 	generator := s.generator
 	expectedProject := s.expectedProject
 
@@ -1417,7 +1541,7 @@ func TestProjectAndTeams(t *testing.T) {
 			},
 		}
 
-		cmd := exec.Command(cliPath,
+		cmd := exec.Command(atlasCliPath,
 			projectsEntity,
 			teamsEntity,
 			"add",
@@ -2058,14 +2182,16 @@ func TestKubernetesConfigGenerate_ClustersWithBackup(t *testing.T) {
 	expectedBackupSchedule := referenceBackupSchedule(targetNamespace, g.projectName, g.clusterName, expectedLabels)
 	expectedBackupPolicy := referenceBackupPolicy(targetNamespace, g.projectName, g.clusterName, expectedLabels)
 
-	cliPath, err := AtlasCLIBin()
+	cliPath, err := PluginBin()
+	require.NoError(t, err)
+	atlasCliPath, err := AtlasCLIBin()
 	require.NoError(t, err)
 
 	// always register atlas entities
 	require.NoError(t, akov2.AddToScheme(scheme.Scheme))
 
 	t.Run("Update backup schedule", func(t *testing.T) {
-		cmd := exec.Command(cliPath,
+		cmd := exec.Command(atlasCliPath,
 			backupsEntity,
 			"schedule",
 			"update",
@@ -2219,7 +2345,7 @@ func TestKubernetesConfigGenerateSharedCluster(t *testing.T) {
 
 	expectedDeployment := referenceSharedCluster(g.clusterName, g.clusterRegion, targetNamespace, g.projectName, expectedLabels)
 
-	cliPath, err := AtlasCLIBin()
+	cliPath, err := PluginBin()
 	require.NoError(t, err)
 
 	// always register atlas entities
@@ -2265,7 +2391,7 @@ func TestKubernetesConfigGenerateFlexCluster(t *testing.T) {
 
 	expectedDeployment := referenceFlex(g.flexName, "US_EAST_1", targetNamespace, g.projectName, expectedLabels)
 
-	cliPath, err := AtlasCLIBin()
+	cliPath, err := PluginBin()
 	require.NoError(t, err)
 
 	// always register atlas entities
@@ -2387,7 +2513,7 @@ func TestKubernetesConfigGenerate_DataFederation(t *testing.T) {
 	storeNames = append(storeNames, g.dataFedName)
 	expectedDataFederation := referenceDataFederation(storeNames[0], targetNamespace, g.projectName, expectedLabels)
 
-	cliPath, err := AtlasCLIBin()
+	cliPath, err := PluginBin()
 	require.NoError(t, err)
 
 	// always register atlas entities
