@@ -41,10 +41,12 @@ func Builder() *cobra.Command {
 			if err != nil {
 				log.Fatalf("Failed to load Atlas CLI config: %v", err)
 			}
+			log.Println("IN PRERUN???")
 			telemetry.StartTrackingCommand(cmd, args)
 			handleSignal()
 		},
 		PersistentPostRun: func(_ *cobra.Command, _ []string) {
+			log.Println("in postrun")
 			telemetry.FinishTrackingCommand(telemetry.TrackOptions{})
 		},
 	}
@@ -54,7 +56,9 @@ func Builder() *cobra.Command {
 }
 
 func handleSignal() {
+	log.Println("in handle signal error thing")
 	sighandle.Notify(func(sig os.Signal) {
+		log.Println("in handle signal error thing")
 		telemetry.FinishTrackingCommand(telemetry.TrackOptions{
 			Err:    errors.New(sig.String()),
 			Signal: sig.String(),

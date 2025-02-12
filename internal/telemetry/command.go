@@ -15,7 +15,9 @@
 package telemetry
 
 import (
-	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/config"
+	"os"
+	"strconv"
+
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/log"
 	"github.com/spf13/cobra"
 )
@@ -32,8 +34,25 @@ func StartedTrackingCommand() bool {
 	return currentTracker != nil
 }
 
+func IsTelemetryEnabled() bool { //TODO: should be avb from coreConfig loadconfig thing
+	val, exists := os.LookupEnv("TELEMETRY_ENABLED")
+	if !exists { // if TELEMETRY_ENABLED is not found, assume disabled
+		log.Warningln("telem enabled not found")
+		return false
+	}
+	enabled, err := strconv.ParseBool(val)
+	if err != nil { // if err parsing bool from TELEMETRY_ENABLED, assume disabled
+		log.Warningln("err parsing telem enabled")
+		return false
+	}
+	log.Warningf("telem enabled is %v\n", enabled)
+	return enabled
+}
+
 func StartTrackingCommand(cmd *cobra.Command, args []string) {
-	if !config.TelemetryEnabled() {
+	log.Warningln("in start tracking cmd func")
+	if !IsTelemetryEnabled() {
+		log.Warningln("ahh telem enabled is false")
 		return
 	}
 	var err error
@@ -49,9 +68,10 @@ func AppendOption(opt EventOpt) {
 }
 
 func FinishTrackingCommand(opt TrackOptions) {
-	if !config.TelemetryEnabled() || currentTracker == nil {
-		return
-	}
+	log.Warningln("in finish tracking cmd func")
+	// if !config.TelemetryEnabled() || currentTracker == nil {
+	// 	return
+	// }
 
 	if err := currentTracker.trackCommand(opt, options...); err != nil {
 		_, _ = log.Debugf("telemetry: failed to track command: %v\n", err)

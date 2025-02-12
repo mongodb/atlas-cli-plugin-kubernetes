@@ -51,12 +51,10 @@ type tracker struct {
 func newTracker(ctx context.Context, cmd *cobra.Command, args []string) (*tracker, error) {
 	var err error
 
-	cacheDir, err := os.UserCacheDir()
-	if err != nil {
-		return nil, err
+	cacheDir, exists := os.LookupEnv("--apix-telemetry-cache-file")
+	if !exists {
+		return nil, errors.New("unable to obtain telemetry cache file")
 	}
-
-	cacheDir = filepath.Join(cacheDir, config.AtlasCLI)
 
 	t := &tracker{
 		fs:               afero.NewOsFs(),
@@ -135,17 +133,22 @@ func (t *tracker) trackCommand(data TrackOptions, opt ...EventOpt) error {
 }
 
 func (t *tracker) openCacheFile() (afero.File, error) {
-	exists, err := afero.DirExists(t.fs, t.cacheDir)
-	if err != nil {
-		return nil, err
-	}
+	// exists, err := afero.DirExists(t.fs, t.cacheDir)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// if !exists {
+	// 	if mkdirError := t.fs.MkdirAll(t.cacheDir, dirPermissions); mkdirError != nil {
+	// 		return nil, mkdirError
+	// 	}
+	// }
+	// filename := filepath.Join(t.cacheDir, cacheFilename)
+	filename, exists := os.LookupEnv("--apix-telemetry-cache-file")
 	if !exists {
-		if mkdirError := t.fs.MkdirAll(t.cacheDir, dirPermissions); mkdirError != nil {
-			return nil, mkdirError
-		}
+		return nil, errors.New("unable to obtain telemetry cache file")
 	}
-	filename := filepath.Join(t.cacheDir, cacheFilename)
-	exists, err = afero.Exists(t.fs, filename)
+
+	exists, err := afero.Exists(t.fs, filename)
 	if err != nil {
 		return nil, err
 	}
@@ -159,6 +162,7 @@ func (t *tracker) openCacheFile() (afero.File, error) {
 			return nil, errors.New("telemetry cache file too large")
 		}
 	}
+	// var fs afero.Fs
 	file, err := t.fs.OpenFile(filename, os.O_APPEND|os.O_WRONLY|os.O_CREATE, filePermissions)
 	return file, err
 }

@@ -18,6 +18,7 @@ import (
 	"os"
 
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/cli/kubernetes"
+	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/telemetry"
 
 	"github.com/spf13/cobra"
 )
@@ -41,6 +42,13 @@ func main() {
 	rootCmd.AddCommand(cmd)
 
 	if err := rootCmd.Execute(); err != nil {
+		if !telemetry.StartedTrackingCommand() {
+			telemetry.StartTrackingCommand(cmd, os.Args[1:])
+		}
+
+		telemetry.FinishTrackingCommand(telemetry.TrackOptions{
+			Err: err,
+		})
 		os.Exit(1)
 	}
 }
