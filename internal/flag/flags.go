@@ -18,6 +18,8 @@ const (
 	OrgID                                 = "orgId"                         // OrgID flag to use an Organization ID
 	ProjectID                             = "projectId"                     // ProjectID flag to use a project ID
 	ClusterName                           = "clusterName"                   // ClusterName flag
+	Debug                                 = "debug"                         // Debug flag to set debug log level
+	DebugShort                            = "D"                             // DebugShort flag to set debug log level
 	OperatorIncludeSecrets                = "includeSecrets"                // OperatorIncludeSecrets flag
 	OperatorTargetNamespace               = "targetNamespace"               // OperatorTargetNamespace flag
 	OperatorWatchNamespace                = "watchNamespace"                // OperatorTargetNamespace flag
