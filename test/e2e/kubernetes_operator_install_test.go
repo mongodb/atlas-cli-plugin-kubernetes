@@ -45,7 +45,6 @@ func TestKubernetesOperatorInstall(t *testing.T) {
 	req := require.New(t)
 
 	cliPath, err := PluginBin()
-	fmt.Println(cliPath)
 	req.NoError(err)
 	const contextPrefix = "kind-"
 	t.Run("should failed to install old and not supported version of the operator", func(t *testing.T) {

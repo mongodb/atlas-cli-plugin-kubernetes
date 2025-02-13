@@ -25,11 +25,6 @@ import (
 var errUnsupportedService = errors.New("unsupported service")
 
 func InitProfile(profile string) error {
-	fmt.Printf("profile: %v\nProfileList:\n", profile)
-	ps := config.List()
-	for _, p := range ps {
-		fmt.Printf("%v\n", p)
-	}
 	if profile != "" {
 		return config.SetName(profile)
 	} else if profile = config.GetString(flag.Profile); profile != "" {
