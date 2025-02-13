@@ -20,18 +20,29 @@ import (
 	coreConfig "github.com/mongodb/atlas-cli-core/config"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/cli/kubernetes/config"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/cli/kubernetes/operator"
+	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/flag"
+	cliLog "github.com/mongodb/atlas-cli-plugin-kubernetes/internal/log"
+	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/usage"
 
 	"github.com/spf13/cobra"
 )
 
 func Builder() *cobra.Command {
 	const use = "kubernetes"
+	var (
+		debugLevel bool
+	)
 
 	cmd := &cobra.Command{
 		Use:   use,
 		Short: "Manage Kubernetes resources.",
 		Long:  `This command provides access to Kubernetes features within Atlas.`,
-		PersistentPreRun: func(_ *cobra.Command, _ []string) {
+		PersistentPreRun: func(cmd *cobra.Command, _ []string) {
+			cliLog.SetWriter(cmd.ErrOrStderr())
+			if debugLevel {
+				cliLog.SetLevel(cliLog.DebugLevel)
+			}
+
 			err := coreConfig.LoadAtlasCLIConfig()
 			if err != nil {
 				log.Fatalf("Failed to load Atlas CLI config: %v", err)
@@ -40,5 +51,9 @@ func Builder() *cobra.Command {
 	}
 
 	cmd.AddCommand(config.Builder(), operator.Builder())
+
+	cmd.PersistentFlags().BoolVarP(&debugLevel, flag.Debug, flag.DebugShort, false, usage.Debug)
+	_ = cmd.PersistentFlags().MarkHidden(flag.Debug)
+
 	return cmd
 }
