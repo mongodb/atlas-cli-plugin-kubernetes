@@ -40,10 +40,8 @@ type pluginTracker struct {
 	fs               afero.Fs
 	maxCacheFileSize int64
 	cacheDir         string
-	storeSet         bool
 	cmd              *cobra.Command
 	args             []string
-	installer        *string
 }
 
 func newTracker(ctx context.Context, cmd *cobra.Command, args []string) (*pluginTracker, error) {
@@ -115,7 +113,6 @@ func (t *pluginTracker) read() ([]Event, error) {
 
 // Append a single event to the cache file.
 func (t *pluginTracker) save(event Event) error {
-	fmt.Println("trying to save event to cache")
 	file, err := t.openCacheFile()
 	if err != nil {
 		return err
