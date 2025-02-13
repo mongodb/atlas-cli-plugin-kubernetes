@@ -21,12 +21,17 @@ import (
 
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/cli/kubernetes/config"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/cli/kubernetes/operator"
+	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/flag"
+	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/usage"
 
 	"github.com/spf13/cobra"
 )
 
 func Builder() *cobra.Command {
 	const use = "kubernetes"
+	var (
+		debugLevel bool
+	)
 
 	cmd := &cobra.Command{
 		Use:   use,
@@ -43,5 +48,9 @@ func Builder() *cobra.Command {
 	}
 
 	cmd.AddCommand(config.Builder(), operator.Builder())
+
+	cmd.PersistentFlags().BoolVarP(&debugLevel, flag.Debug, flag.DebugShort, false, usage.Debug)
+	_ = cmd.PersistentFlags().MarkHidden(flag.Debug)
+
 	return cmd
 }

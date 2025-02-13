@@ -18,6 +18,7 @@ const (
 	ProjectID                             = "Hexadecimal string that identifies the project to use. This option overrides the settings in the configuration file or environment variable."
 	OrgID                                 = "Organization ID to use. This option overrides the settings in the configuration file or environment variable."
 	ExporterClusterName                   = "One or more comma separated cluster names to import"
+	Debug                                 = "Debug log level."
 	OperatorIncludeSecrets                = "Flag that generates kubernetes secrets with data for projects, users, deployments entities."
 	OperatorTargetNamespace               = "Namespaces to use for generated kubernetes entities"
 	OperatorVersion                       = "Version of Atlas Kubernetes Operator to generate resources for."
