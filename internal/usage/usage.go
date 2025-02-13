@@ -15,6 +15,7 @@
 package usage
 
 const (
+	ProfileAtlasCLI                       = "Name of the profile to use from your configuration file. To learn about profiles for the Atlas CLI, see https://dochub.mongodb.org/core/atlas-cli-save-connection-settings."
 	ProjectID                             = "Hexadecimal string that identifies the project to use. This option overrides the settings in the configuration file or environment variable."
 	OrgID                                 = "Organization ID to use. This option overrides the settings in the configuration file or environment variable."
 	ExporterClusterName                   = "One or more comma separated cluster names to import"

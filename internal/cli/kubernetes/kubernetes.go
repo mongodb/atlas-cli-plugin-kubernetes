@@ -19,6 +19,7 @@ import (
 
 	coreConfig "github.com/mongodb/atlas-cli-core/config"
 
+	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/cli"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/cli/kubernetes/config"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/cli/kubernetes/operator"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/flag"
@@ -32,6 +33,7 @@ import (
 func Builder() *cobra.Command {
 	const use = "kubernetes"
 	var (
+		profile    string
 		debugLevel bool
 	)
 
@@ -49,6 +51,9 @@ func Builder() *cobra.Command {
 			if err != nil {
 				return fmt.Errorf("failed to load Atlas CLI configuration: %v", err)
 			}
+			if err := cli.InitProfile(profile); err != nil {
+				return fmt.Errorf("Failed to initialise Atlas CLI profile: %v", err)
+			}
 
 			telemetry.TrackPluginCommand(cmd, args)
 			return nil
@@ -57,6 +62,7 @@ func Builder() *cobra.Command {
 
 	cmd.AddCommand(config.Builder(), operator.Builder())
 
+	cmd.PersistentFlags().StringVarP(&profile, flag.Profile, flag.ProfileShort, "", usage.ProfileAtlasCLI)
 	cmd.PersistentFlags().BoolVarP(&debugLevel, flag.Debug, flag.DebugShort, false, usage.Debug)
 	_ = cmd.PersistentFlags().MarkHidden(flag.Debug)
 
