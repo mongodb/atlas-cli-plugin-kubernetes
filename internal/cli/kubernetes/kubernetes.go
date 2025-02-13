@@ -22,6 +22,7 @@ import (
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/cli/kubernetes/config"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/cli/kubernetes/operator"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/flag"
+	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/telemetry"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/usage"
 
 	"github.com/spf13/cobra"
