@@ -18,7 +18,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"os"
 	"path/filepath"
 
@@ -117,7 +116,6 @@ func (t *pluginTracker) save(event Event) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println(file)
 
 	defer file.Close()
 	data, err := json.Marshal(event)
