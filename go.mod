@@ -18,6 +18,7 @@ require (
 	github.com/mongodb/mongodb-atlas-kubernetes/v2 v2.7.0
 	github.com/spf13/afero v1.12.0
 	github.com/spf13/cobra v1.8.1
+	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.19.0
 	github.com/stretchr/testify v1.10.0
 	github.com/tangzero/inflector v1.0.0
@@ -75,7 +76,6 @@ require (
 	github.com/sagikazarmark/slog-shim v0.1.0 // indirect
 	github.com/sourcegraph/conc v0.3.0 // indirect
 	github.com/spf13/cast v1.6.0 // indirect
-	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	go.mongodb.org/atlas-sdk/v20231115008 v20231115008.5.0 // indirect
