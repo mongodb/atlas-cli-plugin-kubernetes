@@ -56,7 +56,7 @@ func withCommandPath(cmd CmdName) EventOpt {
 
 func withEventType() EventOpt {
 	return func(event Event) {
-		event.Properties["eventType"] = "plugin"
+		event.Properties["cli_event_type"] = "plugin"
 	}
 }
 
