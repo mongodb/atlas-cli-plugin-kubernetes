@@ -18,6 +18,7 @@ import (
 	"log"
 
 	coreConfig "github.com/mongodb/atlas-cli-core/config"
+
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/cli/kubernetes/config"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/cli/kubernetes/operator"
 
@@ -31,11 +32,13 @@ func Builder() *cobra.Command {
 		Use:   use,
 		Short: "Manage Kubernetes resources.",
 		Long:  `This command provides access to Kubernetes features within Atlas.`,
-		PersistentPreRun: func(_ *cobra.Command, _ []string) {
+		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			err := coreConfig.LoadAtlasCLIConfig()
 			if err != nil {
 				log.Fatalf("Failed to load Atlas CLI config: %v", err)
 			}
+
+			telemetry.TrackPluginCommand(cmd, args)
 		},
 	}
 
