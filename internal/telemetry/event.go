@@ -42,6 +42,11 @@ type CmdName interface {
 func withCommandPath(cmd CmdName) EventOpt {
 	return func(event Event) {
 		cmdPath := cmd.CommandPath()
+		// remove the first character if it is " "
+		if cmdPath != "" && cmdPath[0] == ' ' {
+			cmdPath = cmdPath[1:]
+		}
+
 		event.Properties["command"] = strings.ReplaceAll(cmdPath, " ", "-")
 		if cmd.CalledAs() != "" {
 			event.Properties["alias"] = cmd.CalledAs()
