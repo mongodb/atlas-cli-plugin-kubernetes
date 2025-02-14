@@ -13,7 +13,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/mongodb-forks/digest v1.1.0
 	github.com/mongodb-labs/cobra2snooty v0.18.2
-	github.com/mongodb/atlas-cli-core v0.0.0-20250214145422-88b464fd5b79
+	github.com/mongodb/atlas-cli-core v0.0.0-20250214162807-8f937b802e87
 	github.com/mongodb/mongodb-atlas-kubernetes/v2 v2.7.0
 	github.com/spf13/afero v1.12.0
 	github.com/spf13/cobra v1.8.1
