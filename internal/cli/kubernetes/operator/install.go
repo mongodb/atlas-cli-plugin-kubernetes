@@ -19,9 +19,9 @@ import (
 	"fmt"
 
 	"github.com/google/go-github/v61/github"
+	"github.com/mongodb/atlas-cli-core/config"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/cli"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/cli/require"
-	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/config"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/flag"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator"

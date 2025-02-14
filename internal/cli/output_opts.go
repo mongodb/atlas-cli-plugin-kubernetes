@@ -22,7 +22,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/config"
+	"github.com/mongodb/atlas-cli-core/config"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/jsonpathwriter"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/jsonwriter"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/templatewriter"

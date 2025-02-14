@@ -20,7 +20,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/config"
+	"github.com/mongodb/atlas-cli-core/config"
 	atlasauth "go.mongodb.org/atlas/auth"
 )
 

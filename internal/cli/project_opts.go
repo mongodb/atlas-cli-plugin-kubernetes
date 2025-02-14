@@ -15,7 +15,7 @@
 package cli
 
 import (
-	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/config"
+	"github.com/mongodb/atlas-cli-core/config"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/flag"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/usage"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/validate"
