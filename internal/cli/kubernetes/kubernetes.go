@@ -19,7 +19,6 @@ import (
 
 	coreConfig "github.com/mongodb/atlas-cli-core/config"
 
-	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/cli"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/cli/kubernetes/config"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/cli/kubernetes/operator"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/flag"
@@ -51,7 +50,7 @@ func Builder() *cobra.Command {
 			if err != nil {
 				return fmt.Errorf("failed to load Atlas CLI configuration: %v", err)
 			}
-			if err := cli.InitProfile(profile); err != nil {
+			if err := coreConfig.InitProfile(profile); err != nil {
 				return fmt.Errorf("Failed to initialise Atlas CLI profile: %v", err)
 			}
 

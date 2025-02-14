@@ -8,7 +8,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	config "github.com/mongodb/atlas-cli-plugin-kubernetes/internal/config"
+	config "github.com/mongodb/atlas-cli-core/config"
 	auth "go.mongodb.org/atlas/auth"
 )
 

@@ -4,6 +4,10 @@ go 1.23.5
 
 toolchain go1.23.6
 
+replace (
+	github.com/mongodb/atlas-cli-core => /Users/bianca.vianadeaguiar/workplace/atlas-cli-core
+)
+
 require (
 	github.com/Masterminds/semver/v3 v3.3.1
 	github.com/PaesslerAG/jsonpath v0.1.1

@@ -23,7 +23,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/config"
+	"github.com/mongodb/atlas-cli-core/config"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/log"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/transport"
 	atlasClustersPinned "go.mongodb.org/atlas-sdk/v20240530005/admin"
@@ -147,7 +147,7 @@ func WithContext(ctx context.Context) Option {
 
 // setAtlasClient sets the internal client to use an Atlas client and methods.
 func (s *Store) setAtlasClient(client *http.Client) error {
-	opts := []atlas.ClientOpt{atlas.SetUserAgent(config.UserAgent)}
+	opts := []atlas.ClientOpt{atlas.SetUserAgent(config.UserAgent("tst-ver"))}
 	if s.baseURL != "" {
 		opts = append(opts, atlas.SetBaseURL(s.baseURL))
 	}
@@ -193,7 +193,7 @@ response:
 func (s *Store) createV2Client(client *http.Client) error {
 	opts := []atlasv2.ClientModifier{
 		atlasv2.UseHTTPClient(client),
-		atlasv2.UseUserAgent(config.UserAgent),
+		atlasv2.UseUserAgent(config.UserAgent("tst-ver")),
 		atlasv2.UseDebug(log.IsDebugLevel())}
 
 	if s.baseURL != "" {
@@ -210,7 +210,7 @@ func (s *Store) createV2Client(client *http.Client) error {
 func (s *Store) createClustersClient(client *http.Client) error {
 	opts := []atlasClustersPinned.ClientModifier{
 		atlasClustersPinned.UseHTTPClient(client),
-		atlasClustersPinned.UseUserAgent(config.UserAgent),
+		atlasClustersPinned.UseUserAgent(config.UserAgent("tst-ver")),
 		atlasClustersPinned.UseDebug(log.IsDebugLevel())}
 
 	if s.baseURL != "" {
