@@ -71,6 +71,9 @@ func (opts *GenerateOpts) initStores(ctx context.Context) func() error {
 		var err error
 
 		profile := config.Default()
+		fmt.Println(profile.Name())
+
+		fmt.Println(config.Default().Name())
 		opts.store, err = store.New(store.AuthenticatedPreset(profile), store.WithContext(ctx))
 		if err != nil {
 			return err
@@ -137,6 +140,9 @@ func GenerateBuilder() *cobra.Command {
   # Export Project, DatabaseUsers, Clusters and specific DataFederation resources for a specific project to a specific namespace:
   atlas kubernetes config generate --projectId=<projectId> --dataFederationName=<data-federation-name-1, data-federation-name-2> --targetNamespace=<namespace>`,
 		PreRunE: func(cmd *cobra.Command, _ []string) error {
+			// if err := cli.InitProfile("qa"); err != nil {
+			// 	return err
+			// }
 			return opts.OrgOpts.PreRunE(
 				opts.ValidateProjectID,
 				opts.ValidateTargetNamespace,
