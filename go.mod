@@ -1,8 +1,8 @@
 module github.com/mongodb/atlas-cli-plugin-kubernetes
 
-go 1.23.5
+go 1.23.6
 
-toolchain go1.23.6
+toolchain go1.24.0
 
 require (
 	github.com/Masterminds/semver/v3 v3.3.1
@@ -14,7 +14,7 @@ require (
 	github.com/mongodb-forks/digest v1.1.0
 	github.com/mongodb-labs/cobra2snooty v0.18.2
 	github.com/mongodb/atlas-cli-core v0.0.0-20250214162807-8f937b802e87
-	github.com/mongodb/mongodb-atlas-kubernetes/v2 v2.7.0
+	github.com/mongodb/mongodb-atlas-kubernetes/v2 v2.7.1
 	github.com/spf13/afero v1.12.0
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/pflag v1.0.5
