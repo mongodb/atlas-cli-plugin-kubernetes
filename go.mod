@@ -1,6 +1,7 @@
 module github.com/mongodb/atlas-cli-plugin-kubernetes
 
-go 1.23.5
+go 1.23.6
+
 require (
 	github.com/Masterminds/semver/v3 v3.3.1
 	github.com/PaesslerAG/jsonpath v0.1.1
