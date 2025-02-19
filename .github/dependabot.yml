@@ -10,7 +10,11 @@ updates:
     commit-message:
       prefix: "chore"
     reviewers:
-      - "mongodb/apix-2" # TODO: change to AKO team as part of handover
+      - "igor-karpukhin"
+      - "helderjs" 
+      - "josvazg"
+      - "roothorp"
+      - "s-urbaniak"
     ignore:
       - dependency-name: "go.mongodb.org/atlas-sdk/*"
     groups:
