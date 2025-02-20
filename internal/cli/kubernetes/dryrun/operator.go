@@ -109,9 +109,8 @@ func (r *Worker) Run() error {
 					RestartPolicy:      corev1.RestartPolicyNever,
 					Containers: []corev1.Container{
 						{
-							Name:  "ako-dry-run",
-							Image: "quay.io/mongodb/atlas-kubernetes-operator:" + r.akoVersion,
-							//Image:   "docker.io/ikarpukhin/mongodb-atlas-kubernetes:dry-run",
+							Name:    "ako-dry-run",
+							Image:   "quay.io/mongodb/atlas-kubernetes-operator:" + r.akoVersion,
 							Command: []string{"/manager"},
 							Args: []string{
 								"--atlas-domain=https://cloud-qa.mongodb.com/",
