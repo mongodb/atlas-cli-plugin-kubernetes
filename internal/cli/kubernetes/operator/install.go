@@ -52,6 +52,7 @@ type InstallOpts struct {
 	KubeContext                  string
 	featureDeletionProtection    bool
 	featureSubDeletionProtection bool
+	configOnly                   bool
 }
 
 func (opts *InstallOpts) defaults() error {
@@ -95,7 +96,7 @@ func (opts *InstallOpts) ValidateOperatorVersion() error {
 func (opts *InstallOpts) ValidateWatchNamespace() error {
 	for _, ns := range opts.watchNamespace {
 		if errs := validation.IsDNS1123Label(ns); len(errs) != 0 {
-			return fmt.Errorf("item %s of %s parameter is invalid: %v", ns, flag.OperatorWatchNamespace, errs)
+			return fmt.Errorf("item %s of %s parameter is invalid: %v", ns, flag.OperatorWatchNamespaces, errs)
 		}
 	}
 
@@ -136,6 +137,7 @@ func (opts *InstallOpts) Run(ctx context.Context) error {
 		WithResourceDeletionProtection(opts.featureDeletionProtection).
 		WithSubResourceDeletionProtection(opts.featureSubDeletionProtection).
 		WithAtlasGov(opts.atlasGov).
+		WithConfigOnly(opts.configOnly).
 		Run(ctx, opts.OrgID)
 
 	if err != nil {
@@ -202,7 +204,7 @@ The key is scoped to the project when you specify the --projectName option and t
 	flags.StringVar(&opts.OrgID, flag.OrgID, "", usage.OrgID)
 	flags.StringVar(&opts.operatorVersion, flag.OperatorVersion, "", usage.OperatorVersionInstall)
 	flags.StringVar(&opts.targetNamespace, flag.OperatorTargetNamespace, "", usage.OperatorTargetNamespaceInstall)
-	flags.StringSliceVar(&opts.watchNamespace, flag.OperatorWatchNamespace, []string{}, usage.OperatorWatchNamespace)
+	flags.StringSliceVar(&opts.watchNamespace, flag.OperatorWatchNamespaces, []string{}, usage.OperatorWatchNamespace)
 	flags.StringVar(&opts.projectName, flag.OperatorProjectName, "", usage.OperatorProjectName)
 	flags.BoolVar(&opts.importResources, flag.OperatorImport, false, usage.OperatorImport)
 	flags.BoolVar(&opts.atlasGov, flag.OperatorAtlasGov, false, usage.OperatorAtlasGov)
@@ -210,6 +212,7 @@ The key is scoped to the project when you specify the --projectName option and t
 	flags.StringVar(&opts.KubeContext, flag.KubernetesClusterContext, "", usage.KubernetesClusterContext)
 	flags.BoolVar(&opts.featureDeletionProtection, flag.OperatorResourceDeletionProtection, true, usage.OperatorResourceDeletionProtection)
 	flags.BoolVar(&opts.featureSubDeletionProtection, flag.OperatorSubResourceDeletionProtection, true, usage.OperatorSubResourceDeletionProtection)
+	flags.BoolVar(&opts.configOnly, flag.OperatorConfigOnly, false, usage.OperatorConfigOnly)
 
 	return cmd
 }

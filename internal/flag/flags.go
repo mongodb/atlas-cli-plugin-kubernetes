@@ -15,24 +15,28 @@
 package flag
 
 const (
-	Profile                               = "profile"                       // Profile flag to use a profile
-	ProfileShort                          = "P"                             // ProfileShort flag to use a profile
-	OrgID                                 = "orgId"                         // OrgID flag to use an Organization ID
-	ProjectID                             = "projectId"                     // ProjectID flag to use a project ID
-	ClusterName                           = "clusterName"                   // ClusterName flag
-	Debug                                 = "debug"                         // Debug flag to set debug log level
-	DebugShort                            = "D"                             // DebugShort flag to set debug log level
-	OperatorIncludeSecrets                = "includeSecrets"                // OperatorIncludeSecrets flag
-	OperatorTargetNamespace               = "targetNamespace"               // OperatorTargetNamespace flag
-	OperatorWatchNamespace                = "watchNamespace"                // OperatorTargetNamespace flag
+	Profile                               = "profile"         // Profile flag to use a profile
+	ProfileShort                          = "P"               // ProfileShort flag to use a profile
+	OrgID                                 = "orgId"           // OrgID flag to use an Organization ID
+	ProjectID                             = "projectId"       // ProjectID flag to use a project ID
+	ClusterName                           = "clusterName"     // ClusterName flag
+	Debug                                 = "debug"           // Debug flag to set debug log level
+	DebugShort                            = "D"               // DebugShort flag to set debug log level
+	EnableWatch                           = "watch"           // EnableWatch flag
+	EnableWatchShort                      = "w"               // EnableWatchShort flag
+	WatchTimeout                          = "watchTimeout"    // WatchTimeout flag
+	OperatorIncludeSecrets                = "includeSecrets"  // OperatorIncludeSecrets flag
+	OperatorTargetNamespace               = "targetNamespace" // OperatorTargetNamespace flag
+	OperatorWatchNamespaces               = "watchNamespaces"
 	OperatorVersion                       = "operatorVersion"               // OperatorVersion flag
 	OperatorProjectName                   = "projectName"                   // OperatorProjectName flag
 	OperatorImport                        = "import"                        // OperatorImport flag
 	OperatorResourceDeletionProtection    = "resourceDeletionProtection"    // OperatorResourceDeletionProtection flag
 	OperatorSubResourceDeletionProtection = "subresourceDeletionProtection" // Operator OperatorSubResourceDeletionProtection flag
-	OperatorAtlasGov                      = "atlasGov"                      // OperatorAtlasGov flag
-	KubernetesClusterConfig               = "kubeconfig"                    // Kubeconfig flag
-	KubernetesClusterContext              = "kubeContext"                   // KubeContext flag
-	DataFederationName                    = "dataFederationName"            // DataFederationName flag
-	IndependentResources                  = "independentResources"          // IndependentResources flag
+	OperatorConfigOnly                    = "configOnly"
+	OperatorAtlasGov                      = "atlasGov"             // OperatorAtlasGov flag
+	KubernetesClusterConfig               = "kubeconfig"           // Kubeconfig flag
+	KubernetesClusterContext              = "kubeContext"          // KubeContext flag
+	DataFederationName                    = "dataFederationName"   // DataFederationName flag
+	IndependentResources                  = "independentResources" // IndependentResources flag
 )
