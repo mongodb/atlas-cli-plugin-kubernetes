@@ -33,6 +33,9 @@ const (
 	KubernetesClusterContext              = "Name of the kubeconfig context to use."
 	OperatorResourceDeletionProtection    = "Toggle atlas operator deletion protection for resources like Projects, Deployments, etc. Read more: https://dochub.mongodb.org/core/ako-deletion-protection"
 	OperatorSubResourceDeletionProtection = "Toggle atlas operator deletion protection for subresources like Alerts, Integrations, etc. Read more: https://dochub.mongodb.org/core/ako-deletion-protection"
+	OperatorConfigOnly                    = "Flag that indicates whether to generate only the operator configuration files without installing the Operator"
 	ExporterDataFederationName            = "One or more comma separated data federation names to import"
 	IndependentResources                  = "Flag that makes the generated resources that support independent usage, to use external IDs rather than Kubernetes references."
+	EnableWatch                           = "Flag that indicates whether to watch the command until it completes its execution or the watch times out. To set the time that the watch times out, use the --watchTimeout option."
+	WatchTimeout                          = "Time in seconds until a watch times out. After a watch times out, the CLI no longer watches the command."
 )
