@@ -89,10 +89,7 @@ func Builder() *cobra.Command {
 		Args:    require.NoArgs,
 		Aliases: cli.GenerateAliases(use),
 		Short:   "Deploy and run Atlas Kubernetes Operator in dry-run mode",
-		Long: `This command deploys the Atlas Kubernetes operator with the DryRun mode.
-
-TODO: ask Dan about the proper description of the dry-run mode.
-`,
+		Long:    `This command deploys the Atlas Kubernetes operator with the DryRun mode.`,
 		PreRunE: func(_ *cobra.Command, _ []string) error {
 			return opts.OrgOpts.PreRunE(
 				opts.ValidateTargetNamespace,
