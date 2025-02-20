@@ -16,9 +16,6 @@ Deploy and run Atlas Kubernetes Operator in dry-run mode
 
 This command deploys the Atlas Kubernetes operator with the DryRun mode.
 
-TODO: ask Dan about the proper description of the dry-run mode.
-
-
 Syntax
 ------
 
