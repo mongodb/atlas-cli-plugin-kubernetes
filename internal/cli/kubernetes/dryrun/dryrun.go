@@ -103,7 +103,7 @@ func Builder() *cobra.Command {
 
 	opts.AddOrgOptFlags(cmd)
 	cmd.Flags().StringVar(&opts.targetNamespace, flag.OperatorTargetNamespace, "", usage.OperatorTargetNamespace)
-	cmd.Flags().StringSliceVar(&opts.watchNamespaces, flag.OperatorWatchNamespaces, []string{}, usage.OperatorWatchNamespace)
+	cmd.Flags().StringSliceVar(&opts.watchNamespaces, flag.OperatorWatchNamespace, []string{}, usage.OperatorWatchNamespace)
 	cmd.Flags().StringVar(&opts.operatorVersion, flag.OperatorVersion, features.LatestOperatorMajorVersion, usage.OperatorVersion)
 	cmd.Flags().BoolVar(&opts.waitForJob, flag.EnableWatch, false, usage.EnableWatch)
 	cmd.Flags().Int64Var(&opts.waitTimeout, flag.WatchTimeout, defaultTimeoutSec, usage.WatchTimeout)

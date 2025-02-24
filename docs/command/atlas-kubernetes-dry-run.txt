@@ -57,7 +57,7 @@ Options
      - 
      - false
      - Flag that indicates whether to watch the command until it completes its execution or the watch times out. To set the time that the watch times out, use the --watchTimeout option.
-   * - --watchNamespaces
+   * - --watchNamespace
      - strings
      - false
      - List that contains namespaces that the operator will listen to.

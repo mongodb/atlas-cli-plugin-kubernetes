@@ -88,7 +88,7 @@ Options
      - string
      - false
      - Namespace where to install the operator.
-   * - --watchNamespaces
+   * - --watchNamespace
      - strings
      - false
      - List that contains namespaces that the operator will listen to.

@@ -15,19 +15,19 @@
 package flag
 
 const (
-	Profile                               = "profile"         // Profile flag to use a profile
-	ProfileShort                          = "P"               // ProfileShort flag to use a profile
-	OrgID                                 = "orgId"           // OrgID flag to use an Organization ID
-	ProjectID                             = "projectId"       // ProjectID flag to use a project ID
-	ClusterName                           = "clusterName"     // ClusterName flag
-	Debug                                 = "debug"           // Debug flag to set debug log level
-	DebugShort                            = "D"               // DebugShort flag to set debug log level
-	EnableWatch                           = "watch"           // EnableWatch flag
-	EnableWatchShort                      = "w"               // EnableWatchShort flag
-	WatchTimeout                          = "watchTimeout"    // WatchTimeout flag
-	OperatorIncludeSecrets                = "includeSecrets"  // OperatorIncludeSecrets flag
-	OperatorTargetNamespace               = "targetNamespace" // OperatorTargetNamespace flag
-	OperatorWatchNamespaces               = "watchNamespaces"
+	Profile                               = "profile"                       // Profile flag to use a profile
+	ProfileShort                          = "P"                             // ProfileShort flag to use a profile
+	OrgID                                 = "orgId"                         // OrgID flag to use an Organization ID
+	ProjectID                             = "projectId"                     // ProjectID flag to use a project ID
+	ClusterName                           = "clusterName"                   // ClusterName flag
+	Debug                                 = "debug"                         // Debug flag to set debug log level
+	DebugShort                            = "D"                             // DebugShort flag to set debug log level
+	EnableWatch                           = "watch"                         // EnableWatch flag
+	EnableWatchShort                      = "w"                             // EnableWatchShort flag
+	WatchTimeout                          = "watchTimeout"                  // WatchTimeout flag
+	OperatorIncludeSecrets                = "includeSecrets"                // OperatorIncludeSecrets flag
+	OperatorTargetNamespace               = "targetNamespace"               // OperatorTargetNamespace flag
+	OperatorWatchNamespace                = "watchNamespace"                // OperatorWatchNamespace flag
 	OperatorVersion                       = "operatorVersion"               // OperatorVersion flag
 	OperatorProjectName                   = "projectName"                   // OperatorProjectName flag
 	OperatorImport                        = "import"                        // OperatorImport flag
