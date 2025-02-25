@@ -17,11 +17,14 @@
 package e2e
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
 	"testing"
 	"time"
+
+	rbacv1 "k8s.io/api/rbac/v1"
 
 	akov2 "github.com/mongodb/mongodb-atlas-kubernetes/v2/api/v1"
 	"github.com/stretchr/testify/assert"
@@ -81,6 +84,25 @@ func TestKubernetesOperatorInstall(t *testing.T) {
 		_, inErr := test.RunAndGetStdOutAndErr(cmd)
 		require.Error(t, inErr)
 		assert.Equal(t, "Error: unable to prepare client configuration: invalid configuration: no configuration has been provided, try setting KUBERNETES_MASTER environment variable\n (exit status 1)", inErr.Error())
+	})
+
+	t.Run("should only install operator configuration", func(t *testing.T) {
+		clusterName := "install-default"
+		operator := setupCluster(t, clusterName)
+		context := contextPrefix + clusterName
+
+		cmd := exec.Command(cliPath,
+			"kubernetes",
+			"operator",
+			"install",
+			"--configOnly",
+			"--kubeContext", context)
+		cmd.Env = os.Environ()
+		resp, inErr := test.RunAndGetStdOutAndErr(cmd)
+		require.NoError(t, inErr)
+		assert.Equal(t, "Atlas Kubernetes Operator installed successfully\n", string(resp))
+
+		verifyAKOResources(t, operator)
 	})
 
 	t.Run("should install operator with default options", func(t *testing.T) {
@@ -302,6 +324,50 @@ func TestKubernetesOperatorInstall(t *testing.T) {
 
 		cleanUpKeys(t, operator, operatorNamespace)
 	})
+}
+
+func verifyAKOResources(t *testing.T, operator *operatorHelder, namespace string) {
+	t.Helper()
+	client := operator.getk8sClient()
+	// ServiceAccount, ClusterRole, ClusterRoleBinding, Deployment
+	var saList corev1.ServiceAccountList
+	err := client.List(context.Background(), &saList, &client.ListOptions{Namespace: namespace})
+	require.NoError(t, err)
+
+	saFound := false
+	for _, sa := range saList.Items {
+		if sa.Name == "mongodb-atlas-operator" {
+			saFound = true
+			break
+		}
+	}
+	require.True(t, saFound, "ServiceAccount mongodb-atlas-operator not found")
+
+	var crList rbacv1.ClusterRoleList
+	err = client.List(context.Background(), &crList)
+	require.NoError(t, err)
+
+	crFound := false
+	for _, cr := range crList.Items {
+		if cr.Name == "mongodb-atlas-manager-role" {
+			crFound = true
+			break
+		}
+	}
+	require.True(t, crFound, "ClusterRole mongodb-atlas-manager-role not found")
+
+	var crbList rbacv1.ClusterRoleBindingList
+	err = client.List(context.Background(), &crbList)
+	require.NoError(t, err)
+
+	crbFound := false
+	for _, crb := range crbList.Items {
+		if crb.Name == "mongodb-atlas-manager-rolebinding" {
+			crbFound = true
+			break
+		}
+	}
+	require.True(t, crbFound, "ClusterRoleBinding mongodb-atlas-manager-rolebinding not found")
 }
 
 func checkDeployment(t *testing.T, operator *operatorHelper, namespace string) {

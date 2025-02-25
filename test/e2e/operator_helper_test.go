@@ -103,6 +103,9 @@ func deleteK8SCluster(name string) error {
 	return provider.Delete(name, "")
 }
 
+func (oh *operatorHelper) getK8SClient() client.Client {
+	return oh.k8sClient
+}
 func (oh *operatorHelper) getK8sObject(key client.ObjectKey, object client.Object, track bool) error {
 	err := oh.k8sClient.Get(context.Background(), key, object, &client.GetOptions{})
 	if err != nil {
