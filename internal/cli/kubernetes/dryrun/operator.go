@@ -36,7 +36,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 const repeatInterval = 5 * time.Second
@@ -50,6 +49,7 @@ type Worker struct {
 	wait            bool
 	akoVersion      string
 	waitSec         int64
+	k8sClient       client.Client
 }
 
 func NewWorker() *Worker {
@@ -81,23 +81,19 @@ func (r *Worker) WithWaitTimeoutSec(waitSec int64) *Worker {
 	return r
 }
 
+func (r *Worker) WithK8SClient(k8sClient client.Client) *Worker {
+	r.k8sClient = k8sClient
+	return r
+}
+
 func (r *Worker) Run() error {
-	conf, err := config.GetConfig()
-	if err != nil {
-		return fmt.Errorf("failed to get k8s config: %w", err)
-	}
-
-	c, err := client.New(conf, client.Options{})
-	if err != nil {
-		return fmt.Errorf("failed to create client: %w", err)
-	}
-
 	jb := &batchv1.Job{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Job",
 			APIVersion: "batch/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
+			Labels:       map[string]string{"app": "ako-dry-run"},
 			GenerateName: "ako-dry-run",
 			Namespace:    r.targetNamespace,
 		},
@@ -154,7 +150,7 @@ func (r *Worker) Run() error {
 		},
 	}
 
-	if err := c.Create(context.Background(), jb); err != nil {
+	if err := r.k8sClient.Create(context.Background(), jb); err != nil {
 		return fmt.Errorf("failed to create job: %w", err)
 	}
 
@@ -168,7 +164,7 @@ func (r *Worker) Run() error {
 	ctx, timeoutF := context.WithTimeout(context.Background(), time.Duration(r.waitSec)*time.Second)
 	defer timeoutF()
 
-	if err := waitForJob(ctx, c, jb); err != nil {
+	if err := waitForJob(ctx, r.k8sClient, jb); err != nil {
 		return fmt.Errorf("failed to wait for job: %w", err)
 	}
 

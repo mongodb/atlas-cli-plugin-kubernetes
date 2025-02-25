@@ -37,6 +37,8 @@ import (
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/usage"
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/util/validation"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 var ErrUnsupportedOperatorVersionFmt = "version %q is not supported. Supported versions: %v"
@@ -68,13 +70,32 @@ func (opts *Opts) ValidateOperatorVersion() error {
 	return fmt.Errorf(ErrUnsupportedOperatorVersionFmt, opts.operatorVersion, features.SupportedVersions())
 }
 
+func (opts *Opts) MakeK8SClient() (client.Client, error) {
+	conf, err := config.GetConfig()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get k8s config: %w", err)
+	}
+
+	c, err := client.New(conf, client.Options{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create client: %w", err)
+	}
+	return c, nil
+}
+
 func (opts *Opts) Run() error {
+	k8sClient, err := opts.MakeK8SClient()
+	if err != nil {
+		return err
+	}
+
 	worker := NewWorker().
 		WithTargetNamespace(opts.targetNamespace).
 		WithWatchNamespaces(strings.Join(opts.watchNamespaces, ",")).
 		WithOperatorVersion(opts.operatorVersion).
 		WithWaitForCompletion(opts.waitForJob).
-		WithWaitTimeoutSec(opts.waitTimeout)
+		WithWaitTimeoutSec(opts.waitTimeout).
+		WithK8SClient(k8sClient)
 	return worker.Run()
 }
 
