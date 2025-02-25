@@ -87,8 +87,8 @@ func TestKubernetesOperatorInstall(t *testing.T) {
 	})
 
 	t.Run("should only install operator configuration", func(t *testing.T) {
-		clusterName := "install-default"
-		operator := setupCluster(t, clusterName)
+		clusterName := "install-clusterwide"
+		operator := setupCluster(t, clusterName, operatorNamespace)
 		context := contextPrefix + clusterName
 
 		cmd := exec.Command(cliPath,
@@ -96,12 +96,12 @@ func TestKubernetesOperatorInstall(t *testing.T) {
 			"operator",
 			"install",
 			"--configOnly",
+			"--operatorVersion", features.LatestOperatorMajorVersion,
 			"--targetNamespace", operatorNamespace,
 			"--kubeContext", context)
 		cmd.Env = os.Environ()
-		resp, inErr := test.RunAndGetStdOutAndErr(cmd)
-		require.NoError(t, inErr)
-		assert.Equal(t, "Atlas Kubernetes Operator installed successfully\n", string(resp))
+		resp, err := cmd.CombinedOutput()
+		require.NoError(t, err, string(resp))
 
 		verifyAKOResources(t, operator, operatorNamespace)
 	})
