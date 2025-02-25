@@ -299,9 +299,6 @@ func TestBuildAtlasProject(t *testing.T) {
 		GroupId:      projectID,
 		ItemsPerPage: &listOption.ItemsPerPage,
 	}
-	containerListOptionAWS := &store.ContainersListOptions{ListOptions: *listOption, ProviderName: string(akov2provider.ProviderAWS)}
-	containerListOptionGCP := &store.ContainersListOptions{ListOptions: *listOption, ProviderName: string(akov2provider.ProviderGCP)}
-	containerListOptionAzure := &store.ContainersListOptions{ListOptions: *listOption, ProviderName: string(akov2provider.ProviderAzure)}
 
 	dictionary := resources.AtlasNameToKubernetesName()
 
@@ -621,19 +618,8 @@ func TestBuildAtlasProject(t *testing.T) {
 						},
 					},
 					AlertConfigurationSyncEnabled: false,
-					NetworkPeers: []akov2.NetworkPeer{
-						{
-							AccepterRegionName:  peeringConnectionAWS.GetAccepterRegionName(),
-							ContainerRegion:     "",
-							AWSAccountID:        peeringConnectionAWS.GetAwsAccountId(),
-							ContainerID:         peeringConnectionAWS.ContainerId,
-							ProviderName:        akov2provider.ProviderName(peeringConnectionAWS.GetProviderName()),
-							RouteTableCIDRBlock: peeringConnectionAWS.GetRouteTableCidrBlock(),
-							VpcID:               peeringConnectionAWS.GetVpcId(),
-						},
-					},
-					WithDefaultAlertsSettings: false,
-					X509CertRef:               nil,
+					WithDefaultAlertsSettings:     false,
+					X509CertRef:                   nil,
 					Integrations: []akov2project.Integration{
 						{
 							Type:     thirdPartyIntegrations.GetResults()[0].GetType(),
@@ -704,9 +690,6 @@ func TestBuildAtlasProject(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			projectStore.EXPECT().MaintenanceWindow(projectID).Return(mw, nil)
 			projectStore.EXPECT().Integrations(projectID).Return(thirdPartyIntegrations, nil)
-			projectStore.EXPECT().PeeringConnections(projectID, containerListOptionAWS).Return(peeringConnections, nil)
-			projectStore.EXPECT().PeeringConnections(projectID, containerListOptionGCP).Return(nil, nil)
-			projectStore.EXPECT().PeeringConnections(projectID, containerListOptionAzure).Return(nil, nil)
 			projectStore.EXPECT().EncryptionAtRest(projectID).Return(encryptionAtRest, nil)
 			projectStore.EXPECT().CloudProviderAccessRoles(projectID).Return(cpas, nil)
 			projectStore.EXPECT().ProjectSettings(projectID).Return(projectSettings, nil)
@@ -720,6 +703,7 @@ func TestBuildAtlasProject(t *testing.T) {
 			if !tt.independentResource {
 				projectStore.EXPECT().ProjectIPAccessLists(projectID, listOption).Return(ipAccessLists, nil)
 				projectStore.EXPECT().DatabaseRoles(projectID).Return(customRoles, nil)
+				projectStore.EXPECT().PeeringConnections(projectID).Return(peeringConnections, nil)
 			}
 
 			featureValidator.EXPECT().FeatureExist(features.ResourceAtlasProject, featureAccessLists).Return(true)
@@ -738,6 +722,7 @@ func TestBuildAtlasProject(t *testing.T) {
 			featureValidator.EXPECT().IsResourceSupported(features.ResourceAtlasPrivateEndpoint).Return(tt.independentResource)
 			featureValidator.EXPECT().IsResourceSupported(features.ResourceAtlasCustomRole).Return(tt.independentResource)
 			featureValidator.EXPECT().IsResourceSupported(features.ResourceAtlasIPAccessList).Return(tt.independentResource)
+			featureValidator.EXPECT().IsResourceSupported(features.ResourceAtlasNetworkPeering).Return(tt.independentResource)
 
 			projectResult, err := BuildAtlasProject(&AtlasProjectBuildRequest{
 				ProjectStore:    projectStore,
@@ -1301,15 +1286,7 @@ func Test_buildNetworkPeering(t *testing.T) {
 		peeringConnections := []atlasv2.BaseNetworkPeeringConnectionSettings{
 			*peeringConnectionAWS,
 		}
-
-		listOptions := store.ListOptions{ItemsPerPage: MaxItems}
-		containerListOptionAWS := &store.ContainersListOptions{ListOptions: listOptions, ProviderName: string(akov2provider.ProviderAWS)}
-		containerListOptionGCP := &store.ContainersListOptions{ListOptions: listOptions, ProviderName: string(akov2provider.ProviderGCP)}
-		containerListOptionAzure := &store.ContainersListOptions{ListOptions: listOptions, ProviderName: string(akov2provider.ProviderAzure)}
-
-		peerProvider.EXPECT().PeeringConnections(projectID, containerListOptionAWS).Return(peeringConnections, nil)
-		peerProvider.EXPECT().PeeringConnections(projectID, containerListOptionGCP).Return(nil, nil)
-		peerProvider.EXPECT().PeeringConnections(projectID, containerListOptionAzure).Return(nil, nil)
+		peerProvider.EXPECT().PeeringConnections(projectID).Return(peeringConnections, nil)
 
 		got, err := buildNetworkPeering(peerProvider, projectID)
 		if err != nil {
