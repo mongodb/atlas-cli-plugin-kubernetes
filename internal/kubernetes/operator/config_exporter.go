@@ -298,6 +298,42 @@ func (e *ConfigExporter) exportProject() ([]runtime.Object, string, error) {
 		}
 	}
 
+	if e.featureValidator.IsResourceSupported(features.ResourceAtlasNetworkContainer) {
+		networkContainers, err := project.BuildNetworkContainers(
+			e.dataProvider,
+			project.NetworkContainersRequest{
+				ProjectName:         projectData.Project.Name,
+				ProjectID:           e.projectID,
+				TargetNamespace:     e.targetNamespace ,
+				Version:             e.operatorVersion,
+				Credentials:         credentialsName,
+				IndependentResource: e.independentResources,
+				Dictionary:          e.dictionaryForAtlasNames,
+			},
+		)
+		if err != nil {
+			return nil, "", err
+		}
+
+		for _, container := range networkContainers {
+			r = append(r, &container)
+		}
+	}
+
+	if e.featureValidator.IsResourceSupported(features.ResourceAtlasNetworkPeering) {
+		networkPeerings, err := project.BuildNetworkPeerings(
+			e.dataProvider,
+			project.NetworkPeeringsRequest{},
+		)
+		if err != nil {
+			return nil, "", err
+		}
+
+		for _, peering := range networkPeerings {
+			r = append(r, &peering)
+		}
+	}
+
 	// DB users
 	usersData, relatedSecrets, err := dbusers.BuildDBUsers(
 		e.dataProvider,

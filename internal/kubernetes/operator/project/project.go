@@ -125,7 +125,7 @@ func BuildAtlasProject(br *AtlasProjectBuildRequest) (*AtlasProjectResult, error
 		result.Secrets = intSecrets
 	}
 
-	if br.Validator.FeatureExist(features.ResourceAtlasProject, featureNetworkPeering) {
+	if br.Validator.FeatureExist(features.ResourceAtlasProject, featureNetworkPeering) && !br.Validator.IsResourceSupported(features.ResourceAtlasNetworkPeering) {
 		networkPeering, ferr := buildNetworkPeering(br.ProjectStore, br.ProjectID)
 		if ferr != nil {
 			return nil, ferr
@@ -495,67 +495,28 @@ func buildPrivateEndpoints(peProvider store.PrivateEndpointLister, projectID str
 }
 
 func buildNetworkPeering(npProvider store.PeeringConnectionLister, projectID string) ([]akov2.NetworkPeer, error) {
-	// pagination not required, max 25 entries per provider can be configured via API
-	npListAWS, err := npProvider.PeeringConnections(projectID, &store.ContainersListOptions{
-		ListOptions: store.ListOptions{
-			ItemsPerPage: MaxItems,
-		},
-		ProviderName: string(akov2provider.ProviderAWS),
-	})
+	npList, err := npProvider.PeeringConnections(projectID)
 	if err != nil {
-		return nil, fmt.Errorf("error getting network peering connections for AWS: %w", err)
+		return nil, fmt.Errorf("error getting all network peering connections: %w", err)
 	}
-
-	npListGCP, err := npProvider.PeeringConnections(projectID, &store.ContainersListOptions{
-		ListOptions: store.ListOptions{
-			ItemsPerPage: MaxItems,
-		},
-		ProviderName: string(akov2provider.ProviderGCP),
-	})
-	if err != nil {
-		return nil, fmt.Errorf("error getting network peering connections for GCP: %w", err)
+	result := make([]akov2.NetworkPeer, 0, len(npList))
+	for _, np := range npList {
+		result = append(result, convertNetworkPeer(np))
 	}
-
-	npListAzure, err := npProvider.PeeringConnections(projectID, &store.ContainersListOptions{
-		ListOptions: store.ListOptions{
-			ItemsPerPage: MaxItems,
-		},
-		ProviderName: string(akov2provider.ProviderAzure),
-	})
-	if err != nil {
-		return nil, fmt.Errorf("error getting network peering connections for Azure: %w", err)
-	}
-
-	result := make([]akov2.NetworkPeer, 0, len(npListAWS)+len(npListGCP)+len(npListAzure))
-
-	for i := range npListAWS {
-		np := npListAWS[i]
-		result = append(result, convertNetworkPeer(np, akov2provider.ProviderAWS))
-	}
-
-	for i := range npListGCP {
-		np := npListGCP[i]
-		result = append(result, convertNetworkPeer(np, akov2provider.ProviderGCP))
-	}
-
-	for i := range npListAzure {
-		np := npListAzure[i]
-		result = append(result, convertNetworkPeer(np, akov2provider.ProviderAzure))
-	}
-
 	return result, nil
 }
 
-func convertNetworkPeer(np atlasv2.BaseNetworkPeeringConnectionSettings, providerName akov2provider.ProviderName) akov2.NetworkPeer {
-	switch np.GetProviderName() {
-	case "AWS":
-		return convertAWSNetworkPeer(&np, providerName)
-	case "GCP":
-		return convertGCPNetworkPeer(&np, providerName)
-	case "Azure":
-		return convertAzureNetworkPeer(&np, providerName)
+func convertNetworkPeer(np atlasv2.BaseNetworkPeeringConnectionSettings) akov2.NetworkPeer {
+	providerName := np.GetProviderName()
+	switch akov2provider.ProviderName(providerName) {
+	case akov2provider.ProviderAWS:
+		return convertAWSNetworkPeer(&np, akov2provider.ProviderAWS)
+	case akov2provider.ProviderGCP:
+		return convertGCPNetworkPeer(&np, akov2provider.ProviderGCP)
+	case akov2provider.ProviderAzure:
+		return convertAzureNetworkPeer(&np, akov2provider.ProviderAzure)
 	default:
-		return akov2.NetworkPeer{}
+		return akov2.NetworkPeer{} // we do not panic but skip unsupported providers
 	}
 }
 

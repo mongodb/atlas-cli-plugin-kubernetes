@@ -8,7 +8,6 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	store "github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store"
 	admin "go.mongodb.org/atlas-sdk/v20241113004/admin"
 )
 
@@ -36,16 +35,16 @@ func (m *MockPeeringConnectionLister) EXPECT() *MockPeeringConnectionListerMockR
 }
 
 // PeeringConnections mocks base method.
-func (m *MockPeeringConnectionLister) PeeringConnections(arg0 string, arg1 *store.ContainersListOptions) ([]admin.BaseNetworkPeeringConnectionSettings, error) {
+func (m *MockPeeringConnectionLister) PeeringConnections(arg0 string) ([]admin.BaseNetworkPeeringConnectionSettings, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "PeeringConnections", arg0, arg1)
+	ret := m.ctrl.Call(m, "PeeringConnections", arg0)
 	ret0, _ := ret[0].([]admin.BaseNetworkPeeringConnectionSettings)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // PeeringConnections indicates an expected call of PeeringConnections.
-func (mr *MockPeeringConnectionListerMockRecorder) PeeringConnections(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockPeeringConnectionListerMockRecorder) PeeringConnections(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PeeringConnections", reflect.TypeOf((*MockPeeringConnectionLister)(nil).PeeringConnections), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PeeringConnections", reflect.TypeOf((*MockPeeringConnectionLister)(nil).PeeringConnections), arg0)
 }
