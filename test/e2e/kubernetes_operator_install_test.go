@@ -96,13 +96,14 @@ func TestKubernetesOperatorInstall(t *testing.T) {
 			"operator",
 			"install",
 			"--configOnly",
+			"--targetNamespace", operatorNamespace,
 			"--kubeContext", context)
 		cmd.Env = os.Environ()
 		resp, inErr := test.RunAndGetStdOutAndErr(cmd)
 		require.NoError(t, inErr)
 		assert.Equal(t, "Atlas Kubernetes Operator installed successfully\n", string(resp))
 
-		verifyAKOResources(t, operator)
+		verifyAKOResources(t, operator, operatorNamespace)
 	})
 
 	t.Run("should install operator with default options", func(t *testing.T) {
@@ -326,12 +327,12 @@ func TestKubernetesOperatorInstall(t *testing.T) {
 	})
 }
 
-func verifyAKOResources(t *testing.T, operator *operatorHelder, namespace string) {
+func verifyAKOResources(t *testing.T, operator *operatorHelper, namespace string) {
 	t.Helper()
-	client := operator.getk8sClient()
-	// ServiceAccount, ClusterRole, ClusterRoleBinding, Deployment
+	k8sClient := operator.getK8SClient()
+
 	var saList corev1.ServiceAccountList
-	err := client.List(context.Background(), &saList, &client.ListOptions{Namespace: namespace})
+	err := k8sClient.List(context.Background(), &saList, &client.ListOptions{Namespace: namespace})
 	require.NoError(t, err)
 
 	saFound := false
@@ -344,7 +345,7 @@ func verifyAKOResources(t *testing.T, operator *operatorHelder, namespace string
 	require.True(t, saFound, "ServiceAccount mongodb-atlas-operator not found")
 
 	var crList rbacv1.ClusterRoleList
-	err = client.List(context.Background(), &crList)
+	err = k8sClient.List(context.Background(), &crList)
 	require.NoError(t, err)
 
 	crFound := false
@@ -357,7 +358,7 @@ func verifyAKOResources(t *testing.T, operator *operatorHelder, namespace string
 	require.True(t, crFound, "ClusterRole mongodb-atlas-manager-role not found")
 
 	var crbList rbacv1.ClusterRoleBindingList
-	err = client.List(context.Background(), &crbList)
+	err = k8sClient.List(context.Background(), &crbList)
 	require.NoError(t, err)
 
 	crbFound := false
