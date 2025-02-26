@@ -20,6 +20,7 @@ import (
 	coreConfig "github.com/mongodb/atlas-cli-core/config"
 
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/cli/kubernetes/config"
+	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/cli/kubernetes/dryrun"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/cli/kubernetes/operator"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/flag"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/log"
@@ -59,7 +60,7 @@ func Builder() *cobra.Command {
 		},
 	}
 
-	cmd.AddCommand(config.Builder(), operator.Builder())
+	cmd.AddCommand(config.Builder(), operator.Builder(), dryrun.Builder())
 
 	cmd.PersistentFlags().StringVarP(&profile, flag.Profile, flag.ProfileShort, "", usage.ProfileAtlasCLI)
 	cmd.PersistentFlags().BoolVarP(&debugLevel, flag.Debug, flag.DebugShort, false, usage.Debug)

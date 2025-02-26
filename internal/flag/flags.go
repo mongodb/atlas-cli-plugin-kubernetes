@@ -22,17 +22,21 @@ const (
 	ClusterName                           = "clusterName"                   // ClusterName flag
 	Debug                                 = "debug"                         // Debug flag to set debug log level
 	DebugShort                            = "D"                             // DebugShort flag to set debug log level
+	EnableWatch                           = "watch"                         // EnableWatch flag
+	EnableWatchShort                      = "w"                             // EnableWatchShort flag
+	WatchTimeout                          = "watchTimeout"                  // WatchTimeout flag
 	OperatorIncludeSecrets                = "includeSecrets"                // OperatorIncludeSecrets flag
 	OperatorTargetNamespace               = "targetNamespace"               // OperatorTargetNamespace flag
-	OperatorWatchNamespace                = "watchNamespace"                // OperatorTargetNamespace flag
+	OperatorWatchNamespace                = "watchNamespace"                // OperatorWatchNamespace flag
 	OperatorVersion                       = "operatorVersion"               // OperatorVersion flag
 	OperatorProjectName                   = "projectName"                   // OperatorProjectName flag
 	OperatorImport                        = "import"                        // OperatorImport flag
 	OperatorResourceDeletionProtection    = "resourceDeletionProtection"    // OperatorResourceDeletionProtection flag
 	OperatorSubResourceDeletionProtection = "subresourceDeletionProtection" // Operator OperatorSubResourceDeletionProtection flag
-	OperatorAtlasGov                      = "atlasGov"                      // OperatorAtlasGov flag
-	KubernetesClusterConfig               = "kubeconfig"                    // Kubeconfig flag
-	KubernetesClusterContext              = "kubeContext"                   // KubeContext flag
-	DataFederationName                    = "dataFederationName"            // DataFederationName flag
-	IndependentResources                  = "independentResources"          // IndependentResources flag
+	OperatorConfigOnly                    = "configOnly"
+	OperatorAtlasGov                      = "atlasGov"             // OperatorAtlasGov flag
+	KubernetesClusterConfig               = "kubeconfig"           // Kubeconfig flag
+	KubernetesClusterContext              = "kubeContext"          // KubeContext flag
+	DataFederationName                    = "dataFederationName"   // DataFederationName flag
+	IndependentResources                  = "independentResources" // IndependentResources flag
 )
