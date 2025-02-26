@@ -369,6 +369,11 @@ func verifyAKOResources(t *testing.T, operator *operatorHelper, namespace string
 		}
 	}
 	require.True(t, crbFound, "ClusterRoleBinding mongodb-atlas-manager-rolebinding not found")
+
+	var deployments appsv1.DeploymentList
+	err = k8sClient.List(context.Background(), &deployments, &client.ListOptions{Namespace: namespace})
+	require.NoError(t, err)
+	require.Len(t, deployments.Items, 0)
 }
 
 func checkDeployment(t *testing.T, operator *operatorHelper, namespace string) {

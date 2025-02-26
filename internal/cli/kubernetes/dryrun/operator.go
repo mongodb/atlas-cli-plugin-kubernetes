@@ -31,6 +31,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/pointer"
+
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -98,7 +100,7 @@ func (r *Worker) Run() error {
 			Namespace:    r.targetNamespace,
 		},
 		Spec: batchv1.JobSpec{
-			BackoffLimit: makePtr[int32](1),
+			BackoffLimit: pointer.Get[int32](1),
 			Template: corev1.PodTemplateSpec{
 				Spec: corev1.PodSpec{
 					ServiceAccountName: "mongodb-atlas-operator",
@@ -198,8 +200,4 @@ func waitForJob(ctx context.Context, c client.Client, job *batchv1.Job) error {
 			fmt.Printf("Waiting for job to complete... Attempt #%d\r\n", attempts)
 		}
 	}
-}
-
-func makePtr[T any](v T) *T {
-	return &v
 }
