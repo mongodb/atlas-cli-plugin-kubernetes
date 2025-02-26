@@ -253,10 +253,10 @@ func TestExportPrivateEndpoint(t *testing.T) {
 	}{
 		"should export sub-resource for version without support for separate resource": {
 			independentResources: false,
-			version:              "2.5.0",
+			version:              "2.7.0",
 			expected: []runtime.Object{
 				expectedWithPrivateEndpoints(
-					defaultTestProject(s.generator.projectName, "", map[string]string{features.ResourceVersion: "2.5.0"}, false),
+					defaultTestProject(s.generator.projectName, "", map[string]string{features.ResourceVersion: "2.7.0"}, false),
 					expectedPESubresource,
 				),
 				defaultTestAtlasConnSecret(credentialName, ""),
