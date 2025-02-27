@@ -73,7 +73,7 @@ func TestBuildContainers(t *testing.T) {
 						APIVersion: "atlas.mongodb.com/v1",
 					},
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      strings.ToLower(projectName) + "-container-",
+						Name:      strings.ToLower(projectName) + "-container-aws-useast1",
 						Namespace: targetNamespace,
 						Labels: map[string]string{
 							features.ResourceVersion: version,
@@ -118,8 +118,8 @@ func TestBuildContainers(t *testing.T) {
 					ProviderName:   pointer.Get(string(akov2provider.ProviderGCP)),
 					Provisioned:    pointer.Get(false),
 					AtlasCidrBlock: pointer.Get("12.0.0.0/18"),
-					GcpProjectId:   pointer.Get("gcp-project"),
-					NetworkName:    pointer.Get("gcp-network"),
+					GcpProjectId:   pointer.Get("project"),
+					NetworkName:    pointer.Get("network-name"),
 				},
 			},
 			wantResources: []akov2.AtlasNetworkContainer{
@@ -129,7 +129,7 @@ func TestBuildContainers(t *testing.T) {
 						APIVersion: "atlas.mongodb.com/v1",
 					},
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      strings.ToLower(projectName) + "-container-",
+						Name:      strings.ToLower(projectName) + "-container-azure-uscentral",
 						Namespace: targetNamespace,
 						Labels: map[string]string{
 							features.ResourceVersion: version,
@@ -161,7 +161,7 @@ func TestBuildContainers(t *testing.T) {
 						APIVersion: "atlas.mongodb.com/v1",
 					},
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      strings.ToLower(projectName) + "-container-",
+						Name:      strings.ToLower(projectName) + "-container-gcp-global",
 						Namespace: targetNamespace,
 						Labels: map[string]string{
 							features.ResourceVersion: version,
@@ -225,7 +225,7 @@ func TestBuildContainers(t *testing.T) {
 						APIVersion: "atlas.mongodb.com/v1",
 					},
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      strings.ToLower(projectName) + "-container-",
+						Name:      strings.ToLower(projectName) + "-container-aws-useast1",
 						Namespace: targetNamespace,
 						Labels: map[string]string{
 							features.ResourceVersion: version,
@@ -259,7 +259,7 @@ func TestBuildContainers(t *testing.T) {
 						APIVersion: "atlas.mongodb.com/v1",
 					},
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      strings.ToLower(projectName) + "-container-",
+						Name:      strings.ToLower(projectName) + "-container-azure-uscentral",
 						Namespace: targetNamespace,
 						Labels: map[string]string{
 							features.ResourceVersion: version,
@@ -293,7 +293,7 @@ func TestBuildContainers(t *testing.T) {
 						APIVersion: "atlas.mongodb.com/v1",
 					},
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      strings.ToLower(projectName) + "-container-",
+						Name:      strings.ToLower(projectName) + "-container-gcp-global",
 						Namespace: targetNamespace,
 						Labels: map[string]string{
 							features.ResourceVersion: version,
@@ -343,17 +343,7 @@ func TestBuildContainers(t *testing.T) {
 				},
 			)
 			require.NoError(t, err)
-			assert.Equal(t, tc.wantResources, deRandomizeContainers(containers))
+			assert.Equal(t, tc.wantResources, containers)
 		})
 	}
-}
-
-func deRandomizeContainers(containers []akov2.AtlasNetworkContainer) []akov2.AtlasNetworkContainer {
-	predictableContainers := make([]akov2.AtlasNetworkContainer, 0, len(containers))
-	for _, container := range containers {
-		predictableContainer := container.DeepCopy()
-		predictableContainer.Name = predictableContainer.Name[:len(predictableContainer.Name)-5]
-		predictableContainers = append(predictableContainers, *predictableContainer)
-	}
-	return predictableContainers
 }
