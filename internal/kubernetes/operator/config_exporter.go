@@ -323,7 +323,15 @@ func (e *ConfigExporter) exportProject() ([]runtime.Object, string, error) {
 	if e.featureValidator.IsResourceSupported(features.ResourceAtlasNetworkPeering) {
 		networkPeerings, err := project.BuildNetworkPeerings(
 			e.dataProvider,
-			project.NetworkPeeringsRequest{},
+			project.NetworkPeeringsRequest{
+				ProjectName:         projectData.Project.Name,
+				ProjectID:           e.projectID,
+				TargetNamespace:     e.targetNamespace ,
+				Version:             e.operatorVersion,
+				Credentials:         credentialsName,
+				IndependentResource: e.independentResources,
+				Dictionary:          e.dictionaryForAtlasNames,
+			},
 		)
 		if err != nil {
 			return nil, "", err

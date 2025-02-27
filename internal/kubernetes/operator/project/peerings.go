@@ -16,6 +16,7 @@ package project
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator/features"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator/resources"
@@ -62,7 +63,7 @@ func convertPeeringToKubernetes(request NetworkPeeringsRequest, atlasPeering *ad
 			APIVersion: fmt.Sprintf("%s/%s", akov2.GroupVersion.Group, akov2.GroupVersion.Version),
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      resources.NormalizeAtlasName(request.ProjectName+"-peering-"+randomSuffix(5), request.Dictionary),
+			Name:      peeringResourceName(request, atlasPeering),
 			Namespace: request.TargetNamespace,
 			Labels: map[string]string{
 				features.ResourceVersion: request.Version,
@@ -73,8 +74,8 @@ func convertPeeringToKubernetes(request NetworkPeeringsRequest, atlasPeering *ad
 				ID: atlasPeering.GetContainerId(),
 			},
 			AtlasNetworkPeeringConfig: akov2.AtlasNetworkPeeringConfig{
-				ID:                 atlasPeering.GetId(),
-				Provider:           atlasPeering.GetProviderName(),
+				ID:       atlasPeering.GetId(),
+				Provider: atlasPeering.GetProviderName(),
 			},
 		},
 		Status: status.AtlasNetworkPeeringStatus{
@@ -122,4 +123,20 @@ func convertPeeringToKubernetes(request NetworkPeeringsRequest, atlasPeering *ad
 		}
 	}
 	return resource
+}
+
+func peeringResourceName(request NetworkPeeringsRequest, atlasPeering *admin.BaseNetworkPeeringConnectionSettings) string {
+	provider := atlasPeering.GetProviderName()
+	conn := ""
+	switch provider {
+	case string(akov2provider.ProviderAWS):
+		region := strings.ReplaceAll(atlasPeering.GetAccepterRegionName(), "_", "")
+		conn = strings.ToLower(fmt.Sprintf("%s-%s", region, atlasPeering.GetVpcId()))
+	case string(akov2provider.ProviderAzure):
+		conn = strings.ToLower(fmt.Sprintf("%s-%s", atlasPeering.GetAzureSubscriptionId(), atlasPeering.GetVnetName()))
+	case string(akov2provider.ProviderGCP):
+		conn = strings.ToLower(fmt.Sprintf("%s-%s", atlasPeering.GetGcpProjectId(), atlasPeering.GetNetworkName()))
+	}
+	baseName := fmt.Sprintf("%s-peering-%s-%s", request.ProjectName, provider, conn)
+	return resources.NormalizeAtlasName(baseName, request.Dictionary)
 }

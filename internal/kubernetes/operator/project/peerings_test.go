@@ -75,7 +75,7 @@ func TestBuildPeerings(t *testing.T) {
 						APIVersion: "atlas.mongodb.com/v1",
 					},
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      strings.ToLower(projectName) + "-peering-",
+						Name:      strings.ToLower(projectName) + "-peering-aws-useast1-some-vpc",
 						Namespace: targetNamespace,
 						Labels: map[string]string{
 							features.ResourceVersion: version,
@@ -114,20 +114,20 @@ func TestBuildPeerings(t *testing.T) {
 			title: "Azure and GCP peerings properly exported",
 			atlasPeerings: []admin.BaseNetworkPeeringConnectionSettings{
 				{
-					ContainerId: "container-id-0",
-					Id: pointer.Get("peering-id-0"),
-					ProviderName: pointer.Get(string(akov2provider.ProviderAzure)),
-					AzureDirectoryId:    pointer.Get("azure-directory-id"),
-					AzureSubscriptionId: pointer.Get("azure-subscription-id"),
+					ContainerId:         "container-id-0",
+					Id:                  pointer.Get("peering-id-0"),
+					ProviderName:        pointer.Get(string(akov2provider.ProviderAzure)),
+					AzureDirectoryId:    pointer.Get("directory-id"),
+					AzureSubscriptionId: pointer.Get("subscription-id"),
 					ResourceGroupName:   pointer.Get("resource-group-name"),
 					VnetName:            pointer.Get("vnet-name"),
 				},
 				{
-					ContainerId: "container-id-1",
-					Id: pointer.Get("peering-id-1"),
+					ContainerId:  "container-id-1",
+					Id:           pointer.Get("peering-id-1"),
 					ProviderName: pointer.Get(string(akov2provider.ProviderGCP)),
-					GcpProjectId:        pointer.Get("gcp-project-id"),
-					NetworkName:         pointer.Get("network-name"),
+					GcpProjectId: pointer.Get("project-id"),
+					NetworkName:  pointer.Get("network-name"),
 				},
 			},
 			wantResources: []akov2.AtlasNetworkPeering{
@@ -137,7 +137,7 @@ func TestBuildPeerings(t *testing.T) {
 						APIVersion: "atlas.mongodb.com/v1",
 					},
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      strings.ToLower(projectName) + "-peering-",
+						Name:      strings.ToLower(projectName) + "-peering-azure-subscription-id-vnet-name",
 						Namespace: targetNamespace,
 						Labels: map[string]string{
 							features.ResourceVersion: version,
@@ -157,8 +157,8 @@ func TestBuildPeerings(t *testing.T) {
 							ID:       "peering-id-0",
 							Provider: string(akov2provider.ProviderAzure),
 							AzureConfiguration: &akov2.AzureNetworkPeeringConfiguration{
-								AzureDirectoryID:    "azure-directory-id",
-								AzureSubscriptionID: "azure-subscription-id",
+								AzureDirectoryID:    "directory-id",
+								AzureSubscriptionID: "subscription-id",
 								ResourceGroupName:   "resource-group-name",
 								VNetName:            "vnet-name",
 							},
@@ -176,7 +176,7 @@ func TestBuildPeerings(t *testing.T) {
 						APIVersion: "atlas.mongodb.com/v1",
 					},
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      strings.ToLower(projectName) + "-peering-",
+						Name:      strings.ToLower(projectName) + "-peering-gcp-project-id-network-name",
 						Namespace: targetNamespace,
 						Labels: map[string]string{
 							features.ResourceVersion: version,
@@ -196,7 +196,7 @@ func TestBuildPeerings(t *testing.T) {
 							ID:       "peering-id-1",
 							Provider: string(akov2provider.ProviderGCP),
 							GCPConfiguration: &akov2.GCPNetworkPeeringConfiguration{
-								GCPProjectID: "gcp-project-id",
+								GCPProjectID: "project-id",
 								NetworkName:  "network-name",
 							},
 						},
@@ -210,7 +210,7 @@ func TestBuildPeerings(t *testing.T) {
 			},
 		},
 		{
-			title: "AWS, Azure and GCP peering properly exported with IDs",
+			title:               "AWS, Azure and GCP peering properly exported with IDs",
 			independentResource: true,
 			atlasPeerings: []admin.BaseNetworkPeeringConnectionSettings{
 				{
@@ -224,20 +224,20 @@ func TestBuildPeerings(t *testing.T) {
 					VpcId:               pointer.Get("some-vpc"),
 				},
 				{
-					ContainerId: "container-id-0",
-					Id: pointer.Get("peering-id-0"),
-					ProviderName: pointer.Get(string(akov2provider.ProviderAzure)),
-					AzureDirectoryId:    pointer.Get("azure-directory-id"),
-					AzureSubscriptionId: pointer.Get("azure-subscription-id"),
+					ContainerId:         "container-id-0",
+					Id:                  pointer.Get("peering-id-0"),
+					ProviderName:        pointer.Get(string(akov2provider.ProviderAzure)),
+					AzureDirectoryId:    pointer.Get("directory-id"),
+					AzureSubscriptionId: pointer.Get("subscription-id"),
 					ResourceGroupName:   pointer.Get("resource-group-name"),
 					VnetName:            pointer.Get("vnet-name"),
 				},
 				{
-					ContainerId: "container-id-1",
-					Id: pointer.Get("peering-id-1"),
+					ContainerId:  "container-id-1",
+					Id:           pointer.Get("peering-id-1"),
 					ProviderName: pointer.Get(string(akov2provider.ProviderGCP)),
-					GcpProjectId:        pointer.Get("gcp-project-id"),
-					NetworkName:         pointer.Get("network-name"),
+					GcpProjectId: pointer.Get("project-id"),
+					NetworkName:  pointer.Get("network-name"),
 				},
 			},
 			wantResources: []akov2.AtlasNetworkPeering{
@@ -247,7 +247,7 @@ func TestBuildPeerings(t *testing.T) {
 						APIVersion: "atlas.mongodb.com/v1",
 					},
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      strings.ToLower(projectName) + "-peering-",
+						Name:      strings.ToLower(projectName) + "-peering-aws-useast1-some-vpc",
 						Namespace: targetNamespace,
 						Labels: map[string]string{
 							features.ResourceVersion: version,
@@ -288,7 +288,7 @@ func TestBuildPeerings(t *testing.T) {
 						APIVersion: "atlas.mongodb.com/v1",
 					},
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      strings.ToLower(projectName) + "-peering-",
+						Name:      strings.ToLower(projectName) + "-peering-azure-subscription-id-vnet-name",
 						Namespace: targetNamespace,
 						Labels: map[string]string{
 							features.ResourceVersion: version,
@@ -310,8 +310,8 @@ func TestBuildPeerings(t *testing.T) {
 							ID:       "peering-id-0",
 							Provider: string(akov2provider.ProviderAzure),
 							AzureConfiguration: &akov2.AzureNetworkPeeringConfiguration{
-								AzureDirectoryID:    "azure-directory-id",
-								AzureSubscriptionID: "azure-subscription-id",
+								AzureDirectoryID:    "directory-id",
+								AzureSubscriptionID: "subscription-id",
 								ResourceGroupName:   "resource-group-name",
 								VNetName:            "vnet-name",
 							},
@@ -329,7 +329,7 @@ func TestBuildPeerings(t *testing.T) {
 						APIVersion: "atlas.mongodb.com/v1",
 					},
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      strings.ToLower(projectName) + "-peering-",
+						Name:      strings.ToLower(projectName) + "-peering-gcp-project-id-network-name",
 						Namespace: targetNamespace,
 						Labels: map[string]string{
 							features.ResourceVersion: version,
@@ -351,7 +351,7 @@ func TestBuildPeerings(t *testing.T) {
 							ID:       "peering-id-1",
 							Provider: string(akov2provider.ProviderGCP),
 							GCPConfiguration: &akov2.GCPNetworkPeeringConfiguration{
-								GCPProjectID: "gcp-project-id",
+								GCPProjectID: "project-id",
 								NetworkName:  "network-name",
 							},
 						},
@@ -385,17 +385,7 @@ func TestBuildPeerings(t *testing.T) {
 				},
 			)
 			require.NoError(t, err)
-			assert.Equal(t, tc.wantResources, deRandomizePeerings(peerings))
+			assert.Equal(t, tc.wantResources, peerings)
 		})
 	}
-}
-
-func deRandomizePeerings(peerings []akov2.AtlasNetworkPeering) []akov2.AtlasNetworkPeering {
-	predictablePeerings := make([]akov2.AtlasNetworkPeering, 0, len(peerings))
-	for _, peering := range peerings {
-		predictablePeering := peering.DeepCopy()
-		predictablePeering.Name = predictablePeering.Name[:len(predictablePeering.Name)-5]
-		predictablePeerings = append(predictablePeerings, *predictablePeering)
-	}
-	return predictablePeerings
 }

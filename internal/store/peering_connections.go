@@ -43,7 +43,7 @@ func (s *Store) PeeringConnections(projectID string) ([]atlasv2.BaseNetworkPeeri
 
 func (s *Store) peeringConnectionsFor(projectID string, provider akov2provider.ProviderName) ([]atlasv2.BaseNetworkPeeringConnectionSettings, error) {
 	allPages := []atlasv2.BaseNetworkPeeringConnectionSettings{}
-	pageNum := 0
+	pageNum := 1
 	itemsPerPage := MaxItems
 	for {
 		result, _, err := s.clientv2.NetworkPeeringApi.ListPeeringConnections(s.ctx, projectID).

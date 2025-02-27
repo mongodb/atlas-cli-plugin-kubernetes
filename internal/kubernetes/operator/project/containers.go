@@ -16,8 +16,8 @@ package project
 
 import (
 	"fmt"
+	"strings"
 
-	"github.com/google/uuid"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator/features"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator/resources"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store"
@@ -63,7 +63,7 @@ func convertContainerToKubernetes(request NetworkContainersRequest, atlasContain
 			APIVersion: fmt.Sprintf("%s/%s", akov2.GroupVersion.Group, akov2.GroupVersion.Version),
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      resources.NormalizeAtlasName(request.ProjectName+"-container-"+randomSuffix(5), request.Dictionary),
+			Name:      containerResourceName(request, atlasContainer),
 			Namespace: request.TargetNamespace,
 			Labels: map[string]string{
 				features.ResourceVersion: request.Version,
@@ -108,6 +108,16 @@ func convertContainerToKubernetes(request NetworkContainersRequest, atlasContain
 	return resource
 }
 
-func randomSuffix(size int) string {
-	return uuid.NewString()[:size]
+func containerResourceName(request NetworkContainersRequest, atlasContainer *admin.CloudProviderContainer) string {
+	provider := atlasContainer.GetProviderName()
+	region := "global"
+	switch provider {
+	case string(akov2provider.ProviderAWS):
+		region = atlasContainer.GetRegionName()
+	case string(akov2provider.ProviderAzure):
+		region = atlasContainer.GetRegion()
+	}
+	normalizedRegion := strings.ToLower(strings.ReplaceAll(region, "_", ""))
+	baseName := fmt.Sprintf("%s-container-%s-%s", request.ProjectName, provider, normalizedRegion)
+	return resources.NormalizeAtlasName(baseName, request.Dictionary)
 }
