@@ -1,25 +1,21 @@
+---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.16.1
-  creationTimestamp: null
-  labels:
-    app.kubernetes.io/component: controller
-    app.kubernetes.io/instance: mongodb-atlas-kubernetes-operator
-    app.kubernetes.io/name: mongodb-atlas-kubernetes-operator
-  name: atlasbackupcompliancepolicies.atlas.mongodb.com
+  name: atlasbackuppolicies.atlas.mongodb.com
 spec:
   group: atlas.mongodb.com
   names:
     categories:
     - atlas
-    kind: AtlasBackupCompliancePolicy
-    listKind: AtlasBackupCompliancePolicyList
-    plural: atlasbackupcompliancepolicies
+    kind: AtlasBackupPolicy
+    listKind: AtlasBackupPolicyList
+    plural: atlasbackuppolicies
     shortNames:
-    - abcp
-    singular: atlasbackupcompliancepolicy
+    - abp
+    singular: atlasbackuppolicy
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
@@ -29,8 +25,7 @@ spec:
     name: v1
     schema:
       openAPIV3Schema:
-        description: AtlasBackupCompliancePolicy defines the desired state of a compliance
-          policy in Atlas.
+        description: AtlasBackupPolicy is the Schema for the atlasbackuppolicies API
         properties:
           apiVersion:
             description: |-
@@ -50,64 +45,10 @@ spec:
           metadata:
             type: object
           spec:
+            description: AtlasBackupPolicySpec defines the desired state of AtlasBackupPolicy
             properties:
-              authorizedEmail:
-                description: Email address of the user who authorized to update the
-                  Backup Compliance Policy settings.
-                type: string
-              authorizedUserFirstName:
-                description: First name of the user who authorized to updated the
-                  Backup Compliance Policy settings.
-                type: string
-              authorizedUserLastName:
-                description: Last name of the user who authorized to updated the Backup
-                  Compliance Policy settings.
-                type: string
-              copyProtectionEnabled:
-                description: Flag that indicates whether to prevent cluster users
-                  from deleting backups copied to other regions, even if those additional
-                  snapshot regions are removed.
-                type: boolean
-              encryptionAtRestEnabled:
-                description: Flag that indicates whether Encryption at Rest using
-                  Customer Key Management is required for all clusters with a Backup
-                  Compliance Policy.
-                type: boolean
-              onDemandPolicy:
-                description: Specifications for on-demand policy.
-                properties:
-                  retentionUnit:
-                    description: 'Scope of the backup policy item: days, weeks, or
-                      months'
-                    enum:
-                    - days
-                    - weeks
-                    - months
-                    type: string
-                  retentionValue:
-                    description: Value to associate with RetentionUnit
-                    type: integer
-                required:
-                - retentionUnit
-                - retentionValue
-                type: object
-              overwriteBackupPolicies:
-                description: Flag that indicates whether to overwrite non complying
-                  backup policies with the new data protection settings or not.
-                type: boolean
-              pointInTimeEnabled:
-                description: Flag that indicates whether the cluster uses Continuous
-                  Cloud Backups with a Backup Compliance Policy.
-                type: boolean
-              restoreWindowDays:
-                description: Number of previous days that you can restore back to
-                  with Continuous Cloud Backup with a Backup Compliance Policy. This
-                  parameter applies only to Continuous Cloud Backups with a Backup
-                  Compliance Policy.
-                type: integer
-              scheduledPolicyItems:
-                description: List that contains the specifications for one scheduled
-                  policy.
+              items:
+                description: A list of BackupPolicy items
                 items:
                   properties:
                     frequencyInterval:
@@ -177,12 +118,15 @@ spec:
                   type: object
                 type: array
             required:
-            - authorizedEmail
-            - authorizedUserFirstName
-            - authorizedUserLastName
+            - items
             type: object
           status:
             properties:
+              backupScheduleIDs:
+                description: DeploymentID of the deployment using the backup policy
+                items:
+                  type: string
+                type: array
               conditions:
                 description: Conditions is the list of statuses showing the current
                   state of the Atlas Custom Resource
@@ -227,9 +171,3 @@ spec:
     storage: true
     subresources:
       status: {}
-status:
-  acceptedNames:
-    kind: ""
-    plural: ""
-  conditions: null
-  storedVersions: null
