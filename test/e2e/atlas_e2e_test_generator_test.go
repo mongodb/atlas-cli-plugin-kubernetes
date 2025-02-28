@@ -17,6 +17,7 @@
 package e2e
 
 import (
+	"context"
 	"encoding/json"
 	"os"
 	"os/exec"
@@ -24,7 +25,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/pointer"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/test"
+	akov2provider "github.com/mongodb/mongodb-atlas-kubernetes/v2/api/v1/provider"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	atlasv2 "go.mongodb.org/atlas-sdk/v20241113004/admin"
@@ -227,6 +230,56 @@ func (g *atlasE2ETestGenerator) generatePrivateEndpoint(provider, region string)
 		require.Error(g.t, err)
 		assert.Contains(g.t, string(resp), "404")
 	})
+}
+
+func (g *atlasE2ETestGenerator) generateAWSContainer(cidr, region string) string {
+	g.t.Helper()
+
+	client := MustGetNewTestClientFromEnv(g.t)
+	ctx := context.Background()
+	containerRequest := &atlasv2.CloudProviderContainer{
+		ProviderName:   pointer.Get(string(akov2provider.ProviderAWS)),
+		AtlasCidrBlock: pointer.Get(cidr),
+		RegionName:     pointer.Get(region),
+	}
+	createdContainer, _, err := client.NetworkPeeringApi.CreatePeeringContainer(ctx, g.projectID, containerRequest).Execute()
+	if err != nil {
+		g.t.Fatalf("failed to create test container: %v", err)
+	}
+	return createdContainer.GetId()
+}
+
+func (g *atlasE2ETestGenerator) generateAzureContainer(cidr, region string) string {
+	g.t.Helper()
+
+	client := MustGetNewTestClientFromEnv(g.t)
+	ctx := context.Background()
+	containerRequest := &atlasv2.CloudProviderContainer{
+		ProviderName:        pointer.Get(string(akov2provider.ProviderAzure)),
+		AtlasCidrBlock:      pointer.Get(cidr),
+		Region:              pointer.Get(region),
+	}
+	createdContainer, _, err := client.NetworkPeeringApi.CreatePeeringContainer(ctx, g.projectID, containerRequest).Execute()
+	if err != nil {
+		g.t.Fatalf("failed to create test container: %v", err)
+	}
+	return createdContainer.GetId()
+}
+
+func (g *atlasE2ETestGenerator) generateGCPContainer(cidr string) string {
+	g.t.Helper()
+
+	client := MustGetNewTestClientFromEnv(g.t)
+	ctx := context.Background()
+	containerRequest := &atlasv2.CloudProviderContainer{
+		ProviderName:        pointer.Get(string(akov2provider.ProviderGCP)),
+		AtlasCidrBlock:      pointer.Get(cidr),
+	}
+	createdContainer, _, err := client.NetworkPeeringApi.CreatePeeringContainer(ctx, g.projectID, containerRequest).Execute()
+	if err != nil {
+		g.t.Fatalf("failed to create test container: %v", err)
+	}
+	return createdContainer.GetId()
 }
 
 func (g *atlasE2ETestGenerator) generateDBUser(prefix string) {

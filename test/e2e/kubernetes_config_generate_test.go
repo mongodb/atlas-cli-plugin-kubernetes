@@ -29,6 +29,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/mongodb/mongodb-atlas-kubernetes/v2/api"
 	akoapi "github.com/mongodb/mongodb-atlas-kubernetes/v2/api"
 	akov2 "github.com/mongodb/mongodb-atlas-kubernetes/v2/api/v1"
 	akov2common "github.com/mongodb/mongodb-atlas-kubernetes/v2/api/v1/common"
@@ -238,6 +239,12 @@ func TestExportPrivateEndpoint(t *testing.T) {
 	s := InitialSetup(t)
 	s.generator.generatePrivateEndpoint(awsEntity, "eu-central-1")
 
+	expectedPESubresource := []akov2.PrivateEndpoint{
+		{
+			Provider: "AWS",
+			Region:   "EU_CENTRAL_1",
+		},
+	}
 	credentialName := resources.NormalizeAtlasName(s.generator.projectName+credSuffixTest, resources.AtlasNameToKubernetesName())
 
 	tests := map[string]struct {
@@ -245,6 +252,17 @@ func TestExportPrivateEndpoint(t *testing.T) {
 		version              string
 		expected             []runtime.Object
 	}{
+		"should export sub-resource for version without support for separate resource": {
+			independentResources: false,
+			version:              "2.5.0",
+			expected: []runtime.Object{
+				expectedWithPrivateEndpoints(
+					defaultTestProject(s.generator.projectName, "", map[string]string{features.ResourceVersion: "2.5.0"}, false),
+					expectedPESubresource,
+				),
+				defaultTestAtlasConnSecret(credentialName, ""),
+			},
+		},
 		"should export separate resource with internal reference for version with support": {
 			independentResources: false,
 			version:              features.LatestOperatorMajorVersion,
@@ -403,6 +421,159 @@ func TestExportIPAccessList(t *testing.T) {
 			require.Equal(t, tc.expected, objects)
 		})
 	}
+}
+
+func TestNetworkContainer(t *testing.T) {
+	s := InitialSetup(t)
+	operatorVersion := "2.8.0"
+	awsCIDR := "10.0.0.0/21"
+	awsContainerID := s.generator.generateAWSContainer(awsCIDR, "EU_CENTRAL_1")
+	azureCIDR := "10.128.0.0/21"
+	azureContainerID := s.generator.generateAzureContainer(azureCIDR, "EUROPE_NORTH")
+	gcpCIDR := "10.64.0.0/18"
+	gcpContainerID := s.generator.generateGCPContainer(gcpCIDR)
+
+	for _, tc := range []struct {
+		title                string
+		independentResources bool
+		wantContainers       []runtime.Object
+	}{
+		{
+			title:                "independent resource container",
+			independentResources: true,
+			wantContainers: []runtime.Object{
+				defaultAWSContainer(s.generator, awsContainerID, awsCIDR, true),
+				defaultAzureContainer(s.generator, azureContainerID, azureCIDR, true),		
+				defaultGCPContainer(s.generator, gcpContainerID, gcpCIDR, true),			
+			},
+		},
+		{
+			title:                "dependent resource container",
+			independentResources: false,
+			wantContainers: []runtime.Object{
+				defaultAWSContainer(s.generator, awsContainerID, awsCIDR, false),
+				defaultAzureContainer(s.generator, azureContainerID, azureCIDR, false),	
+				defaultGCPContainer(s.generator, gcpContainerID, gcpCIDR, false),	
+			},
+		},
+	} {
+		t.Run(tc.title, func(t *testing.T) {
+			cmdArgs := []string{
+				"kubernetes",
+				"config",
+				"generate",
+				"--projectId",
+				s.generator.projectID,
+				"--operatorVersion",
+				operatorVersion,
+			}
+			if tc.independentResources {
+				cmdArgs = append(cmdArgs, "--independentResources")
+			}
+			cmd := exec.Command(s.cliPath, cmdArgs...) //nolint:gosec
+			cmd.Env = os.Environ()
+			resp, err := cmd.CombinedOutput()
+			require.NoError(t, err, string(resp))
+
+			var objects []runtime.Object
+			objects, err = getK8SEntities(resp)
+			objects = filtered(objects).byKind(globalKinds...)
+			require.NoError(t, err, "should not fail on decode but got:\n"+string(resp))
+			require.NotEmpty(t, objects)
+			credentialsName := resources.NormalizeAtlasName(
+				strings.ToLower(s.generator.projectName)+"-credentials",
+				resources.AtlasNameToKubernetesName(),
+			)
+			want := []runtime.Object{
+				defaultTestProject(s.generator.projectName, "", expectedLabels, false),
+				defaultTestAtlasConnSecret(credentialsName, ""),
+			}
+			want = append(want, tc.wantContainers...)
+			require.Equal(t, want, objects)
+		})
+	}
+}
+
+func defaultAWSContainer(generator *atlasE2ETestGenerator, id, cidr string, independent bool) *akov2.AtlasNetworkContainer {
+	resourceName := resources.NormalizeAtlasName(
+		strings.ToLower(fmt.Sprintf("%s-container-aws-eucentral1", generator.projectName)),
+		resources.AtlasNameToKubernetesName(),
+	)
+	return customContainer(generator, independent, resourceName, &akov2.AtlasNetworkContainerSpec{
+		Provider: "AWS",
+		AtlasNetworkContainerConfig: akov2.AtlasNetworkContainerConfig{
+			ID:        id,
+			Region:    "EU_CENTRAL_1",
+			CIDRBlock: cidr,
+		},
+	})
+}
+
+func defaultAzureContainer(generator *atlasE2ETestGenerator, id, cidr string, independent bool) *akov2.AtlasNetworkContainer {
+	resourceName := resources.NormalizeAtlasName(
+		strings.ToLower(fmt.Sprintf("%s-container-azure-europenorth", generator.projectName)),
+		resources.AtlasNameToKubernetesName(),
+	)
+	return customContainer(generator, independent, resourceName, &akov2.AtlasNetworkContainerSpec{
+		Provider: "AZURE",
+		AtlasNetworkContainerConfig: akov2.AtlasNetworkContainerConfig{
+			ID:        id,
+			Region:    "EUROPE_NORTH",
+			CIDRBlock: cidr,
+		},
+	})
+}
+
+func defaultGCPContainer(generator *atlasE2ETestGenerator, id, cidr string, independent bool) *akov2.AtlasNetworkContainer {
+	resourceName := resources.NormalizeAtlasName(
+		strings.ToLower(fmt.Sprintf("%s-container-gcp-global", generator.projectName)),
+		resources.AtlasNameToKubernetesName(),
+	)
+	return customContainer(generator, independent, resourceName, &akov2.AtlasNetworkContainerSpec{
+		Provider: "GCP",
+		AtlasNetworkContainerConfig: akov2.AtlasNetworkContainerConfig{
+			ID:        id,
+			CIDRBlock: cidr,
+		},
+	})
+}
+
+func customContainer(generator *atlasE2ETestGenerator, independent bool, resourceName string, spec *akov2.AtlasNetworkContainerSpec) *akov2.AtlasNetworkContainer {
+	container := akov2.AtlasNetworkContainer{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "AtlasNetworkContainer",
+			APIVersion: "atlas.mongodb.com/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   resourceName,
+			Labels: expectedLabels,
+		},
+		Spec: *spec,
+		Status: akov2status.AtlasNetworkContainerStatus{
+			Common: api.Common{
+				Conditions: []api.Condition{},
+			},
+		},
+	}
+	if independent {
+		credentialsName := resources.NormalizeAtlasName(
+			strings.ToLower(generator.projectName)+"-credentials",
+			resources.AtlasNameToKubernetesName(),
+		)
+		container.Spec.ProjectDualReference = akov2.ProjectDualReference{
+			ExternalProjectRef: &akov2.ExternalProjectReference{
+				ID: generator.projectID,
+			},
+			ConnectionSecret: &akoapi.LocalObjectReference{
+				Name: credentialsName,
+			},
+		}
+	} else {
+		container.Spec.ProjectRef = &akov2common.ResourceRefNamespaced{
+			Name: strings.ToLower(generator.projectName),
+		}
+	}
+	return &container
 }
 
 func defaultPrivateEndpoint(generator *atlasE2ETestGenerator, independent bool) *akov2.AtlasPrivateEndpoint {
