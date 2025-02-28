@@ -23,10 +23,12 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
+	"runtime"
 	"strings"
 	"testing"
 
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator/resources"
+	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/version"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -84,6 +86,11 @@ const (
 	e2eGovClusterTier         = "M20"
 	e2eSharedClusterTier      = "M2"
 	e2eDefaultClusterProvider = "AWS"
+)
+
+// User agent for CLI e2e tests
+const (
+	cliKubePluginE2EUserAgentName = "MongoDBAtlasCLIKubernetesPlugin"
 )
 
 func deployFlexClusterForProject(projectID string) (string, error) {
@@ -787,4 +794,28 @@ func deleteStreamsConnection(t *testing.T, projectID, instanceName, name string)
 
 func prepareK8sName(pattern string) string {
 	return resources.NormalizeAtlasName(pattern, resources.AtlasNameToKubernetesName())
+}
+
+func MustGetNewTestClientFromEnv(t *testing.T) *atlasv2.APIClient {
+	t.Helper()
+
+	client, err := NewTestClientFromEnv()
+	if err != nil {
+		t.Fatalf("failed to get test client: %v", err)
+	}
+	return client
+}
+
+func NewTestClientFromEnv() (*atlasv2.APIClient, error) {
+	baseURL := os.Getenv("MCLI_OPS_MANAGER_URL")
+	key := os.Getenv("MCLI_PUBLIC_API_KEY")
+	secret := os.Getenv("MCLI_PRIVATE_API_KEY")
+	return atlasv2.NewClient(
+		atlasv2.UseBaseURL(baseURL),
+		atlasv2.UseDigestAuth(key, secret),
+		atlasv2.UseUserAgent(cliE2EUserAgent()))
+}
+
+func cliE2EUserAgent() string {
+	return fmt.Sprintf("%s/%s (%s;%s)", cliKubePluginE2EUserAgentName, version.Version, runtime.GOOS, runtime.GOARCH)
 }
