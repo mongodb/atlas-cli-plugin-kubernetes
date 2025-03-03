@@ -19,23 +19,62 @@ package e2e
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"os"
 	"os/exec"
 	"strings"
 	"testing"
 	"time"
 
+	compute "cloud.google.com/go/compute/apiv1"
+	"cloud.google.com/go/compute/apiv1/computepb"
+	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/network/armnetwork/v2"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/pointer"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/test"
 	akov2provider "github.com/mongodb/mongodb-atlas-kubernetes/v2/api/v1/provider"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.mongodb.org/atlas-sdk/v20241113004/admin"
 	atlasv2 "go.mongodb.org/atlas-sdk/v20241113004/admin"
 )
 
 const (
 	maxRetryAttempts = 5
 )
+
+const (
+	googleSAFilename = ".googleServiceAccount.json"
+)
+
+type awsVPC struct {
+	id     string
+	region string
+	cidr   string
+}
+
+type azureClient struct {
+	resourceGroupName      string
+	credentials            *azidentity.DefaultAzureCredential
+	networkResourceFactory *armnetwork.ClientFactory
+}
+
+type azureVNet struct {
+	id     string
+	name   string
+	region string
+	cidr   string
+}
+
+type gcpConnection struct {
+	projectID string
+
+	networkClient *compute.NetworksClient
+}
 
 // atlasE2ETestGenerator is about providing capabilities to provide projects and clusters for our e2e tests.
 type atlasE2ETestGenerator struct {
@@ -255,9 +294,9 @@ func (g *atlasE2ETestGenerator) generateAzureContainer(cidr, region string) stri
 	client := MustGetNewTestClientFromEnv(g.t)
 	ctx := context.Background()
 	containerRequest := &atlasv2.CloudProviderContainer{
-		ProviderName:        pointer.Get(string(akov2provider.ProviderAzure)),
-		AtlasCidrBlock:      pointer.Get(cidr),
-		Region:              pointer.Get(region),
+		ProviderName:   pointer.Get(string(akov2provider.ProviderAzure)),
+		AtlasCidrBlock: pointer.Get(cidr),
+		Region:         pointer.Get(region),
 	}
 	createdContainer, _, err := client.NetworkPeeringApi.CreatePeeringContainer(ctx, g.projectID, containerRequest).Execute()
 	if err != nil {
@@ -272,14 +311,349 @@ func (g *atlasE2ETestGenerator) generateGCPContainer(cidr string) string {
 	client := MustGetNewTestClientFromEnv(g.t)
 	ctx := context.Background()
 	containerRequest := &atlasv2.CloudProviderContainer{
-		ProviderName:        pointer.Get(string(akov2provider.ProviderGCP)),
-		AtlasCidrBlock:      pointer.Get(cidr),
+		ProviderName:   pointer.Get(string(akov2provider.ProviderGCP)),
+		AtlasCidrBlock: pointer.Get(cidr),
 	}
 	createdContainer, _, err := client.NetworkPeeringApi.CreatePeeringContainer(ctx, g.projectID, containerRequest).Execute()
 	if err != nil {
 		g.t.Fatalf("failed to create test container: %v", err)
 	}
 	return createdContainer.GetId()
+}
+
+func (g *atlasE2ETestGenerator) generateAWSNetworkVPC(cidr, region string) *awsVPC {
+	g.t.Helper()
+
+	name := vpcName(g.t, region)
+
+	awsSession, err := newAWSSession()
+	if err != nil {
+		g.t.Fatalf("failed to create an AWS session: %v", err)
+	}
+	ec2Client := ec2.New(awsSession, aws.NewConfig().WithRegion(region))
+
+	result, err := ec2Client.CreateVpc(&ec2.CreateVpcInput{
+		AmazonProvidedIpv6CidrBlock: aws.Bool(false),
+		CidrBlock:                   aws.String(cidr),
+		TagSpecifications: []*ec2.TagSpecification{{
+			ResourceType: aws.String(ec2.ResourceTypeVpc),
+			Tags: []*ec2.Tag{
+				{Key: aws.String("Name"), Value: aws.String(name)},
+			},
+		}},
+	})
+	if err != nil {
+		g.t.Fatalf("failed to create AWS test VPC in %s: %v", region, err)
+	}
+	if result == nil {
+		g.t.Fatalf("failed to create AWS test VPC in %s: no result", region)
+	}
+	if result.Vpc == nil {
+		g.t.Fatalf("failed to create AWS test VPC in %s: no VPC populated", region)
+	}
+	if result.Vpc.VpcId == nil {
+		g.t.Fatalf("failed to create AWS test VPC in %s: no VPC ID set", region)
+	}
+	vpcId := *result.Vpc.VpcId
+
+	_, err = ec2Client.ModifyVpcAttribute(&ec2.ModifyVpcAttributeInput{
+		EnableDnsHostnames: &ec2.AttributeBooleanValue{
+			Value: aws.Bool(true),
+		},
+		VpcId: &vpcId,
+	})
+	if err != nil {
+		g.t.Fatalf("failed to modify test VPC %q in %s: %v", vpcId, region, err)
+	}
+
+	return &awsVPC{id: vpcId, cidr: cidr, region: region}
+}
+
+func (g *atlasE2ETestGenerator) deleteAWSNetworkVPC(vpc *awsVPC) {
+	g.t.Helper()
+
+	awsSession, err := newAWSSession()
+	if err != nil {
+		g.t.Fatalf("failed to create an AWS session: %v", err)
+	}
+	ec2Client := ec2.New(awsSession, aws.NewConfig().WithRegion(vpc.region))
+
+	input := &ec2.DeleteVpcInput{
+		DryRun: aws.Bool(false),
+		VpcId:  aws.String(vpc.id),
+	}
+
+	if _, err := ec2Client.DeleteVpc(input); err != nil {
+		g.t.Fatalf("failed to delete test VPC %q in %s: %v", vpc.id, vpc.region, err)
+	}
+}
+
+func newAWSSession() (*session.Session, error) {
+	if _, ok := os.LookupEnv("AWS_ACCESS_KEY_ID"); !ok {
+		return nil, errors.New("missing env var AWS_ACCESS_KEY_ID")
+	}
+	if _, ok := os.LookupEnv("AWS_SECRET_ACCESS_KEY"); !ok {
+		return nil, errors.New("missing env var AWS_SECRET_ACCESS_KEY")
+	}
+	return session.NewSession(aws.NewConfig())
+}
+
+func (g *atlasE2ETestGenerator) generateAWSPeering(containerID string, vpc *awsVPC) string {
+	g.t.Helper()
+	return g.generatePeering(&atlasv2.BaseNetworkPeeringConnectionSettings{
+		ContainerId:         containerID,
+		ProviderName:        pointer.Get(string(akov2provider.ProviderAWS)),
+		AccepterRegionName:  pointer.Get(vpc.region),
+		AwsAccountId:        pointer.Get(os.Getenv("AWS_ACCOUNT_ID")),
+		RouteTableCidrBlock: pointer.Get(vpc.cidr),
+		VpcId:               pointer.Get(vpc.id),
+	})
+}
+
+func (g *atlasE2ETestGenerator) generateAzurePeering(containerID string, vnet *azureVNet) string {
+	g.t.Helper()
+	return g.generatePeering(&atlasv2.BaseNetworkPeeringConnectionSettings{
+		ContainerId:         containerID,
+		ProviderName:        pointer.Get(string(akov2provider.ProviderAzure)),
+		AzureSubscriptionId: pointer.Get(os.Getenv("AZURE_SUBSCRIPTION_ID")),
+		AzureDirectoryId:    pointer.Get(os.Getenv("AZURE_TENANT_ID")),
+		ResourceGroupName:   pointer.Get(os.Getenv("AZURE_RESOURCE_GROUP_NAME")),
+		VnetName:            pointer.Get(vnet.name),
+	})
+}
+
+func (g *atlasE2ETestGenerator) generateGCPPeering(containerID string, networkName string) string {
+	g.t.Helper()
+	return g.generatePeering(&atlasv2.BaseNetworkPeeringConnectionSettings{
+		ContainerId:  containerID,
+		ProviderName: pointer.Get(string(akov2provider.ProviderGCP)),
+		GcpProjectId: pointer.Get(os.Getenv("GOOGLE_PROJECT_ID")),
+		NetworkName:  pointer.Get(networkName),
+	})
+}
+
+func (g *atlasE2ETestGenerator) generateAzureVPC(cidr, region string) *azureVNet {
+	g.t.Helper()
+	azr, err := newAzureClient()
+	if err != nil {
+		g.t.Fatalf("failed to create azure client: %v", err)
+	}
+	vpcClient := azr.networkResourceFactory.NewVirtualNetworksClient()
+	ctx := context.Background()
+	vpcName := vpcName(g.t, region)
+	op, err := vpcClient.BeginCreateOrUpdate(
+		ctx,
+		azr.resourceGroupName,
+		vpcName,
+		armnetwork.VirtualNetwork{
+			Location: pointer.Get(region),
+			Properties: &armnetwork.VirtualNetworkPropertiesFormat{
+				AddressSpace: &armnetwork.AddressSpace{
+					AddressPrefixes: []*string{
+						pointer.Get(cidr),
+					},
+				},
+			},
+			Tags: map[string]*string{
+				"Name": pointer.Get(vpcName),
+			},
+		},
+		nil,
+	)
+	if err != nil {
+		g.t.Fatalf("failed to begin create azure VPC: %v", err)
+	}
+
+	vpc, err := op.PollUntilDone(ctx, nil)
+	if err != nil {
+		g.t.Fatalf("creation process of Azure VPC failed: %v", err)
+	}
+	if vpc.Name == nil {
+		g.t.Fatal("VPC created without a name")
+	}
+	if vpc.ID == nil {
+		g.t.Fatal("VPC created without ID")
+	}
+	return &azureVNet{id: *vpc.ID, name: *vpc.Name, cidr: cidr, region: region}
+}
+
+func (g *atlasE2ETestGenerator) deleteAzureVPC(vpc *azureVNet) {
+	g.t.Helper()
+	azr, err := newAzureClient()
+	if err != nil {
+		g.t.Fatalf("failed to create azure client: %v", err)
+	}
+	vpcClient := azr.networkResourceFactory.NewVirtualNetworksClient()
+	ctx := context.Background()
+	op, err := vpcClient.BeginDelete(
+		ctx,
+		azr.resourceGroupName,
+		vpc.name,
+		nil,
+	)
+	if err != nil {
+		g.t.Fatalf("Failed to delete Azure VPC: %v", err)
+	}
+
+	if _, err = op.PollUntilDone(ctx, nil); err != nil {
+		g.t.Fatalf("Failed to check Azure VPC was deleted: %v", err)
+	}
+}
+
+func newAzureClient() (*azureClient, error) {
+	if _, ok := os.LookupEnv("AZURE_CLIENT_ID"); !ok {
+		return nil, errors.New("missing env var AZURE_CLIENT_ID")
+	}
+	if _, ok := os.LookupEnv("AZURE_TENANT_ID"); !ok {
+		return nil, errors.New("missing env var AZURE_TENANT_ID")
+	}
+	if _, ok := os.LookupEnv("AZURE_CLIENT_SECRET"); !ok {
+		return nil, errors.New("missing env var AZURE_CLIENT_SECRET")
+	}
+	rg, ok := os.LookupEnv("AZURE_RESOURCE_GROUP_NAME")
+	if !ok {
+		return nil, errors.New("missing env var AZURE_RESOURCE_GROUP_NAME")
+	}
+	subscriptionID, ok := os.LookupEnv("AZURE_SUBSCRIPTION_ID")
+	if !ok {
+		return nil, errors.New("missing env var AZURE_SUBSCRIPTION_ID")
+	}
+	cred, err := azidentity.NewDefaultAzureCredential(nil)
+	if err != nil {
+		return nil, err
+	}
+
+	networkFactory, err := armnetwork.NewClientFactory(subscriptionID, cred, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return &azureClient{
+		resourceGroupName:      rg,
+		networkResourceFactory: networkFactory,
+		credentials:            cred,
+	}, err
+}
+
+func vpcName(t *testing.T, region string) string {
+	return strings.ToLower(fmt.Sprintf("cli-plugin-test-vpc-at-%s-%s", region, randomString(t)))
+}
+
+func (g *atlasE2ETestGenerator) generateGCPNetworkVPC() string {
+	ctx := context.Background()
+	gcp, err := newGCPConnection(ctx, os.Getenv("GOOGLE_PROJECT_ID"))
+	if err != nil {
+		g.t.Fatalf("failed to get Google Cloud connection: %v", err)
+	}
+	vpcName := vpcName(g.t, "google")
+
+	op, err := gcp.networkClient.Insert(ctx, &computepb.InsertNetworkRequest{
+		Project: gcp.projectID,
+		NetworkResource: &computepb.Network{
+			Name:                  pointer.Get(vpcName),
+			Description:           pointer.Get("Atlas Kubernetes CLI plugin E2E Tests VPC"),
+			AutoCreateSubnetworks: pointer.Get(false),
+		},
+	})
+	if err != nil {
+		g.t.Fatalf("failed to request creation of Google VPC: %v", err)
+	}
+
+	err = op.Wait(ctx)
+	if err != nil {
+		g.t.Fatalf("failed to create Google VPC: %v", err)
+	}
+
+	return vpcName
+}
+
+func (g *atlasE2ETestGenerator) deleteGCPNetworkVPC(vpcName string) {
+	ctx := context.Background()
+	gcp, err := newGCPConnection(ctx, os.Getenv("GOOGLE_PROJECT_ID"))
+	if err != nil {
+		g.t.Fatalf("failed to get Google Cloud connection: %v", err)
+	}
+	op, err := gcp.networkClient.Delete(ctx, &computepb.DeleteNetworkRequest{
+		Project: gcp.projectID,
+		Network: vpcName,
+	})
+	if err != nil {
+		g.t.Fatalf("failed to request deletion of Google VPC: %v", err)
+	}
+	err = op.Wait(ctx)
+	if err != nil {
+		g.t.Fatalf("failed to delete Google VPC: %v", err)
+	}
+}
+
+func newGCPConnection(ctx context.Context, projectID string) (*gcpConnection, error) {
+	if err := ensureGCPCredentials(); err != nil {
+		return nil, fmt.Errorf("failed to prepare credentials")
+	}
+
+	networkClient, err := compute.NewNetworksRESTClient(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to setup network rest client")
+	}
+
+	return &gcpConnection{
+		projectID:     projectID,
+		networkClient: networkClient,
+	}, nil
+}
+
+func ensureGCPCredentials() error {
+	if os.Getenv("GOOGLE_APPLICATION_CREDENTIALS") != "" {
+		return nil
+	}
+	credentials := os.Getenv("GCP_SA_CRED")
+	if credentials == "" {
+		return errors.New("GOOGLE_APPLICATION_CREDENTIALS and GCP_SA_CRED are unset, cant setup Google credentials")
+	}
+	if err := os.WriteFile(googleSAFilename, ([]byte)(credentials), 0600); err != nil {
+		return fmt.Errorf("failed to save credentials contents GCP_SA_CRED to %s: %w",
+			googleSAFilename, err)
+	}
+	os.Setenv("GOOGLE_APPLICATION_CREDENTIALS", googleSAFilename)
+	return nil
+}
+
+func (g *atlasE2ETestGenerator) generatePeering(request *atlasv2.BaseNetworkPeeringConnectionSettings) string {
+	client := MustGetNewTestClientFromEnv(g.t)
+	ctx := context.Background()
+	createdPeering, _, err := client.NetworkPeeringApi.CreatePeeringConnection(ctx, g.projectID, request).Execute()
+	if err != nil {
+		g.t.Fatalf("failed to create test peering: %v", err)
+	}
+	return createdPeering.GetId()
+}
+
+func (g *atlasE2ETestGenerator) deletePeering(id string) {
+	g.t.Helper()
+
+	client := MustGetNewTestClientFromEnv(g.t)
+	ctx := context.Background()
+	_, _, err := client.NetworkPeeringApi.DeletePeeringConnection(ctx, g.projectID, id).Execute()
+	if err != nil {
+		g.t.Fatalf("failed to delete test peering %s: %v", id, err)
+	}
+	start := time.Now()
+	pause := time.Second
+	timeout := 5 * time.Minute
+	for {
+		_, _, err := client.NetworkPeeringApi.GetPeeringConnection(ctx, g.projectID, id).Execute()
+		if admin.IsErrorCode(err, "PEER_NOT_FOUND") {
+			return
+		}
+		if err != nil {
+			g.t.Fatalf("failed to check deletion of test peering %s: %v", id, err)
+		}
+		if time.Since(start) > timeout {
+			g.t.Fatalf("timed out checking for deletion of test peering %s: %v", id, err)
+		}
+		time.Sleep(pause)
+		pause = pause * 2
+	}
 }
 
 func (g *atlasE2ETestGenerator) generateDBUser(prefix string) {

@@ -819,3 +819,11 @@ func NewTestClientFromEnv() (*atlasv2.APIClient, error) {
 func cliE2EUserAgent() string {
 	return fmt.Sprintf("%s/%s (%s;%s)", cliKubePluginE2EUserAgentName, version.Version, runtime.GOOS, runtime.GOARCH)
 }
+
+func randomString(t *testing.T) string {
+	n, err := RandInt(100000)
+	if err != nil {
+		t.Fatalf("failed to get random string: %v", err)
+	}
+	return fmt.Sprintf("%x", n)
+}
