@@ -423,37 +423,64 @@ func TestExportIPAccessList(t *testing.T) {
 	}
 }
 
-func TestNetworkContainer(t *testing.T) {
+func TestNetworkContainerAndPeerings(t *testing.T) {
 	s := InitialSetup(t)
 	operatorVersion := "2.8.0"
-	awsCIDR := "10.0.0.0/21"
-	awsContainerID := s.generator.generateAWSContainer(awsCIDR, "EU_CENTRAL_1")
-	azureCIDR := "10.128.0.0/21"
-	azureContainerID := s.generator.generateAzureContainer(azureCIDR, "EUROPE_NORTH")
-	gcpCIDR := "10.64.0.0/18"
-	gcpContainerID := s.generator.generateGCPContainer(gcpCIDR)
+
+	awsContainerCIDR := "10.0.0.0/21"
+	awsContainerID := s.generator.generateAWSContainer(awsContainerCIDR, "EU_CENTRAL_1")
+
+	azureContainerCIDR := "10.128.0.0/21"
+	azureContainerID := s.generator.generateAzureContainer(azureContainerCIDR, "EUROPE_NORTH")
+
+	gcpContainerCIDR := "10.64.0.0/18"
+	gcpContainerID := s.generator.generateGCPContainer(gcpContainerCIDR)
+
+	awsAppVPC := s.generator.generateAWSNetworkVPC("10.128.0.0/21", "eu-south-2")
+	defer s.generator.deleteAWSNetworkVPC(awsAppVPC)
+	awsPeeringID := s.generator.generateAWSPeering(awsContainerID, awsAppVPC)
+	defer s.generator.deletePeering(awsPeeringID)
+
+	// TODO: debug to re-activate Azure case
+	// azureAppVPC := s.generator.generateAzureVPC("10.64.0.0/21", "northeurope")
+	// defer s.generator.deleteAzureVPC(azureAppVPC)
+	// azurePeeringID := s.generator.generateAzurePeering(azureContainerID, azureAppVPC)
+	// defer s.generator.deletePeering(azurePeeringID)
+
+	gcpAppNetwork := s.generator.generateGCPNetworkVPC()
+	defer s.generator.deleteGCPNetworkVPC(gcpAppNetwork)
+	gcpPeeringID := s.generator.generateGCPPeering(gcpContainerID, gcpAppNetwork)
+	defer s.generator.deletePeering(gcpPeeringID)
 
 	for _, tc := range []struct {
 		title                string
 		independentResources bool
-		wantContainers       []runtime.Object
+		want                 []runtime.Object
 	}{
 		{
 			title:                "independent resource container",
 			independentResources: true,
-			wantContainers: []runtime.Object{
-				defaultAWSContainer(s.generator, awsContainerID, awsCIDR, true),
-				defaultAzureContainer(s.generator, azureContainerID, azureCIDR, true),		
-				defaultGCPContainer(s.generator, gcpContainerID, gcpCIDR, true),			
+			want: []runtime.Object{
+				defaultAWSContainer(s.generator, awsContainerID, awsContainerCIDR, true),
+				defaultAzureContainer(s.generator, azureContainerID, azureContainerCIDR, true),
+				defaultGCPContainer(s.generator, gcpContainerID, gcpContainerCIDR, true),
+
+				defaultAWSPeering(s.generator, awsPeeringID, awsContainerID, awsAppVPC, true),
+				// defaultAzurePeering(s.generator, azurePeeringID, azureContainerID, azureAppVPC, true),
+				defaultGCPPeering(s.generator, gcpPeeringID, gcpContainerID, gcpAppNetwork, true),
 			},
 		},
 		{
 			title:                "dependent resource container",
 			independentResources: false,
-			wantContainers: []runtime.Object{
-				defaultAWSContainer(s.generator, awsContainerID, awsCIDR, false),
-				defaultAzureContainer(s.generator, azureContainerID, azureCIDR, false),	
-				defaultGCPContainer(s.generator, gcpContainerID, gcpCIDR, false),	
+			want: []runtime.Object{
+				defaultAWSContainer(s.generator, awsContainerID, awsContainerCIDR, false),
+				defaultAzureContainer(s.generator, azureContainerID, azureContainerCIDR, false),
+				defaultGCPContainer(s.generator, gcpContainerID, gcpContainerCIDR, false),
+
+				defaultAWSPeering(s.generator, awsPeeringID, awsContainerID, awsAppVPC, false),
+				// defaultAzurePeering(s.generator, azurePeeringID, azureContainerID, azureAppVPC, false),
+				defaultGCPPeering(s.generator, gcpPeeringID, gcpContainerID, gcpAppNetwork, false),
 			},
 		},
 	} {
@@ -488,7 +515,7 @@ func TestNetworkContainer(t *testing.T) {
 				defaultTestProject(s.generator.projectName, "", expectedLabels, false),
 				defaultTestAtlasConnSecret(credentialsName, ""),
 			}
-			want = append(want, tc.wantContainers...)
+			want = append(want, tc.want...)
 			require.Equal(t, want, objects)
 		})
 	}
@@ -574,6 +601,110 @@ func customContainer(generator *atlasE2ETestGenerator, independent bool, resourc
 		}
 	}
 	return &container
+}
+
+func defaultAWSPeering(generator *atlasE2ETestGenerator, id, containerID string, vpc *awsVPC, independent bool) *akov2.AtlasNetworkPeering {
+	resourceName := resources.NormalizeAtlasName(
+		strings.ToLower(fmt.Sprintf("%s-peering-aws-%s-%s", generator.projectName, vpc.region, vpc.id)),
+		resources.AtlasNameToKubernetesName(),
+	)
+	return customPeering(generator, independent, resourceName, &akov2.AtlasNetworkPeeringSpec{
+		ContainerRef: akov2.ContainerDualReference{
+			ID: containerID,
+		},
+		AtlasNetworkPeeringConfig: akov2.AtlasNetworkPeeringConfig{
+			ID:       id,
+			Provider: "AWS",
+			AWSConfiguration: &akov2.AWSNetworkPeeringConfiguration{
+				AccepterRegionName:  vpc.region,
+				AWSAccountID:        os.Getenv("AWS_ACCOUNT_ID"),
+				RouteTableCIDRBlock: vpc.cidr,
+				VpcID:               vpc.id,
+			},
+		},
+	})
+}
+
+func defaultAzurePeering(generator *atlasE2ETestGenerator, id, containerID string, vnet *azureVNet, independent bool) *akov2.AtlasNetworkPeering {
+	subscriptionId := os.Getenv("AZURE_SUBSCRIPTION_ID")
+	resourceName := resources.NormalizeAtlasName(
+		strings.ToLower(fmt.Sprintf("%s-peering-azure-%s-%s", generator.projectName, subscriptionId, vnet.name)),
+		resources.AtlasNameToKubernetesName(),
+	)
+	return customPeering(generator, independent, resourceName, &akov2.AtlasNetworkPeeringSpec{
+		ContainerRef: akov2.ContainerDualReference{
+			ID: containerID,
+		},
+		AtlasNetworkPeeringConfig: akov2.AtlasNetworkPeeringConfig{
+			ID:       id,
+			Provider: "AZURE",
+			AzureConfiguration: &akov2.AzureNetworkPeeringConfiguration{
+				AzureDirectoryID:    os.Getenv("AZURE_TENANT_ID"),
+				AzureSubscriptionID: subscriptionId,
+				ResourceGroupName:   resourceName,
+				VNetName:            vnet.name,
+			},
+		},
+	})
+}
+
+func defaultGCPPeering(generator *atlasE2ETestGenerator, id, containerID string, networkName string, independent bool) *akov2.AtlasNetworkPeering {
+	gcpProject := os.Getenv("GOOGLE_PROJECT_ID")
+	resourceName := resources.NormalizeAtlasName(
+		strings.ToLower(fmt.Sprintf("%s-peering-gcp-%s-%s", generator.projectName, gcpProject, networkName)),
+		resources.AtlasNameToKubernetesName(),
+	)
+	return customPeering(generator, independent, resourceName, &akov2.AtlasNetworkPeeringSpec{
+		ContainerRef: akov2.ContainerDualReference{
+			ID: containerID,
+		},
+		AtlasNetworkPeeringConfig: akov2.AtlasNetworkPeeringConfig{
+			ID:       id,
+			Provider: "GCP",
+			GCPConfiguration: &akov2.GCPNetworkPeeringConfiguration{
+				GCPProjectID: gcpProject,
+				NetworkName:  networkName,
+			},
+		},
+	})
+}
+
+func customPeering(generator *atlasE2ETestGenerator, independent bool, resourceName string, spec *akov2.AtlasNetworkPeeringSpec) *akov2.AtlasNetworkPeering {
+	peering := akov2.AtlasNetworkPeering{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "AtlasNetworkPeering",
+			APIVersion: "atlas.mongodb.com/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   resourceName,
+			Labels: expectedLabels,
+		},
+		Spec: *spec,
+		Status: akov2status.AtlasNetworkPeeringStatus{
+			Common: api.Common{
+				Conditions: []api.Condition{},
+			},
+		},
+	}
+	if independent {
+		credentialsName := resources.NormalizeAtlasName(
+			strings.ToLower(generator.projectName)+"-credentials",
+			resources.AtlasNameToKubernetesName(),
+		)
+		peering.Spec.ProjectDualReference = akov2.ProjectDualReference{
+			ExternalProjectRef: &akov2.ExternalProjectReference{
+				ID: generator.projectID,
+			},
+			ConnectionSecret: &akoapi.LocalObjectReference{
+				Name: credentialsName,
+			},
+		}
+	} else {
+		peering.Spec.ProjectRef = &akov2common.ResourceRefNamespaced{
+			Name: strings.ToLower(generator.projectName),
+		}
+	}
+	return &peering
 }
 
 func defaultPrivateEndpoint(generator *atlasE2ETestGenerator, independent bool) *akov2.AtlasPrivateEndpoint {
