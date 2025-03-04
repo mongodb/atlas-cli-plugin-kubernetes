@@ -438,6 +438,16 @@ func (g *atlasE2ETestGenerator) generateAzureVPC(cidr, region string) *azureVNet
 	if err != nil {
 		g.t.Fatalf("failed to create azure client: %v", err)
 	}
+
+	subnetsSpec := []*armnetwork.Subnet{
+		{
+			Name: pointer.Get("default-subnet"),
+			Properties: &armnetwork.SubnetPropertiesFormat{
+				AddressPrefix: pointer.Get(cidr),
+			},
+		},
+	}
+
 	vpcClient := azr.networkResourceFactory.NewVirtualNetworksClient()
 	ctx := context.Background()
 	vpcName := vpcName(g.t, region)
@@ -453,6 +463,7 @@ func (g *atlasE2ETestGenerator) generateAzureVPC(cidr, region string) *azureVNet
 						pointer.Get(cidr),
 					},
 				},
+				Subnets: subnetsSpec,
 			},
 			Tags: map[string]*string{
 				"Name": pointer.Get(vpcName),
