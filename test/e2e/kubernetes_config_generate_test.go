@@ -29,6 +29,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/Masterminds/semver/v3"
 	"github.com/mongodb/mongodb-atlas-kubernetes/v2/api"
 	akoapi "github.com/mongodb/mongodb-atlas-kubernetes/v2/api"
 	akov2 "github.com/mongodb/mongodb-atlas-kubernetes/v2/api/v1"
@@ -423,7 +424,7 @@ func TestExportIPAccessList(t *testing.T) {
 	}
 }
 
-func TestNetworkContainerAndPeerings(t *testing.T) {
+func TestExportNetworkContainerAndPeerings(t *testing.T) {
 	s := InitialSetup(t)
 	operatorVersion := "2.8.0"
 
@@ -512,7 +513,7 @@ func TestNetworkContainerAndPeerings(t *testing.T) {
 				resources.AtlasNameToKubernetesName(),
 			)
 			want := []runtime.Object{
-				defaultTestProject(s.generator.projectName, "", expectedLabels, false),
+				defaultTestProject(s.generator.projectName, "", expectedLabelsAtLeast("2.8.0"), false),
 				defaultTestAtlasConnSecret(credentialsName, ""),
 			}
 			want = append(want, tc.want...)
@@ -573,7 +574,7 @@ func customContainer(generator *atlasE2ETestGenerator, independent bool, resourc
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   resourceName,
-			Labels: expectedLabels,
+			Labels: expectedLabelsAtLeast("2.8.0"),
 		},
 		Spec: *spec,
 		Status: akov2status.AtlasNetworkContainerStatus{
@@ -677,7 +678,7 @@ func customPeering(generator *atlasE2ETestGenerator, independent bool, resourceN
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   resourceName,
-			Labels: expectedLabels,
+			Labels: expectedLabelsAtLeast("2.8.0"),
 		},
 		Spec: *spec,
 		Status: akov2status.AtlasNetworkPeeringStatus{
@@ -705,6 +706,17 @@ func customPeering(generator *atlasE2ETestGenerator, independent bool, resourceN
 		}
 	}
 	return &peering
+}
+
+func expectedLabelsAtLeast(version string) map[string]string {
+	minVersion := semver.MustParse(version)
+	current := semver.MustParse(features.LatestOperatorMajorVersion)
+	if minVersion.GreaterThan(current) {
+		return map[string]string{
+			features.ResourceVersion: version,
+		}
+	}
+	return expectedLabels
 }
 
 func defaultPrivateEndpoint(generator *atlasE2ETestGenerator, independent bool) *akov2.AtlasPrivateEndpoint {
