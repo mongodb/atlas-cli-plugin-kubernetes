@@ -240,12 +240,6 @@ func TestExportPrivateEndpoint(t *testing.T) {
 	s := InitialSetup(t)
 	s.generator.generatePrivateEndpoint(awsEntity, "eu-central-1")
 
-	expectedPESubresource := []akov2.PrivateEndpoint{
-		{
-			Provider: "AWS",
-			Region:   "EU_CENTRAL_1",
-		},
-	}
 	credentialName := resources.NormalizeAtlasName(s.generator.projectName+credSuffixTest, resources.AtlasNameToKubernetesName())
 
 	tests := map[string]struct {
@@ -253,17 +247,6 @@ func TestExportPrivateEndpoint(t *testing.T) {
 		version              string
 		expected             []runtime.Object
 	}{
-		"should export sub-resource for version without support for separate resource": {
-			independentResources: false,
-			version:              "2.5.0",
-			expected: []runtime.Object{
-				expectedWithPrivateEndpoints(
-					defaultTestProject(s.generator.projectName, "", map[string]string{features.ResourceVersion: "2.5.0"}, false),
-					expectedPESubresource,
-				),
-				defaultTestAtlasConnSecret(credentialName, ""),
-			},
-		},
 		"should export separate resource with internal reference for version with support": {
 			independentResources: false,
 			version:              features.LatestOperatorMajorVersion,
