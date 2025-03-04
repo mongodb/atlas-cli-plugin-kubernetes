@@ -124,7 +124,7 @@ func (opts *InstallOpts) Run(ctx context.Context) error {
 		return err
 	}
 
-	featureValidator, err := features.NewAtlasCRDs(crds.NewGithubAtlasCRDProvider(), crdVersion)
+	featureValidator, err := features.NewAtlasCRDs(&crds.EmbeddedAtlasCRDProvider{}, crdVersion)
 	if err != nil {
 		return err
 	}
