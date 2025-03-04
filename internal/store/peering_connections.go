@@ -15,23 +15,49 @@
 package store
 
 import (
+	"fmt"
+
+	akov2provider "github.com/mongodb/mongodb-atlas-kubernetes/v2/api/v1/provider"
 	atlasv2 "go.mongodb.org/atlas-sdk/v20241113004/admin"
 )
 
 //go:generate mockgen -destination=../mocks/mock_peering_connections.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store PeeringConnectionLister
 
 type PeeringConnectionLister interface {
-	PeeringConnections(string, *ContainersListOptions) ([]atlasv2.BaseNetworkPeeringConnectionSettings, error)
+	PeeringConnections(string) ([]atlasv2.BaseNetworkPeeringConnectionSettings, error)
 }
 
-// PeeringConnections encapsulates the logic to manage different cloud providers.
-func (s *Store) PeeringConnections(projectID string, opts *ContainersListOptions) ([]atlasv2.BaseNetworkPeeringConnectionSettings, error) {
-	result, _, err := s.clientv2.NetworkPeeringApi.ListPeeringConnections(s.ctx, projectID).
-		ItemsPerPage(opts.ItemsPerPage).
-		PageNum(opts.PageNum).
-		ProviderName(opts.ProviderName).Execute()
-	if err != nil {
-		return nil, err
+// PeeringConnections encapsulates the logic to list all peerings from all cloud providers
+func (s *Store) PeeringConnections(projectID string) ([]atlasv2.BaseNetworkPeeringConnectionSettings, error) {
+	allResults := []atlasv2.BaseNetworkPeeringConnectionSettings{}
+	for _, provider := range supportedCloudProviders {
+		results, err := s.peeringConnectionsFor(projectID, provider)
+		if err != nil {
+			return nil, fmt.Errorf("error getting network peering connections for %s: %w", provider, err)
+		}
+		allResults = append(allResults, results...)
 	}
-	return result.GetResults(), nil
+
+	return allResults, nil
+}
+
+func (s *Store) peeringConnectionsFor(projectID string, provider akov2provider.ProviderName) ([]atlasv2.BaseNetworkPeeringConnectionSettings, error) {
+	allPages := []atlasv2.BaseNetworkPeeringConnectionSettings{}
+	pageNum := 1
+	itemsPerPage := MaxItems
+	for {
+		result, _, err := s.clientv2.NetworkPeeringApi.ListPeeringConnections(s.ctx, projectID).
+			ItemsPerPage(itemsPerPage).
+			PageNum(pageNum).
+			ProviderName(string(provider)).Execute()
+		if err != nil {
+			return nil, fmt.Errorf("failed to list network peerings: %w", err)
+		}
+		allPages = append(allPages, result.GetResults()...)
+		if len(result.GetResults()) < itemsPerPage {
+			break
+		}
+		pageNum += 1
+	}
+	return allPages, nil
 }

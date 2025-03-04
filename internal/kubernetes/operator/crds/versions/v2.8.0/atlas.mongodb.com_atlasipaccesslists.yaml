@@ -1,42 +1,31 @@
+---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.16.1
-  creationTimestamp: null
-  labels:
-    app.kubernetes.io/component: controller
-    app.kubernetes.io/instance: mongodb-atlas-kubernetes-operator
-    app.kubernetes.io/name: mongodb-atlas-kubernetes-operator
-  name: atlasstreaminstances.atlas.mongodb.com
+  name: atlasipaccesslists.atlas.mongodb.com
 spec:
   group: atlas.mongodb.com
   names:
     categories:
     - atlas
-    kind: AtlasStreamInstance
-    listKind: AtlasStreamInstanceList
-    plural: atlasstreaminstances
+    kind: AtlasIPAccessList
+    listKind: AtlasIPAccessListList
+    plural: atlasipaccesslists
     shortNames:
-    - asi
-    singular: atlasstreaminstance
+    - aip
+    singular: atlasipaccesslist
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
-    - jsonPath: .spec.name
-      name: Name
-      type: string
     - jsonPath: .status.conditions[?(@.type=="Ready")].status
       name: Ready
-      type: string
-    - jsonPath: .status.id
-      name: Atlas ID
       type: string
     name: v1
     schema:
       openAPIV3Schema:
-        description: AtlasStreamInstance is the Schema for the atlasstreaminstances
-          API
+        description: AtlasIPAccessList is the Schema for the atlasipaccesslists API.
         properties:
           apiVersion:
             description: |-
@@ -56,60 +45,66 @@ spec:
           metadata:
             type: object
           spec:
+            description: AtlasIPAccessListSpec defines the desired state of AtlasIPAccessList.
             properties:
-              clusterConfig:
-                description: The configuration to be used to connect to a Atlas Cluster
+              connectionSecret:
+                description: Name of the secret containing Atlas API private and public
+                  keys
                 properties:
-                  provider:
-                    default: AWS
-                    description: Name of the cluster configured for this connection
-                    enum:
-                    - AWS
-                    - GCP
-                    - AZURE
-                    - TENANT
-                    - SERVERLESS
-                    type: string
-                  region:
-                    description: Name of the cloud provider region hosting Atlas Stream
-                      Processing.
-                    type: string
-                  tier:
-                    default: SP10
-                    description: Selected tier for the Stream Instance. Configures
-                      Memory / VCPU allowances.
-                    enum:
-                    - SP10
-                    - SP30
-                    - SP50
+                  name:
+                    description: |-
+                      Name of the resource being referred to
+                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
                     type: string
                 required:
-                - provider
-                - region
-                - tier
+                - name
                 type: object
-              connectionRegistry:
-                description: List of connections of the stream instance for the specified
-                  project
+              entries:
+                description: Entries is the list of IP Access to be managed
                 items:
-                  description: ResourceRefNamespaced is a reference to a Kubernetes
-                    Resource that allows to configure the namespace
                   properties:
-                    name:
-                      description: Name is the name of the Kubernetes Resource
+                    awsSecurityGroup:
+                      description: Unique identifier of AWS security group in this
+                        access list entry.
                       type: string
-                    namespace:
-                      description: Namespace is the namespace of the Kubernetes Resource
+                    cidrBlock:
+                      description: Range of IP addresses in CIDR notation in this
+                        access list entry.
                       type: string
-                  required:
-                  - name
+                    comment:
+                      description: Comment associated with this access list entry.
+                      type: string
+                    deleteAfterDate:
+                      description: Date and time after which Atlas deletes the temporary
+                        access list entry.
+                      format: date-time
+                      type: string
+                    ipAddress:
+                      description: Entry using an IP address in this access list entry.
+                      type: string
                   type: object
+                  x-kubernetes-validations:
+                  - message: Only one of ipAddress, cidrBlock, or awsSecurityGroup
+                      may be set.
+                    rule: '!(has(self.ipAddress) && (has(self.cidrBlock) || has(self.awsSecurityGroup)))
+                      && !(has(self.cidrBlock) && has(self.awsSecurityGroup))'
+                minItems: 1
                 type: array
-              name:
-                description: Human-readable label that identifies the stream connection
-                type: string
+              externalProjectRef:
+                description: |-
+                  "externalProjectRef" holds the parent Atlas project ID.
+                  Mutually exclusive with the "projectRef" field
+                properties:
+                  id:
+                    description: ID is the Atlas project ID
+                    type: string
+                required:
+                - id
+                type: object
               projectRef:
-                description: Project which the instance belongs to
+                description: |-
+                  "projectRef" is a reference to the parent AtlasProject resource.
+                  Mutually exclusive with the "externalProjectRef" field
                 properties:
                   name:
                     description: Name is the name of the Kubernetes Resource
@@ -121,11 +116,20 @@ spec:
                 - name
                 type: object
             required:
-            - clusterConfig
-            - name
-            - projectRef
+            - entries
             type: object
+            x-kubernetes-validations:
+            - message: must define only one project reference through externalProjectRef
+                or projectRef
+              rule: (has(self.externalProjectRef) && !has(self.projectRef)) || (!has(self.externalProjectRef)
+                && has(self.projectRef))
+            - message: must define a local connection secret when referencing an external
+                project
+              rule: (has(self.externalProjectRef) && has(self.connectionSecret)) ||
+                !has(self.externalProjectRef)
           status:
+            description: AtlasIPAccessListStatus is the most recent observed status
+              of the AtlasIPAccessList cluster. Read-only.
             properties:
               conditions:
                 description: Conditions is the list of statuses showing the current
@@ -157,40 +161,21 @@ spec:
                   - type
                   type: object
                 type: array
-              connections:
-                description: List of connections configured in the stream instance.
+              entries:
+                description: Status is the state of the ip access list
                 items:
                   properties:
-                    name:
-                      description: Human-readable label that uniquely identifies the
-                        stream connection
+                    entry:
+                      description: Entry is the ip access Atlas is managing
                       type: string
-                    resourceRef:
-                      description: Reference for the resource that contains connection
-                        configuration
-                      properties:
-                        name:
-                          description: Name is the name of the Kubernetes Resource
-                          type: string
-                        namespace:
-                          description: Namespace is the namespace of the Kubernetes
-                            Resource
-                          type: string
-                      required:
-                      - name
-                      type: object
+                    status:
+                      description: Status is the correspondent state of the entry
+                      type: string
+                  required:
+                  - entry
+                  - status
                   type: object
                 type: array
-              hostnames:
-                description: List that contains the hostnames assigned to the stream
-                  instance.
-                items:
-                  type: string
-                type: array
-              id:
-                description: Unique 24-hexadecimal character string that identifies
-                  the instance
-                type: string
               observedGeneration:
                 description: |-
                   ObservedGeneration indicates the generation of the resource specification that the Atlas Operator is aware of.
@@ -205,9 +190,3 @@ spec:
     storage: true
     subresources:
       status: {}
-status:
-  acceptedNames:
-    kind: ""
-    plural: ""
-  conditions: null
-  storedVersions: null

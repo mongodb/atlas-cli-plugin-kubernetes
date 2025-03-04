@@ -45,6 +45,7 @@ type OperatorProjectStore interface {
 	OperatorPrivateEndpointStore
 	CloudProviderAccessRoleLister
 	PeeringConnectionLister
+	NetworkContainerLister
 	EncryptionAtRestDescriber
 	AuditingDescriber
 	AlertConfigurationLister

@@ -44,6 +44,8 @@ const (
 	ResourceAtlasPrivateEndpoint        = "atlasprivateendpoints"
 	ResourceAtlasCustomRole             = "atlascustomroles"
 	ResourceAtlasIPAccessList           = "atlasipaccesslists"
+	ResourceAtlasNetworkContainer       = "atlasnetworkcontainers"
+	ResourceAtlasNetworkPeering         = "atlasnetworkpeerings"
 )
 
 var (
@@ -55,19 +57,6 @@ var (
 	ErrDocumentHasNoSpec         = errors.New("document contains no Spec")
 
 	versionsToResourcesMap = map[string][]resource{
-		"2.5.0": {
-			resource{ResourceAtlasDatabaseUser, NopPatcher()},
-			resource{ResourceAtlasProject, NopPatcher()},
-			resource{ResourceAtlasDeployment, NopPatcher()},
-			resource{ResourceAtlasBackupSchedule, NopPatcher()},
-			resource{ResourceAtlasBackupPolicy, NopPatcher()},
-			resource{ResourceAtlasTeam, NopPatcher()},
-			resource{ResourceAtlasDataFederation, NopPatcher()},
-			resource{ResourceAtlasFederatedAuth, NopPatcher()},
-			resource{ResourceAtlasStreamInstance, NopPatcher()},
-			resource{ResourceAtlasStreamConnection, NopPatcher()},
-			resource{ResourceAtlasBackupCompliancePolicy, NopPatcher()},
-		},
 		"2.6.0": {
 			resource{ResourceAtlasDatabaseUser, NopPatcher()},
 			resource{ResourceAtlasProject, NopPatcher()},
@@ -98,6 +87,24 @@ var (
 			resource{ResourceAtlasPrivateEndpoint, NopPatcher()},
 			resource{ResourceAtlasCustomRole, NopPatcher()},
 			resource{ResourceAtlasIPAccessList, NopPatcher()},
+		},
+		"2.8.0": {
+			resource{ResourceAtlasDatabaseUser, NopPatcher()},
+			resource{ResourceAtlasProject, NopPatcher()},
+			resource{ResourceAtlasDeployment, NopPatcher()},
+			resource{ResourceAtlasBackupSchedule, NopPatcher()},
+			resource{ResourceAtlasBackupPolicy, NopPatcher()},
+			resource{ResourceAtlasTeam, NopPatcher()},
+			resource{ResourceAtlasDataFederation, NopPatcher()},
+			resource{ResourceAtlasFederatedAuth, NopPatcher()},
+			resource{ResourceAtlasStreamInstance, NopPatcher()},
+			resource{ResourceAtlasStreamConnection, NopPatcher()},
+			resource{ResourceAtlasBackupCompliancePolicy, NopPatcher()},
+			resource{ResourceAtlasPrivateEndpoint, NopPatcher()},
+			resource{ResourceAtlasCustomRole, NopPatcher()},
+			resource{ResourceAtlasIPAccessList, NopPatcher()},
+			resource{ResourceAtlasNetworkContainer, NopPatcher()},
+			resource{ResourceAtlasNetworkPeering, NopPatcher()},
 		},
 	}
 )
