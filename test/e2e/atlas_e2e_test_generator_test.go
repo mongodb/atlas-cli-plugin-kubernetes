@@ -21,7 +21,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"os"
 	"os/exec"
 	"strings"
@@ -440,7 +439,6 @@ func (g *atlasE2ETestGenerator) generateAzureVPC(cidr, region string) *azureVNet
 		g.t.Fatalf("failed to create azure client: %v", err)
 	}
 
-	log.Printf("Azure client for rg=%s", jsonize(azr.resourceGroupName))
 	subnetsSpec := []*armnetwork.Subnet{
 		{
 			Name: pointer.Get("default-subnet"),
@@ -453,27 +451,24 @@ func (g *atlasE2ETestGenerator) generateAzureVPC(cidr, region string) *azureVNet
 	vpcClient := azr.networkResourceFactory.NewVirtualNetworksClient()
 	ctx := context.Background()
 	vpcName := vpcName(g.t, region)
-	log.Printf("vnet name: %q", vpcName)
-	vnetCfg := armnetwork.VirtualNetwork{
-		Location: pointer.Get(region),
-		Properties: &armnetwork.VirtualNetworkPropertiesFormat{
-			AddressSpace: &armnetwork.AddressSpace{
-				AddressPrefixes: []*string{
-					pointer.Get(cidr),
-				},
-			},
-			Subnets: subnetsSpec,
-		},
-		Tags: map[string]*string{
-			"Name": pointer.Get(vpcName),
-		},
-	}
-	log.Printf("vnetconfig: %v", jsonize(vnetCfg))
 	op, err := vpcClient.BeginCreateOrUpdate(
 		ctx,
 		azr.resourceGroupName,
 		vpcName,
-		vnetCfg,
+		armnetwork.VirtualNetwork{
+			Location: pointer.Get(region),
+			Properties: &armnetwork.VirtualNetworkPropertiesFormat{
+				AddressSpace: &armnetwork.AddressSpace{
+					AddressPrefixes: []*string{
+						pointer.Get(cidr),
+					},
+				},
+				Subnets: subnetsSpec,
+			},
+			Tags: map[string]*string{
+				"Name": pointer.Get(vpcName),
+			},
+		},
 		nil,
 	)
 	if err != nil {
@@ -637,7 +632,6 @@ func ensureGCPCredentials() error {
 func (g *atlasE2ETestGenerator) generatePeering(request *atlasv2.BaseNetworkPeeringConnectionSettings) string {
 	client := MustGetNewTestClientFromEnv(g.t)
 	ctx := context.Background()
-	log.Printf("generating peering with request: %s", jsonize(request))
 	createdPeering, _, err := client.NetworkPeeringApi.CreatePeeringConnection(ctx, g.projectID, request).Execute()
 	if err != nil {
 		g.t.Fatalf("failed to create test peering: %v", err)
@@ -925,12 +919,4 @@ func (g *atlasE2ETestGenerator) generateStreamsConnection(name string) {
 		require.NoError(g.t, deleteStreamsConnection(g.t, g.projectID, g.streamInstanceName, connectionName))
 		g.Logf("streams connection %q successfully deleted", connectionName)
 	})
-}
-
-func jsonize(obj any) string {
-	js, err := json.Marshal(obj)
-	if err != nil {
-		return err.Error()
-	}
-	return string(js)
 }
