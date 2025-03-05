@@ -455,19 +455,34 @@ func (mr *MockOperatorGenericStoreMockRecorder) MaintenanceWindow(arg0 interface
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MaintenanceWindow", reflect.TypeOf((*MockOperatorGenericStore)(nil).MaintenanceWindow), arg0)
 }
 
-// PeeringConnections mocks base method.
-func (m *MockOperatorGenericStore) PeeringConnections(arg0 string, arg1 *store.ContainersListOptions) ([]admin0.BaseNetworkPeeringConnectionSettings, error) {
+// NetworkContainers mocks base method.
+func (m *MockOperatorGenericStore) NetworkContainers(arg0 string) ([]admin0.CloudProviderContainer, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "PeeringConnections", arg0, arg1)
+	ret := m.ctrl.Call(m, "NetworkContainers", arg0)
+	ret0, _ := ret[0].([]admin0.CloudProviderContainer)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// NetworkContainers indicates an expected call of NetworkContainers.
+func (mr *MockOperatorGenericStoreMockRecorder) NetworkContainers(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NetworkContainers", reflect.TypeOf((*MockOperatorGenericStore)(nil).NetworkContainers), arg0)
+}
+
+// PeeringConnections mocks base method.
+func (m *MockOperatorGenericStore) PeeringConnections(arg0 string) ([]admin0.BaseNetworkPeeringConnectionSettings, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PeeringConnections", arg0)
 	ret0, _ := ret[0].([]admin0.BaseNetworkPeeringConnectionSettings)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // PeeringConnections indicates an expected call of PeeringConnections.
-func (mr *MockOperatorGenericStoreMockRecorder) PeeringConnections(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockOperatorGenericStoreMockRecorder) PeeringConnections(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PeeringConnections", reflect.TypeOf((*MockOperatorGenericStore)(nil).PeeringConnections), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PeeringConnections", reflect.TypeOf((*MockOperatorGenericStore)(nil).PeeringConnections), arg0)
 }
 
 // PrivateEndpoints mocks base method.

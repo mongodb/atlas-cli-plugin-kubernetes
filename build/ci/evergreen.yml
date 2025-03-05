@@ -85,6 +85,16 @@ functions:
           - E2E_TIMEOUT
           - E2E_PARALLEL
           - revision
+          - AWS_ACCOUNT_ID
+          - AWS_ACCESS_KEY_ID
+          - AWS_SECRET_ACCESS_KEY
+          - AZURE_SUBSCRIPTION_ID
+          - AZURE_TENANT_ID
+          - AZURE_RESOURCE_GROUP_NAME
+          - AZURE_CLIENT_ID
+          - AZURE_CLIENT_SECRET
+          - GOOGLE_PROJECT_ID
+          - GCP_SA_CRED
         env:
           <<: *go_env
           MCLI_SKIP_UPDATE_CHECK: "yes"
@@ -216,6 +226,16 @@ tasks:
           MCLI_PUBLIC_API_KEY: ${atlas_public_api_key}
           MCLI_OPS_MANAGER_URL: ${mcli_ops_manager_url}
           MCLI_SERVICE: cloud
+          AWS_ACCOUNT_ID: ${aws_account_id}
+          AWS_ACCESS_KEY_ID: ${aws_access_key_id}
+          AWS_SECRET_ACCESS_KEY: ${aws_secret_access_key}
+          AZURE_SUBSCRIPTION_ID: ${azure_subscription_id}
+          AZURE_TENANT_ID: ${azure_tenant_id}
+          AZURE_RESOURCE_GROUP_NAME: ${azure_resource_group_name}
+          AZURE_CLIENT_ID: ${azure_client_id}
+          AZURE_CLIENT_SECRET: ${azure_client_secret}
+          GOOGLE_PROJECT_ID: ${google_project_id}
+          GCP_SA_CRED: ${gcp_sa_cred}
           E2E_TAGS: atlas,cli
   - name: atlas_kubernetes_generate_e2e
     tags: ["e2e","required","kubernetes", "assigned_to_jira_team_cloudp_kubernetes_atlas"]
@@ -230,6 +250,16 @@ tasks:
           MCLI_PUBLIC_API_KEY: ${atlas_public_api_key}
           MCLI_OPS_MANAGER_URL: ${mcli_ops_manager_url}
           MCLI_SERVICE: cloud
+          AWS_ACCOUNT_ID: ${aws_account_id}
+          AWS_ACCESS_KEY_ID: ${aws_access_key_id}
+          AWS_SECRET_ACCESS_KEY: ${aws_secret_access_key}
+          AZURE_SUBSCRIPTION_ID: ${azure_subscription_id}
+          AZURE_TENANT_ID: ${azure_tenant_id}
+          AZURE_RESOURCE_GROUP_NAME: ${azure_resource_group_name}
+          AZURE_CLIENT_ID: ${azure_client_id}
+          AZURE_CLIENT_SECRET: ${azure_client_secret}
+          GOOGLE_PROJECT_ID: ${google_project_id}
+          GCP_SA_CRED: ${gcp_sa_cred}
           E2E_TAGS: generate
   - name: atlas_kubernetes_apply_e2e
     tags: [ "e2e","required","kubernetes", "assigned_to_jira_team_cloudp_kubernetes_atlas" ]
@@ -244,6 +274,16 @@ tasks:
           MCLI_PUBLIC_API_KEY: ${atlas_public_api_key}
           MCLI_OPS_MANAGER_URL: ${mcli_ops_manager_url}
           MCLI_SERVICE: cloud
+          AWS_ACCOUNT_ID: ${aws_account_id}
+          AWS_ACCESS_KEY_ID: ${aws_access_key_id}
+          AWS_SECRET_ACCESS_KEY: ${aws_secret_access_key}
+          AZURE_SUBSCRIPTION_ID: ${azure_subscription_id}
+          AZURE_TENANT_ID: ${azure_tenant_id}
+          AZURE_RESOURCE_GROUP_NAME: ${azure_resource_group_name}
+          AZURE_CLIENT_ID: ${azure_client_id}
+          AZURE_CLIENT_SECRET: ${azure_client_secret}
+          GOOGLE_PROJECT_ID: ${google_project_id}
+          GCP_SA_CRED: ${gcp_sa_cred}
           E2E_TAGS: apply
   - name: atlas_kubernetes_install_e2e
     tags: [ "e2e","required","kubernetes", "assigned_to_jira_team_cloudp_kubernetes_atlas" ]
@@ -258,6 +298,16 @@ tasks:
           MCLI_PUBLIC_API_KEY: ${atlas_public_api_key}
           MCLI_OPS_MANAGER_URL: ${mcli_ops_manager_url}
           MCLI_SERVICE: cloud
+          AWS_ACCOUNT_ID: ${aws_account_id}
+          AWS_ACCESS_KEY_ID: ${aws_access_key_id}
+          AWS_SECRET_ACCESS_KEY: ${aws_secret_access_key}
+          AZURE_SUBSCRIPTION_ID: ${azure_subscription_id}
+          AZURE_TENANT_ID: ${azure_tenant_id}
+          AZURE_RESOURCE_GROUP_NAME: ${azure_resource_group_name}
+          AZURE_CLIENT_ID: ${azure_client_id}
+          AZURE_CLIENT_SECRET: ${azure_client_secret}
+          GOOGLE_PROJECT_ID: ${google_project_id}
+          GCP_SA_CRED: ${gcp_sa_cred}
           E2E_TAGS: install
 buildvariants:
   - name: code_health

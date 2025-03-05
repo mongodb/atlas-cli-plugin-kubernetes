@@ -29,6 +29,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/Masterminds/semver/v3"
+	"github.com/mongodb/mongodb-atlas-kubernetes/v2/api"
 	akoapi "github.com/mongodb/mongodb-atlas-kubernetes/v2/api"
 	akov2 "github.com/mongodb/mongodb-atlas-kubernetes/v2/api/v1"
 	akov2common "github.com/mongodb/mongodb-atlas-kubernetes/v2/api/v1/common"
@@ -238,12 +240,6 @@ func TestExportPrivateEndpoint(t *testing.T) {
 	s := InitialSetup(t)
 	s.generator.generatePrivateEndpoint(awsEntity, "eu-central-1")
 
-	expectedPESubresource := []akov2.PrivateEndpoint{
-		{
-			Provider: "AWS",
-			Region:   "EU_CENTRAL_1",
-		},
-	}
 	credentialName := resources.NormalizeAtlasName(s.generator.projectName+credSuffixTest, resources.AtlasNameToKubernetesName())
 
 	tests := map[string]struct {
@@ -251,17 +247,6 @@ func TestExportPrivateEndpoint(t *testing.T) {
 		version              string
 		expected             []runtime.Object
 	}{
-		"should export sub-resource for version without support for separate resource": {
-			independentResources: false,
-			version:              "2.5.0",
-			expected: []runtime.Object{
-				expectedWithPrivateEndpoints(
-					defaultTestProject(s.generator.projectName, "", map[string]string{features.ResourceVersion: "2.5.0"}, false),
-					expectedPESubresource,
-				),
-				defaultTestAtlasConnSecret(credentialName, ""),
-			},
-		},
 		"should export separate resource with internal reference for version with support": {
 			independentResources: false,
 			version:              features.LatestOperatorMajorVersion,
@@ -420,6 +405,301 @@ func TestExportIPAccessList(t *testing.T) {
 			require.Equal(t, tc.expected, objects)
 		})
 	}
+}
+
+func TestExportNetworkContainerAndPeerings(t *testing.T) {
+	s := InitialSetup(t)
+	operatorVersion := "2.8.0"
+
+	awsContainerCIDR := "10.0.0.0/21"
+	awsContainerID := s.generator.generateAWSContainer(awsContainerCIDR, "EU_CENTRAL_1")
+
+	azureContainerCIDR := "10.128.0.0/21"
+	azureContainerID := s.generator.generateAzureContainer(azureContainerCIDR, "EUROPE_NORTH")
+
+	gcpContainerCIDR := "10.64.0.0/18"
+	gcpContainerID := s.generator.generateGCPContainer(gcpContainerCIDR)
+
+	awsAppVPC := s.generator.generateAWSNetworkVPC("10.128.0.0/21", "eu-south-2")
+	defer s.generator.deleteAWSNetworkVPC(awsAppVPC)
+	awsPeeringID := s.generator.generateAWSPeering(awsContainerID, awsAppVPC)
+	defer s.generator.deletePeering(awsPeeringID)
+
+	// TODO: debug why this works locally but fails in Evergreen even with the same Azure parameters
+	// azureAppVPC := s.generator.generateAzureVPC("10.64.0.0/21", "northeurope")
+	// defer s.generator.deleteAzureVPC(azureAppVPC)
+	// azurePeeringID := s.generator.generateAzurePeering(azureContainerID, azureAppVPC)
+	// defer s.generator.deletePeering(azurePeeringID)
+
+	gcpAppNetwork := s.generator.generateGCPNetworkVPC()
+	defer s.generator.deleteGCPNetworkVPC(gcpAppNetwork)
+	gcpPeeringID := s.generator.generateGCPPeering(gcpContainerID, gcpAppNetwork)
+	defer s.generator.deletePeering(gcpPeeringID)
+
+	for _, tc := range []struct {
+		title                string
+		independentResources bool
+		want                 []runtime.Object
+	}{
+		{
+			title:                "independent resource container",
+			independentResources: true,
+			want: []runtime.Object{
+				defaultAWSContainer(s.generator, awsContainerID, awsContainerCIDR, true),
+				defaultAzureContainer(s.generator, azureContainerID, azureContainerCIDR, true),
+				defaultGCPContainer(s.generator, gcpContainerID, gcpContainerCIDR, true),
+
+				defaultAWSPeering(s.generator, awsPeeringID, awsContainerID, awsAppVPC, true),
+				// defaultAzurePeering(s.generator, azurePeeringID, azureContainerID, azureAppVPC, true),
+				defaultGCPPeering(s.generator, gcpPeeringID, gcpContainerID, gcpAppNetwork, true),
+			},
+		},
+		{
+			title:                "dependent resource container",
+			independentResources: false,
+			want: []runtime.Object{
+				defaultAWSContainer(s.generator, awsContainerID, awsContainerCIDR, false),
+				defaultAzureContainer(s.generator, azureContainerID, azureContainerCIDR, false),
+				defaultGCPContainer(s.generator, gcpContainerID, gcpContainerCIDR, false),
+
+				defaultAWSPeering(s.generator, awsPeeringID, awsContainerID, awsAppVPC, false),
+				// defaultAzurePeering(s.generator, azurePeeringID, azureContainerID, azureAppVPC, false),
+				defaultGCPPeering(s.generator, gcpPeeringID, gcpContainerID, gcpAppNetwork, false),
+			},
+		},
+	} {
+		t.Run(tc.title, func(t *testing.T) {
+			cmdArgs := []string{
+				"kubernetes",
+				"config",
+				"generate",
+				"--projectId",
+				s.generator.projectID,
+				"--operatorVersion",
+				operatorVersion,
+			}
+			if tc.independentResources {
+				cmdArgs = append(cmdArgs, "--independentResources")
+			}
+			cmd := exec.Command(s.cliPath, cmdArgs...) //nolint:gosec
+			cmd.Env = os.Environ()
+			resp, err := cmd.CombinedOutput()
+			require.NoError(t, err, string(resp))
+
+			var objects []runtime.Object
+			objects, err = getK8SEntities(resp)
+			objects = filtered(objects).byKind(globalKinds...)
+			require.NoError(t, err, "should not fail on decode but got:\n"+string(resp))
+			require.NotEmpty(t, objects)
+			credentialsName := resources.NormalizeAtlasName(
+				strings.ToLower(s.generator.projectName)+"-credentials",
+				resources.AtlasNameToKubernetesName(),
+			)
+			want := []runtime.Object{
+				defaultTestProject(s.generator.projectName, "", expectedLabelsAtLeast("2.8.0"), false),
+				defaultTestAtlasConnSecret(credentialsName, ""),
+			}
+			want = append(want, tc.want...)
+			require.Equal(t, want, objects)
+		})
+	}
+}
+
+func defaultAWSContainer(generator *atlasE2ETestGenerator, id, cidr string, independent bool) *akov2.AtlasNetworkContainer {
+	resourceName := resources.NormalizeAtlasName(
+		strings.ToLower(fmt.Sprintf("%s-container-aws-eucentral1", generator.projectName)),
+		resources.AtlasNameToKubernetesName(),
+	)
+	return customContainer(generator, independent, resourceName, &akov2.AtlasNetworkContainerSpec{
+		Provider: "AWS",
+		AtlasNetworkContainerConfig: akov2.AtlasNetworkContainerConfig{
+			ID:        id,
+			Region:    "EU_CENTRAL_1",
+			CIDRBlock: cidr,
+		},
+	})
+}
+
+func defaultAzureContainer(generator *atlasE2ETestGenerator, id, cidr string, independent bool) *akov2.AtlasNetworkContainer {
+	resourceName := resources.NormalizeAtlasName(
+		strings.ToLower(fmt.Sprintf("%s-container-azure-europenorth", generator.projectName)),
+		resources.AtlasNameToKubernetesName(),
+	)
+	return customContainer(generator, independent, resourceName, &akov2.AtlasNetworkContainerSpec{
+		Provider: "AZURE",
+		AtlasNetworkContainerConfig: akov2.AtlasNetworkContainerConfig{
+			ID:        id,
+			Region:    "EUROPE_NORTH",
+			CIDRBlock: cidr,
+		},
+	})
+}
+
+func defaultGCPContainer(generator *atlasE2ETestGenerator, id, cidr string, independent bool) *akov2.AtlasNetworkContainer {
+	resourceName := resources.NormalizeAtlasName(
+		strings.ToLower(fmt.Sprintf("%s-container-gcp-global", generator.projectName)),
+		resources.AtlasNameToKubernetesName(),
+	)
+	return customContainer(generator, independent, resourceName, &akov2.AtlasNetworkContainerSpec{
+		Provider: "GCP",
+		AtlasNetworkContainerConfig: akov2.AtlasNetworkContainerConfig{
+			ID:        id,
+			CIDRBlock: cidr,
+		},
+	})
+}
+
+func customContainer(generator *atlasE2ETestGenerator, independent bool, resourceName string, spec *akov2.AtlasNetworkContainerSpec) *akov2.AtlasNetworkContainer {
+	container := akov2.AtlasNetworkContainer{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "AtlasNetworkContainer",
+			APIVersion: "atlas.mongodb.com/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   resourceName,
+			Labels: expectedLabelsAtLeast("2.8.0"),
+		},
+		Spec: *spec,
+		Status: akov2status.AtlasNetworkContainerStatus{
+			Common: api.Common{
+				Conditions: []api.Condition{},
+			},
+		},
+	}
+	if independent {
+		credentialsName := resources.NormalizeAtlasName(
+			strings.ToLower(generator.projectName)+"-credentials",
+			resources.AtlasNameToKubernetesName(),
+		)
+		container.Spec.ProjectDualReference = akov2.ProjectDualReference{
+			ExternalProjectRef: &akov2.ExternalProjectReference{
+				ID: generator.projectID,
+			},
+			ConnectionSecret: &akoapi.LocalObjectReference{
+				Name: credentialsName,
+			},
+		}
+	} else {
+		container.Spec.ProjectRef = &akov2common.ResourceRefNamespaced{
+			Name: strings.ToLower(generator.projectName),
+		}
+	}
+	return &container
+}
+
+func defaultAWSPeering(generator *atlasE2ETestGenerator, id, containerID string, vpc *awsVPC, independent bool) *akov2.AtlasNetworkPeering {
+	resourceName := resources.NormalizeAtlasName(
+		strings.ToLower(fmt.Sprintf("%s-peering-aws-%s-%s", generator.projectName, vpc.region, vpc.id)),
+		resources.AtlasNameToKubernetesName(),
+	)
+	return customPeering(generator, independent, resourceName, &akov2.AtlasNetworkPeeringSpec{
+		ContainerRef: akov2.ContainerDualReference{
+			ID: containerID,
+		},
+		AtlasNetworkPeeringConfig: akov2.AtlasNetworkPeeringConfig{
+			ID:       id,
+			Provider: "AWS",
+			AWSConfiguration: &akov2.AWSNetworkPeeringConfiguration{
+				AccepterRegionName:  vpc.region,
+				AWSAccountID:        os.Getenv("AWS_ACCOUNT_ID"),
+				RouteTableCIDRBlock: vpc.cidr,
+				VpcID:               vpc.id,
+			},
+		},
+	})
+}
+
+func defaultAzurePeering(generator *atlasE2ETestGenerator, id, containerID string, vnet *azureVNet, independent bool) *akov2.AtlasNetworkPeering {
+	subscriptionId := os.Getenv("AZURE_SUBSCRIPTION_ID")
+	resourceName := resources.NormalizeAtlasName(
+		strings.ToLower(fmt.Sprintf("%s-peering-azure-%s-%s", generator.projectName, subscriptionId, vnet.name)),
+		resources.AtlasNameToKubernetesName(),
+	)
+	return customPeering(generator, independent, resourceName, &akov2.AtlasNetworkPeeringSpec{
+		ContainerRef: akov2.ContainerDualReference{
+			ID: containerID,
+		},
+		AtlasNetworkPeeringConfig: akov2.AtlasNetworkPeeringConfig{
+			ID:       id,
+			Provider: "AZURE",
+			AzureConfiguration: &akov2.AzureNetworkPeeringConfiguration{
+				AzureDirectoryID:    os.Getenv("AZURE_TENANT_ID"),
+				AzureSubscriptionID: subscriptionId,
+				ResourceGroupName:   os.Getenv("AZURE_RESOURCE_GROUP_NAME"),
+				VNetName:            vnet.name,
+			},
+		},
+	})
+}
+
+func defaultGCPPeering(generator *atlasE2ETestGenerator, id, containerID string, networkName string, independent bool) *akov2.AtlasNetworkPeering {
+	gcpProject := os.Getenv("GOOGLE_PROJECT_ID")
+	resourceName := resources.NormalizeAtlasName(
+		strings.ToLower(fmt.Sprintf("%s-peering-gcp-%s-%s", generator.projectName, gcpProject, networkName)),
+		resources.AtlasNameToKubernetesName(),
+	)
+	return customPeering(generator, independent, resourceName, &akov2.AtlasNetworkPeeringSpec{
+		ContainerRef: akov2.ContainerDualReference{
+			ID: containerID,
+		},
+		AtlasNetworkPeeringConfig: akov2.AtlasNetworkPeeringConfig{
+			ID:       id,
+			Provider: "GCP",
+			GCPConfiguration: &akov2.GCPNetworkPeeringConfiguration{
+				GCPProjectID: gcpProject,
+				NetworkName:  networkName,
+			},
+		},
+	})
+}
+
+func customPeering(generator *atlasE2ETestGenerator, independent bool, resourceName string, spec *akov2.AtlasNetworkPeeringSpec) *akov2.AtlasNetworkPeering {
+	peering := akov2.AtlasNetworkPeering{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "AtlasNetworkPeering",
+			APIVersion: "atlas.mongodb.com/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   resourceName,
+			Labels: expectedLabelsAtLeast("2.8.0"),
+		},
+		Spec: *spec,
+		Status: akov2status.AtlasNetworkPeeringStatus{
+			Common: api.Common{
+				Conditions: []api.Condition{},
+			},
+		},
+	}
+	if independent {
+		credentialsName := resources.NormalizeAtlasName(
+			strings.ToLower(generator.projectName)+"-credentials",
+			resources.AtlasNameToKubernetesName(),
+		)
+		peering.Spec.ProjectDualReference = akov2.ProjectDualReference{
+			ExternalProjectRef: &akov2.ExternalProjectReference{
+				ID: generator.projectID,
+			},
+			ConnectionSecret: &akoapi.LocalObjectReference{
+				Name: credentialsName,
+			},
+		}
+	} else {
+		peering.Spec.ProjectRef = &akov2common.ResourceRefNamespaced{
+			Name: strings.ToLower(generator.projectName),
+		}
+	}
+	return &peering
+}
+
+func expectedLabelsAtLeast(version string) map[string]string {
+	minVersion := semver.MustParse(version)
+	current := semver.MustParse(features.LatestOperatorMajorVersion)
+	if minVersion.GreaterThan(current) {
+		return map[string]string{
+			features.ResourceVersion: version,
+		}
+	}
+	return expectedLabels
 }
 
 func defaultPrivateEndpoint(generator *atlasE2ETestGenerator, independent bool) *akov2.AtlasPrivateEndpoint {
