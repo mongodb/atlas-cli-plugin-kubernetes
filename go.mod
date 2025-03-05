@@ -16,7 +16,7 @@ require (
 	github.com/mongodb-forks/digest v1.1.0
 	github.com/mongodb-labs/cobra2snooty v0.18.2
 	github.com/mongodb/atlas-cli-core v0.0.0-20250214162807-8f937b802e87
-	github.com/mongodb/mongodb-atlas-kubernetes/v2 v2.7.2-0.20250224144141-d7f4bad179c1
+	github.com/mongodb/mongodb-atlas-kubernetes/v2 v2.8.0
 	github.com/spf13/afero v1.12.0
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/pflag v1.0.6
