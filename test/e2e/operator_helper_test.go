@@ -39,7 +39,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/kind/pkg/apis/config/v1alpha4"
-	kind_cluster "sigs.k8s.io/kind/pkg/cluster"
+	kindcluster "sigs.k8s.io/kind/pkg/cluster"
 )
 
 const defaultOperatorNamespace = "mongodb-atlas-system"
@@ -88,19 +88,19 @@ func createK8SCluster(name string) error {
 		},
 	}
 
-	provider := kind_cluster.NewProvider(kind_cluster.ProviderWithDocker())
+	provider := kindcluster.NewProvider(kindcluster.ProviderWithDocker())
 	return provider.Create(
 		name,
-		kind_cluster.CreateWithV1Alpha4Config(clusterConfig),
-		kind_cluster.CreateWithWaitForReady(1*time.Minute),
-		kind_cluster.CreateWithDisplayUsage(false),
-		kind_cluster.CreateWithDisplaySalutation(false),
-		kind_cluster.CreateWithNodeImage("kindest/node:v1.30.10"),
+		kindcluster.CreateWithV1Alpha4Config(clusterConfig),
+		kindcluster.CreateWithWaitForReady(1*time.Minute),
+		kindcluster.CreateWithDisplayUsage(false),
+		kindcluster.CreateWithDisplaySalutation(false),
+		kindcluster.CreateWithNodeImage("kindest/node:v1.30.10"),
 	)
 }
 
 func deleteK8SCluster(name string) error {
-	provider := kind_cluster.NewProvider(kind_cluster.ProviderWithDocker())
+	provider := kindcluster.NewProvider(kindcluster.ProviderWithDocker())
 	return provider.Delete(name, "")
 }
 
