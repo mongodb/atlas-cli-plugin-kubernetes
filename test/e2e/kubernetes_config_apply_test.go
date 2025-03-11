@@ -20,10 +20,13 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 	"testing"
 
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator/features"
+	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator/resources"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/pointer"
+	akoapi "github.com/mongodb/mongodb-atlas-kubernetes/v2/api"
 	akov2 "github.com/mongodb/mongodb-atlas-kubernetes/v2/api/v1"
 	akov2common "github.com/mongodb/mongodb-atlas-kubernetes/v2/api/v1/common"
 	"github.com/stretchr/testify/assert"
@@ -174,7 +177,7 @@ func TestKubernetesConfigApply(t *testing.T) {
 				true,
 			),
 		)
-		assert.Equal(t, referenceExportedDBUser(g.projectName, g.dbUser, e2eNamespace.Name).Spec, akoDBUser.Spec)
+		assert.Equal(t, referenceExportedDBUser(g, e2eNamespace.Name, false).Spec, akoDBUser.Spec)
 
 		// Assert Team
 		akoTeam := akov2.AtlasTeam{}
@@ -226,7 +229,256 @@ func TestKubernetesConfigApply(t *testing.T) {
 				true,
 			),
 		)
-		assert.Equal(t, referenceExportedDeployment(g.projectName, g.clusterName, e2eNamespace.Name, g.mDBVer).Spec, akoDeployment.Spec)
+		assert.Equal(t, referenceExportedDeployment(g, e2eNamespace.Name, g.mDBVer, false).Spec, akoDeployment.Spec)
+	})
+
+	t.Run("export and apply selected data federation", func(t *testing.T) {
+		operator := setupCluster(t, "k8s-config-apply", defaultOperatorNamespace)
+		err = operator.installOperator(defaultOperatorNamespace, features.LatestOperatorMajorVersion)
+		require.NoError(t, err)
+
+		// we don't want the operator to do reconcile and avoid conflict with cli actions
+		operator.stopOperator()
+		t.Cleanup(func() {
+			operator.startOperator()
+		})
+
+		g := setupAtlasResources(t)
+		g.generateDataFederation()
+		var storeNames []string
+		storeNames = append(storeNames, g.dataFedName)
+		g.generateDataFederation()
+		storeNames = append(storeNames, g.dataFedName)
+
+		e2eNamespace := &corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "e2e-export-atlas-resource",
+			},
+		}
+		require.NoError(t, operator.createK8sObject(e2eNamespace))
+		g.t.Cleanup(func() {
+			require.NoError(t, operator.deleteK8sObject(e2eNamespace))
+		})
+
+		cmd := exec.Command(cliPath,
+			"kubernetes",
+			"config",
+			"apply",
+			"--targetNamespace", "e2e-export-atlas-resource",
+			"--dataFederationName", storeNames[0],
+			"--projectId", g.projectID)
+		cmd.Env = os.Environ()
+		resp, err := cmd.CombinedOutput()
+		require.NoError(t, err, string(resp))
+		t.Log(string(resp))
+		g.t.Cleanup(func() {
+			operator.cleanUpResources()
+		})
+
+		akoProject := akov2.AtlasProject{}
+		require.NoError(
+			t,
+			operator.getK8sObject(
+				client.ObjectKey{Name: prepareK8sName(g.projectName), Namespace: e2eNamespace.Name},
+				&akoProject,
+				true,
+			),
+		)
+		assert.NotEmpty(t, akoProject.Spec.AlertConfigurations)
+		akoProject.Spec.AlertConfigurations = nil
+		assert.Equal(t, referenceExportedProject(g.projectName, g.teamName, &akoProject).Spec, akoProject.Spec)
+
+		// Assert Database User
+		akoDBUser := akov2.AtlasDatabaseUser{}
+		require.NoError(
+			t,
+			operator.getK8sObject(
+				client.ObjectKey{Name: prepareK8sName(fmt.Sprintf("%s-%s", g.projectName, g.dbUser)), Namespace: e2eNamespace.Name},
+				&akoDBUser,
+				true,
+			),
+		)
+		assert.Equal(t, referenceExportedDBUser(g, e2eNamespace.Name, false).Spec, akoDBUser.Spec)
+
+		// Assert Team
+		akoTeam := akov2.AtlasTeam{}
+		require.NoError(
+			t,
+			operator.getK8sObject(
+				client.ObjectKey{Name: prepareK8sName(fmt.Sprintf("%s-team-%s", g.projectName, g.teamName)), Namespace: e2eNamespace.Name},
+				&akoTeam,
+				true,
+			),
+		)
+		assert.Equal(t, referenceExportedTeam(g.teamName, g.teamUser).Spec, akoTeam.Spec)
+
+		// Assert Backup Policy
+		akoBkpPolicy := akov2.AtlasBackupPolicy{}
+		require.NoError(
+			t,
+			operator.getK8sObject(
+				client.ObjectKey{Name: prepareK8sName(fmt.Sprintf("%s-%s-backuppolicy", g.projectName, g.clusterName)), Namespace: e2eNamespace.Name},
+				&akoBkpPolicy,
+				true,
+			),
+		)
+		assert.Equal(t, referenceExportedBackupPolicy().Spec, akoBkpPolicy.Spec)
+
+		// Assert Backup Schedule
+		akoBkpSchedule := akov2.AtlasBackupSchedule{}
+		require.NoError(
+			t,
+			operator.getK8sObject(
+				client.ObjectKey{Name: prepareK8sName(fmt.Sprintf("%s-%s-backupschedule", g.projectName, g.clusterName)), Namespace: e2eNamespace.Name},
+				&akoBkpSchedule,
+				true,
+			),
+		)
+		assert.Equal(
+			t,
+			referenceExportedBackupSchedule(g.projectName, g.clusterName, e2eNamespace.Name, akoBkpSchedule.Spec.ReferenceHourOfDay, akoBkpSchedule.Spec.ReferenceMinuteOfHour).Spec,
+			akoBkpSchedule.Spec,
+		)
+
+		// Assert Deployment
+		akoDeployment := akov2.AtlasDeployment{}
+		require.NoError(
+			t,
+			operator.getK8sObject(
+				client.ObjectKey{Name: prepareK8sName(fmt.Sprintf("%s-%s", g.projectName, g.clusterName)), Namespace: e2eNamespace.Name},
+				&akoDeployment,
+				true,
+			),
+		)
+		assert.Equal(t, referenceExportedDeployment(g, e2eNamespace.Name, g.mDBVer, false).Spec, akoDeployment.Spec)
+
+		// Assert Data Federation
+		akoDataFed := akov2.AtlasDataFederation{}
+		require.NoError(
+			t,
+			operator.getK8sObject(
+				client.ObjectKey{Name: prepareK8sName(fmt.Sprintf("%s-%s", g.projectName, storeNames[0])), Namespace: e2eNamespace.Name},
+				&akoDataFed,
+				true,
+			),
+		)
+		assert.Equal(t, referenceDataFederation(storeNames[0], e2eNamespace.Name, g.projectName, nil).Spec, akoDataFed.Spec)
+	})
+
+	t.Run("export and apply as independent resources to kubernetes cluster", func(t *testing.T) {
+		operator := setupCluster(t, "k8s-config-apply", defaultOperatorNamespace)
+		err = operator.installOperator(defaultOperatorNamespace, features.LatestOperatorMajorVersion)
+		require.NoError(t, err)
+
+		// we don't want the operator to do reconcile and avoid conflict with cli actions
+		operator.stopOperator()
+		t.Cleanup(func() {
+			operator.startOperator()
+		})
+
+		g := setupAtlasResources(t)
+
+		e2eNamespace := &corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "e2e-export-atlas-resource",
+			},
+		}
+		require.NoError(t, operator.createK8sObject(e2eNamespace))
+		g.t.Cleanup(func() {
+			require.NoError(t, operator.deleteK8sObject(e2eNamespace))
+		})
+
+		cmd := exec.Command(cliPath,
+			"kubernetes",
+			"config",
+			"apply",
+			"--targetNamespace", "e2e-export-atlas-resource",
+			"--projectId", g.projectID,
+			"--independentResources")
+		cmd.Env = os.Environ()
+		resp, err := cmd.CombinedOutput()
+		require.NoError(t, err, string(resp))
+		t.Log(string(resp))
+		g.t.Cleanup(func() {
+			operator.cleanUpResources()
+		})
+
+		akoProject := akov2.AtlasProject{}
+		require.NoError(
+			t,
+			operator.getK8sObject(
+				client.ObjectKey{Name: prepareK8sName(g.projectName), Namespace: e2eNamespace.Name},
+				&akoProject,
+				true,
+			),
+		)
+		assert.NotEmpty(t, akoProject.Spec.AlertConfigurations)
+		akoProject.Spec.AlertConfigurations = nil
+		assert.Equal(t, referenceExportedProject(g.projectName, g.teamName, &akoProject).Spec, akoProject.Spec)
+
+		// Assert Database User
+		akoDBUser := akov2.AtlasDatabaseUser{}
+		require.NoError(
+			t,
+			operator.getK8sObject(
+				client.ObjectKey{Name: prepareK8sName(fmt.Sprintf("%s-%s", g.projectName, g.dbUser)), Namespace: e2eNamespace.Name},
+				&akoDBUser,
+				true,
+			),
+		)
+		assert.Equal(t, referenceExportedDBUser(g, e2eNamespace.Name, true).Spec, akoDBUser.Spec)
+
+		// Assert Team
+		akoTeam := akov2.AtlasTeam{}
+		require.NoError(
+			t,
+			operator.getK8sObject(
+				client.ObjectKey{Name: prepareK8sName(fmt.Sprintf("%s-team-%s", g.projectName, g.teamName)), Namespace: e2eNamespace.Name},
+				&akoTeam,
+				true,
+			),
+		)
+		assert.Equal(t, referenceExportedTeam(g.teamName, g.teamUser).Spec, akoTeam.Spec)
+
+		// Assert Backup Policy
+		akoBkpPolicy := akov2.AtlasBackupPolicy{}
+		require.NoError(
+			t,
+			operator.getK8sObject(
+				client.ObjectKey{Name: prepareK8sName(fmt.Sprintf("%s-%s-backuppolicy", g.projectName, g.clusterName)), Namespace: e2eNamespace.Name},
+				&akoBkpPolicy,
+				true,
+			),
+		)
+		assert.Equal(t, referenceExportedBackupPolicy().Spec, akoBkpPolicy.Spec)
+
+		// Assert Backup Schedule
+		akoBkpSchedule := akov2.AtlasBackupSchedule{}
+		require.NoError(
+			t,
+			operator.getK8sObject(
+				client.ObjectKey{Name: prepareK8sName(fmt.Sprintf("%s-%s-backupschedule", g.projectName, g.clusterName)), Namespace: e2eNamespace.Name},
+				&akoBkpSchedule,
+				true,
+			),
+		)
+		assert.Equal(
+			t,
+			referenceExportedBackupSchedule(g.projectName, g.clusterName, e2eNamespace.Name, akoBkpSchedule.Spec.ReferenceHourOfDay, akoBkpSchedule.Spec.ReferenceMinuteOfHour).Spec,
+			akoBkpSchedule.Spec,
+		)
+
+		// Assert Deployment
+		akoDeployment := akov2.AtlasDeployment{}
+		require.NoError(
+			t,
+			operator.getK8sObject(
+				client.ObjectKey{Name: prepareK8sName(fmt.Sprintf("%s-%s", g.projectName, g.clusterName)), Namespace: e2eNamespace.Name},
+				&akoDeployment,
+				true,
+			),
+		)
+		assert.Equal(t, referenceExportedDeployment(g, e2eNamespace.Name, g.mDBVer, true).Spec, akoDeployment.Spec)
 	})
 }
 
@@ -323,28 +575,42 @@ func referenceExportedProject(projectName, teamName string, expectedProject *ako
 	}
 }
 
-func referenceExportedDBUser(projectName, dbUser, namespace string) *akov2.AtlasDatabaseUser {
-	return &akov2.AtlasDatabaseUser{
+func referenceExportedDBUser(generator *atlasE2ETestGenerator, namespace string, independent bool) *akov2.AtlasDatabaseUser {
+	r := &akov2.AtlasDatabaseUser{
 		Spec: akov2.AtlasDatabaseUserSpec{
-			ProjectDualReference: akov2.ProjectDualReference{
-				ProjectRef: &akov2common.ResourceRefNamespaced{
-					Name:      prepareK8sName(projectName),
-					Namespace: namespace,
-				},
-			},
 			Roles: []akov2.RoleSpec{
 				{
 					RoleName:     "readAnyDatabase",
 					DatabaseName: "admin",
 				},
 			},
-			Username:     dbUser,
+			Username:     generator.dbUser,
 			OIDCAuthType: "NONE",
 			AWSIAMType:   "NONE",
 			X509Type:     "MANAGED",
 			DatabaseName: "$external",
 		},
 	}
+
+	if independent {
+		r.Spec.ProjectDualReference = akov2.ProjectDualReference{
+			ExternalProjectRef: &akov2.ExternalProjectReference{
+				ID: generator.projectID,
+			},
+			ConnectionSecret: &akoapi.LocalObjectReference{
+				Name: resources.NormalizeAtlasName(strings.ToLower(generator.projectName)+"-credentials", resources.AtlasNameToKubernetesName()),
+			},
+		}
+	} else {
+		r.Spec.ProjectDualReference = akov2.ProjectDualReference{
+			ProjectRef: &akov2common.ResourceRefNamespaced{
+				Name:      strings.ToLower(generator.projectName),
+				Namespace: namespace,
+			},
+		}
+	}
+
+	return r
 }
 
 func referenceExportedTeam(teamName, username string) *akov2.AtlasTeam {
@@ -412,21 +678,15 @@ func referenceExportedBackupPolicy() *akov2.AtlasBackupPolicy {
 	}
 }
 
-func referenceExportedDeployment(projectName, clusterName, namespace, mdbVersion string) *akov2.AtlasDeployment {
-	return &akov2.AtlasDeployment{
+func referenceExportedDeployment(generator *atlasE2ETestGenerator, namespace, mdbVersion string, independent bool) *akov2.AtlasDeployment {
+	r := &akov2.AtlasDeployment{
 		Spec: akov2.AtlasDeploymentSpec{
-			ProjectDualReference: akov2.ProjectDualReference{
-				ProjectRef: &akov2common.ResourceRefNamespaced{
-					Name:      prepareK8sName(projectName),
-					Namespace: namespace,
-				},
-			},
 			BackupScheduleRef: akov2common.ResourceRefNamespaced{
-				Name:      prepareK8sName(fmt.Sprintf("%s-%s-backupschedule", projectName, clusterName)),
+				Name:      prepareK8sName(fmt.Sprintf("%s-%s-backupschedule", generator.projectName, generator.clusterName)),
 				Namespace: namespace,
 			},
 			DeploymentSpec: &akov2.AdvancedDeploymentSpec{
-				Name:          clusterName,
+				Name:          generator.clusterName,
 				BackupEnabled: pointer.Get(true),
 				BiConnector: &akov2.BiConnectorSpec{
 					Enabled:        pointer.Get(false),
@@ -487,6 +747,26 @@ func referenceExportedDeployment(projectName, clusterName, namespace, mdbVersion
 			},
 		},
 	}
+
+	if independent {
+		r.Spec.ProjectDualReference = akov2.ProjectDualReference{
+			ExternalProjectRef: &akov2.ExternalProjectReference{
+				ID: generator.projectID,
+			},
+			ConnectionSecret: &akoapi.LocalObjectReference{
+				Name: resources.NormalizeAtlasName(strings.ToLower(generator.projectName)+"-credentials", resources.AtlasNameToKubernetesName()),
+			},
+		}
+	} else {
+		r.Spec.ProjectDualReference = akov2.ProjectDualReference{
+			ProjectRef: &akov2common.ResourceRefNamespaced{
+				Name:      strings.ToLower(generator.projectName),
+				Namespace: namespace,
+			},
+		}
+	}
+
+	return r
 }
 
 func deleteTeamFromProject(t *testing.T, cliPath, projectID, teamID string) {

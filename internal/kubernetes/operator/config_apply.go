@@ -84,7 +84,12 @@ func (apply *ConfigApply) Run() error {
 		return err
 	}
 
-	sortedResources := sortResources(ProjectResources, DeploymentResources, streamsResources, apply.Version)
+	dataFederationResources, err := apply.exporter.exportDataFederation(projectName)
+	if err != nil {
+		return err
+	}
+
+	sortedResources := sortResources(ProjectResources, DeploymentResources, streamsResources, dataFederationResources, apply.Version)
 
 	for _, objects := range sortedResources {
 		for _, object := range objects {
@@ -111,7 +116,7 @@ func (apply *ConfigApply) Run() error {
 }
 
 func sortResources(
-	projectResources, deploymentResources, streamsResources []runtime.Object,
+	projectResources, deploymentResources, streamsResources, dataFederationResources []runtime.Object,
 	version string,
 ) [][]runtime.Object {
 	resources, versionFound := features.GetResourcesForVersion(version)
@@ -166,6 +171,8 @@ func sortResources(
 			sortedResources[8] = append(sortedResources[8], resource)
 		}
 	}
+
+	sortedResources[9] = append(sortedResources[9], dataFederationResources...)
 
 	return sortedResources
 }
