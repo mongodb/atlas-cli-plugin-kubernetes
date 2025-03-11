@@ -2748,42 +2748,6 @@ func atlasBackupSchedule(objects []runtime.Object) (*akov2.AtlasBackupSchedule, 
 	return nil, false
 }
 
-func referenceDataFederation(name, namespace, projectName string, labels map[string]string) *akov2.AtlasDataFederation {
-	dictionary := resources.AtlasNameToKubernetesName()
-	return &akov2.AtlasDataFederation{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "AtlasDataFederation",
-			APIVersion: "atlas.mongodb.com/v1",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      resources.NormalizeAtlasName(fmt.Sprintf("%s-%s", projectName, name), dictionary),
-			Namespace: namespace,
-			Labels:    labels,
-		},
-		Spec: akov2.DataFederationSpec{
-			Project: akov2common.ResourceRefNamespaced{
-				Name:      resources.NormalizeAtlasName(projectName, dictionary),
-				Namespace: namespace,
-			},
-			Name:                name,
-			CloudProviderConfig: &akov2.CloudProviderConfig{},
-			DataProcessRegion: &akov2.DataProcessRegion{
-				CloudProvider: "AWS",
-				Region:        "DUBLIN_IRL",
-			},
-			Storage: &akov2.Storage{
-				Databases: nil,
-				Stores:    nil,
-			},
-		},
-		Status: akov2status.DataFederationStatus{
-			Common: akoapi.Common{
-				Conditions: []akoapi.Condition{},
-			},
-		},
-	}
-}
-
 func TestKubernetesConfigGenerate_DataFederation(t *testing.T) {
 	n, err := RandInt(255)
 	require.NoError(t, err)

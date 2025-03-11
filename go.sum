@@ -259,6 +259,8 @@ go.mongodb.org/atlas-sdk/v20241113001 v20241113001.0.0 h1:G3UZcWwWziGUuaILWp/Gc+
 go.mongodb.org/atlas-sdk/v20241113001 v20241113001.0.0/go.mod h1:fMiUyCacIAm+XwFkJ4j+rJtYLRsGU7hButtgGv+SBU4=
 go.mongodb.org/atlas-sdk/v20241113004 v20241113004.0.0 h1:dmIp82dS4foajdKgcKRfr26g0cWE52jQAf+nbgFXr10=
 go.mongodb.org/atlas-sdk/v20241113004 v20241113004.0.0/go.mod h1:z6m7PcfItkgV3+mnLuStlTkdTbfUBQJpRyES8tuHNCk=
+go.mongodb.org/atlas-sdk/v20250219001 v20250219001.1.0 h1:tm7d3xvbNFIpuvFcppXc1zdpM/dO7HwivpA+Y4np3uQ=
+go.mongodb.org/atlas-sdk/v20250219001 v20250219001.1.0/go.mod h1:huR1gWJhExa60NIRhsLDdc7RmmqKJJwnbdlA1UUh8V4=
 go.opentelemetry.io/auto/sdk v1.1.0 h1:cH53jehLUN6UFLY71z+NDOiNJqDdPRaXzTel0sJySYA=
 go.opentelemetry.io/auto/sdk v1.1.0/go.mod h1:3wSPjt5PWp2RhlCcmmOial7AvC4DQqZb7a7wCow3W8A=
 go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.59.0 h1:CV7UdSGJt/Ao6Gp4CXckLxVRRsRgDHoI8XjbL3PDl8s=
