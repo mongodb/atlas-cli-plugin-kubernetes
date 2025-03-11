@@ -33,6 +33,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	atlasv2 "go.mongodb.org/atlas-sdk/v20241113004/admin"
+	atlasv20250219001 "go.mongodb.org/atlas-sdk/v20250219001/admin"
 	"go.mongodb.org/atlas/mongodbatlas"
 )
 
@@ -410,7 +411,7 @@ func getFirstOrgUser() (string, error) {
 		return "", fmt.Errorf("%s (%w)", string(resp), err)
 	}
 
-	var users atlasv2.PaginatedAppUser
+	var users atlasv20250219001.PaginatedOrgUser
 	if err := json.Unmarshal(resp, &users); err != nil {
 		return "", fmt.Errorf("%w: %s", err, string(resp))
 	}
