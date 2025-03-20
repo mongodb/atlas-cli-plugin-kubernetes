@@ -254,6 +254,7 @@ func TestExportPrivateEndpoint(t *testing.T) {
 				defaultTestProject(s.generator.projectName, "", expectedLabels, false),
 				defaultTestAtlasConnSecret(credentialName, ""),
 				defaultPrivateEndpoint(s.generator, false),
+				referenceContainer(s.generator, "AWS", "EU_CENTRAL_1", "", expectedLabels, false),
 			},
 		},
 		"should export separate resource with external reference for version with support": {
@@ -263,6 +264,7 @@ func TestExportPrivateEndpoint(t *testing.T) {
 				defaultTestProject(s.generator.projectName, "", expectedLabels, false),
 				defaultTestAtlasConnSecret(credentialName, ""),
 				defaultPrivateEndpoint(s.generator, true),
+				referenceContainer(s.generator, "AWS", "EU_CENTRAL_1", "", expectedLabels, true),
 			},
 		},
 	}
@@ -1677,7 +1679,7 @@ func TestProjectWithNetworkPeering(t *testing.T) {
 	cliPath := s.cliPath
 	atlasCliPath := s.atlasCliPath
 	generator := s.generator
-	expectedProject := s.expectedProject
+	expectedProject := referenceProject(s.generator.projectName, targetNamespace, map[string]string{features.ResourceVersion: "2.7.0"})
 
 	atlasCidrBlock := "10.8.0.0/18"
 	networkPeer := akov2.NetworkPeer{
@@ -1719,10 +1721,9 @@ func TestProjectWithNetworkPeering(t *testing.T) {
 			"kubernetes",
 			"config",
 			"generate",
-			"--projectId",
-			generator.projectID,
-			"--targetNamespace",
-			targetNamespace,
+			"--projectId", generator.projectID,
+			"--targetNamespace", targetNamespace,
+			"--operatorVersion", "2.7.0",
 			"--includeSecrets")
 		cmd.Env = os.Environ()
 
@@ -1772,6 +1773,7 @@ func TestProjectWithPrivateEndpoint_Azure(t *testing.T) {
 				},
 			},
 		},
+		referenceContainer(s.generator, "AZURE", "EUROPE_NORTH", targetNamespace, expectedLabels, false),
 	}
 
 	t.Run("Add network peer to the project", func(t *testing.T) {
@@ -1796,6 +1798,59 @@ func TestProjectWithPrivateEndpoint_Azure(t *testing.T) {
 		require.NotEmpty(t, objects)
 		require.Equal(t, expected, objects)
 	})
+}
+
+func referenceContainer(g *atlasE2ETestGenerator, provider, region, namespace string, labels map[string]string, independent bool) *akov2.AtlasNetworkContainer {
+	c := &akov2.AtlasNetworkContainer{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "AtlasNetworkContainer",
+			APIVersion: "atlas.mongodb.com/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: resources.NormalizeAtlasName(
+				fmt.Sprintf(""+
+					"%s-container-%s-%s",
+					g.projectName,
+					provider,
+					strings.ToLower(strings.ReplaceAll(region, "_", "")),
+				),
+				resources.AtlasNameToKubernetesName(),
+			),
+			Namespace: namespace,
+			Labels:    labels,
+		},
+		Spec: akov2.AtlasNetworkContainerSpec{
+			Provider: provider,
+			AtlasNetworkContainerConfig: akov2.AtlasNetworkContainerConfig{
+				ID:        g.containerID,
+				Region:    region,
+				CIDRBlock: "192.168.248.0/21",
+			},
+		},
+		Status: akov2status.AtlasNetworkContainerStatus{
+			Common: akoapi.Common{
+				Conditions: []akoapi.Condition{},
+			},
+		},
+	}
+
+	if independent {
+		c.Spec.ProjectDualReference = akov2.ProjectDualReference{
+			ExternalProjectRef: &akov2.ExternalProjectReference{
+				ID: g.projectID,
+			},
+			ConnectionSecret: &akoapi.LocalObjectReference{
+				Name: resources.NormalizeAtlasName(strings.ToLower(g.projectName)+"-credentials", resources.AtlasNameToKubernetesName()),
+			},
+		}
+	} else {
+		c.Spec.ProjectRef = &akov2common.ResourceRefNamespaced{
+			Name:      strings.ToLower(g.projectName),
+			Namespace: namespace,
+		}
+	}
+
+	return c
 }
 
 func TestProjectAndTeams(t *testing.T) {
@@ -2749,6 +2804,10 @@ func atlasBackupSchedule(objects []runtime.Object) (*akov2.AtlasBackupSchedule, 
 }
 
 func TestKubernetesConfigGenerate_DataFederation(t *testing.T) {
+	if revision, ok := os.LookupEnv("revision"); ok {
+		t.Log(revision)
+		t.Log(expectedLabels)
+	}
 	n, err := RandInt(255)
 	require.NoError(t, err)
 	g := newAtlasE2ETestGenerator(t)

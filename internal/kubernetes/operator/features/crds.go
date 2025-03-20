@@ -27,7 +27,7 @@ import (
 )
 
 const (
-	LatestOperatorMajorVersion          = "2.7.0"
+	LatestOperatorMajorVersion          = "2.8.0"
 	maxDepth                            = 100
 	ResourceVersion                     = "mongodb.com/atlas-resource-version"
 	ResourceAtlasProject                = "atlasprojects"
