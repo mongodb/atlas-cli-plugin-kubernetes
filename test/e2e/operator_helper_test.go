@@ -149,7 +149,7 @@ func setupCluster(t *testing.T, name string, namespaces ...string) *operatorHelp
 				Name: namespace,
 			},
 		}
-		t.Logf("adding namespace %s", namespace)
+		t.Logf("adding operator namespace %s", namespace)
 		require.NoError(t, operator.createK8sObject(namespaceObj))
 	}
 

@@ -25,6 +25,7 @@ require (
 	go.mongodb.org/atlas v0.37.0
 	go.mongodb.org/atlas-sdk/v20240530005 v20240530005.0.0
 	go.mongodb.org/atlas-sdk/v20241113004 v20241113004.0.0
+	go.mongodb.org/atlas-sdk/v20250219001 v20250219001.1.0
 	golang.org/x/exp v0.0.0-20240719175910-8a7402abbf56
 	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/api v0.32.3
