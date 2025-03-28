@@ -105,7 +105,9 @@ func (opts *ApplyOpts) Run() error {
 		WithTargetOperatorVersion(opts.operatorVersion).
 		WithSecretsData(true).
 		WithFeatureValidator(atlasCRDs).
-		WithPatcher(atlasCRDs)
+		WithPatcher(atlasCRDs).
+		WithDataFederationNames(opts.dataFederationName).
+		WithIndependentResources(opts.independentResources)
 	err = operator.NewConfigApply(
 		operator.NewConfigApplyParams{
 			OrgID:     opts.OrgID,
@@ -169,6 +171,8 @@ func ApplyBuilder() *cobra.Command {
 	flags.StringVar(&opts.operatorVersion, flag.OperatorVersion, "", usage.OperatorVersion)
 	flags.StringVar(&opts.KubeConfig, flag.KubernetesClusterConfig, "", usage.KubernetesClusterConfig)
 	flags.StringVar(&opts.KubeContext, flag.KubernetesClusterContext, "", usage.KubernetesClusterContext)
+	flags.StringSliceVar(&opts.dataFederationName, flag.DataFederationName, []string{}, usage.ExporterDataFederationName)
+	flags.BoolVar(&opts.independentResources, flag.IndependentResources, false, usage.IndependentResources)
 
 	return cmd
 }

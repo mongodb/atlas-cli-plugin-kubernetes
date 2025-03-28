@@ -30,10 +30,16 @@ import (
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator/resources"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/version"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/test"
+	akoapi "github.com/mongodb/mongodb-atlas-kubernetes/v2/api"
+	akov2 "github.com/mongodb/mongodb-atlas-kubernetes/v2/api/v1"
+	akov2common "github.com/mongodb/mongodb-atlas-kubernetes/v2/api/v1/common"
+	akov2status "github.com/mongodb/mongodb-atlas-kubernetes/v2/api/v1/status"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	atlasv2 "go.mongodb.org/atlas-sdk/v20241113004/admin"
+	atlasv20250219001 "go.mongodb.org/atlas-sdk/v20250219001/admin"
 	"go.mongodb.org/atlas/mongodbatlas"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -342,9 +348,6 @@ func RandProjectName() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if revision, ok := os.LookupEnv("revision"); ok {
-		return fmt.Sprintf("%v-%s", n, revision), nil
-	}
 	return fmt.Sprintf("e2e-%v", n), nil
 }
 
@@ -410,7 +413,7 @@ func getFirstOrgUser() (string, error) {
 		return "", fmt.Errorf("%s (%w)", string(resp), err)
 	}
 
-	var users atlasv2.PaginatedAppUser
+	var users atlasv20250219001.PaginatedOrgUser
 	if err := json.Unmarshal(resp, &users); err != nil {
 		return "", fmt.Errorf("%w: %s", err, string(resp))
 	}
@@ -826,4 +829,40 @@ func randomString(t *testing.T) string {
 		t.Fatalf("failed to get random string: %v", err)
 	}
 	return fmt.Sprintf("%x", n)
+}
+
+func referenceDataFederation(name, namespace, projectName string, labels map[string]string) *akov2.AtlasDataFederation {
+	dictionary := resources.AtlasNameToKubernetesName()
+	return &akov2.AtlasDataFederation{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "AtlasDataFederation",
+			APIVersion: "atlas.mongodb.com/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      resources.NormalizeAtlasName(fmt.Sprintf("%s-%s", projectName, name), dictionary),
+			Namespace: namespace,
+			Labels:    labels,
+		},
+		Spec: akov2.DataFederationSpec{
+			Project: akov2common.ResourceRefNamespaced{
+				Name:      resources.NormalizeAtlasName(projectName, dictionary),
+				Namespace: namespace,
+			},
+			Name:                name,
+			CloudProviderConfig: &akov2.CloudProviderConfig{},
+			DataProcessRegion: &akov2.DataProcessRegion{
+				CloudProvider: "AWS",
+				Region:        "DUBLIN_IRL",
+			},
+			Storage: &akov2.Storage{
+				Databases: nil,
+				Stores:    nil,
+			},
+		},
+		Status: akov2status.DataFederationStatus{
+			Common: akoapi.Common{
+				Conditions: []akoapi.Condition{},
+			},
+		},
+	}
 }
