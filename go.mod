@@ -2,6 +2,8 @@ module github.com/mongodb/atlas-cli-plugin-kubernetes
 
 go 1.23.6
 
+toolchain go1.24.1
+
 require (
 	cloud.google.com/go/compute v1.34.1
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.8.2
@@ -33,7 +35,7 @@ require (
 	k8s.io/apimachinery v0.32.3
 	k8s.io/apiserver v0.32.3
 	k8s.io/client-go v0.32.3
-	sigs.k8s.io/controller-runtime v0.20.3
+	sigs.k8s.io/controller-runtime v0.20.4
 	sigs.k8s.io/kind v0.27.0
 	sigs.k8s.io/yaml v1.4.0
 )
