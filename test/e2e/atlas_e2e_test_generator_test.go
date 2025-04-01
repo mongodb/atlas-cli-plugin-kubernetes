@@ -87,6 +87,7 @@ type atlasE2ETestGenerator struct {
 	teamID               string
 	teamUser             string
 	dbUser               string
+	containerID          string
 	tier                 string
 	mDBVer               string
 	dataFedName          string
@@ -240,6 +241,22 @@ func (g *atlasE2ETestGenerator) generatePrivateEndpoint(provider, region string)
 	require.NoError(g.t, json.Unmarshal(resp, &r))
 
 	g.t.Logf("endpointServiceID=%s", r.GetId())
+
+	cmd = exec.Command(cliPath,
+		networkingEntity,
+		networkContainerEntity,
+		"list",
+		"--projectId",
+		g.projectID,
+		"-o=json")
+	cmd.Env = os.Environ()
+	resp, err = test.RunAndGetStdOut(cmd)
+	require.NoError(g.t, err, string(resp))
+	var nc []atlasv2.CloudProviderContainer
+	require.NoError(g.t, json.Unmarshal(resp, &nc))
+	g.containerID = nc[0].GetId()
+
+	g.t.Logf("containerID=%s", nc[0].GetId())
 
 	g.t.Cleanup(func() {
 		g.t.Logf("deleting private endpoint service - ID=%s", r.GetId())
