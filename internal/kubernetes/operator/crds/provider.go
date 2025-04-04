@@ -43,6 +43,7 @@ func (p EmbeddedAtlasCRDProvider) GetAtlasOperatorResource(resourceName, version
 	if err != nil {
 		return nil, fmt.Errorf("failed to open embeddedPath path %q: %w", embeddedPath, err)
 	}
+	//nolint:errcheck
 	defer f.Close()
 
 	data, err := io.ReadAll(f)

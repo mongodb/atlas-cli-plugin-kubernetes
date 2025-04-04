@@ -97,6 +97,7 @@ func (t *pluginTracker) read() ([]Event, error) {
 		if err != nil {
 			return events, err
 		}
+		//nolint:errcheck
 		defer file.Close()
 		decoder := json.NewDecoder(file)
 		for decoder.More() {
@@ -117,6 +118,7 @@ func (t *pluginTracker) save(event Event) error {
 		return err
 	}
 
+	//nolint:errcheck
 	defer file.Close()
 	data, err := json.Marshal(event)
 	if err != nil {

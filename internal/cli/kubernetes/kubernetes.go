@@ -52,7 +52,7 @@ func Builder() *cobra.Command {
 				return fmt.Errorf("failed to load Atlas CLI configuration: %v", err)
 			}
 			if err := coreConfig.InitProfile(profile); err != nil {
-				return fmt.Errorf("Failed to initialise Atlas CLI profile: %v", err)
+				return fmt.Errorf("failed to initialise Atlas CLI profile: %w", err)
 			}
 
 			telemetry.TrackPluginCommand(cmd, args)
