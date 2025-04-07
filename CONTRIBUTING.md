@@ -47,7 +47,7 @@ To make the contribution process as seamless as possible, we ask for the followi
 #### Prerequisite Tools
 
 - [Git](https://git-scm.com/)
-- [Go (at least Go 1.23.1)](https://golang.org/dl/)
+- [Go (at least Go 1.24)](https://golang.org/dl/)
 
 #### Environment
 

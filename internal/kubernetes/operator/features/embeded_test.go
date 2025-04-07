@@ -28,7 +28,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"sigs.k8s.io/yaml"
 )
 
@@ -61,7 +60,7 @@ func diffResource(t *testing.T, httpClient *http.Client, provider crds.AtlasOper
 	return !reflect.DeepEqual(localCRD, remoteCRD)
 }
 
-func getGitHubCRD(httpClient *http.Client, resource, version string) (*v1.CustomResourceDefinition, error) {
+func getGitHubCRD(httpClient *http.Client, resource, version string) (*apiextensionsv1.CustomResourceDefinition, error) {
 	ctx, cancelF := context.WithTimeout(context.Background(), requestTimeout)
 	defer cancelF()
 
@@ -75,6 +74,7 @@ func getGitHubCRD(httpClient *http.Client, resource, version string) (*v1.Custom
 	if err != nil {
 		return nil, fmt.Errorf("failed to GET %s: %w", url, err)
 	}
+	//nolint:errcheck
 	defer resp.Body.Close()
 
 	data, err := io.ReadAll(resp.Body)
