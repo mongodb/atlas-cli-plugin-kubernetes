@@ -247,8 +247,8 @@ github.com/x448/float16 v0.8.4/go.mod h1:14CWIYCyZA/cWjXOioeEpHeN/83MdbZDRQHoFcY
 github.com/yuin/goldmark v1.1.27/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.2.1/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.3.5/go.mod h1:mwnBkeHKe2W/ZEtQ+71ViKU8L12m81fl3OWwC1Zlc8k=
-go.mongodb.org/atlas v0.37.0 h1:zQnO1o5+bVP9IotpAYpres4UjMD2F4nwNEFTZhNL4ck=
-go.mongodb.org/atlas v0.37.0/go.mod h1:DJYtM+vsEpPEMSkQzJnFHrT0sP7ev6cseZc/GGjJYG8=
+go.mongodb.org/atlas v0.38.0 h1:zfwymq20GqivGwxPZfypfUDry+WwMGVui97z1d8V4bU=
+go.mongodb.org/atlas v0.38.0/go.mod h1:DJYtM+vsEpPEMSkQzJnFHrT0sP7ev6cseZc/GGjJYG8=
 go.mongodb.org/atlas-sdk/v20231115004 v20231115004.1.0 h1:vOvfk8bPedcphaTHIm6p8UB/ZPeVOqJZ7+MmTuI1eGs=
 go.mongodb.org/atlas-sdk/v20231115004 v20231115004.1.0/go.mod h1:FzD5DLz+WPB+z3OGgNBjXMPQJjJ7Y+hKn4iupXZuoOc=
 go.mongodb.org/atlas-sdk/v20231115008 v20231115008.5.0 h1:OuV1HfIpZUZa4+BKvtrvDlNqnilkCkdHspuZok6KAbM=
