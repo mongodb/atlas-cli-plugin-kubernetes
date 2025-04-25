@@ -742,12 +742,6 @@ func defaultPrivateEndpoint(generator *atlasE2ETestGenerator, independent bool) 
 	return pe
 }
 
-func expectedWithPrivateEndpoints(p *akov2.AtlasProject, pes []akov2.PrivateEndpoint) *akov2.AtlasProject {
-	p.Spec.PrivateEndpoints = pes
-
-	return p
-}
-
 func defaultIPAccessList(generator *atlasE2ETestGenerator, independent bool) *akov2.AtlasIPAccessList {
 	ial := &akov2.AtlasIPAccessList{
 		TypeMeta: metav1.TypeMeta{
