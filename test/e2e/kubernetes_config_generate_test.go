@@ -1628,7 +1628,7 @@ func TestProjectWithMaintenanceWindow(t *testing.T) {
 		HourOfDay: 1,
 	}
 	expectedProject.Spec.MaintenanceWindow = newMaintenanceWindow
-	expectedProject.Spec.AlertConfigurations = defaultMaintenanceWindowAlertConfigs()
+	expectedProject.Spec.AlertConfigurations = nil
 
 	t.Run("Add integration to the project", func(t *testing.T) {
 		cmd := exec.Command(atlasCliPath,
@@ -2344,61 +2344,6 @@ func referenceSharedCluster(name, region, namespace, projectName string, labels 
 	cluster.Spec.DeploymentSpec.PitEnabled = nil
 	cluster.Spec.BackupScheduleRef = akov2common.ResourceRefNamespaced{}
 	return cluster
-}
-
-func defaultMaintenanceWindowAlertConfigs() []akov2.AlertConfiguration {
-	ownerNotifications := func() []akov2.Notification {
-		return []akov2.Notification{
-			{
-				EmailEnabled: pointer.Get(true),
-				IntervalMin:  60,
-				DelayMin:     pointer.Get(0),
-				SMSEnabled:   pointer.Get(false),
-				TypeName:     "GROUP",
-				Roles:        []string{"GROUP_OWNER"},
-			},
-		}
-	}
-
-	return []akov2.AlertConfiguration{
-		{
-			Enabled:       true,
-			EventTypeName: "MAINTENANCE_IN_ADVANCED",
-			Threshold:     &akov2.Threshold{},
-			Notifications: []akov2.Notification{
-				{
-					EmailEnabled: pointer.Get(true),
-					IntervalMin:  60,
-					DelayMin:     pointer.Get(0),
-					SMSEnabled:   pointer.Get(false),
-					TypeName:     "GROUP",
-					Roles:        []string{"GROUP_OWNER"},
-				},
-			},
-			MetricThreshold: &akov2.MetricThreshold{},
-		},
-		{
-			Enabled:         true,
-			EventTypeName:   "MAINTENANCE_STARTED",
-			Threshold:       &akov2.Threshold{},
-			Notifications:   ownerNotifications(),
-			MetricThreshold: &akov2.MetricThreshold{},
-		},
-		{
-			Enabled:         true,
-			EventTypeName:   "MAINTENANCE_NO_LONGER_NEEDED",
-			Threshold:       &akov2.Threshold{},
-			Notifications:   ownerNotifications(),
-			MetricThreshold: &akov2.MetricThreshold{},
-		},
-		{
-			Enabled:         true,
-			EventTypeName:   "MAINTENANCE_AUTO_DEFERRED",
-			Threshold:       &akov2.Threshold{},
-			Notifications:   ownerNotifications(),
-			MetricThreshold: &akov2.MetricThreshold{},
-		},
-	}
 }
 
 func referenceBackupSchedule(namespace, projectName, clusterName string, labels map[string]string) *akov2.AtlasBackupSchedule {
