@@ -548,23 +548,6 @@ func deleteAllNetworkPeers(t *testing.T, projectID, provider string) {
 	}
 }
 
-func deletePrivateEndpoint(t *testing.T, cliPath, projectID, provider, endpointID string) {
-	t.Helper()
-
-	cmd := exec.Command(cliPath,
-		privateEndpointsEntity,
-		provider,
-		"delete",
-		endpointID,
-		"--projectId",
-		projectID,
-		"--force",
-	)
-	cmd.Env = os.Environ()
-	resp, err := test.RunAndGetStdOut(cmd)
-	require.NoError(t, err, string(resp))
-}
-
 func deleteTeam(teamID string) error {
 	cliPath, err := AtlasCLIBin()
 	if err != nil {

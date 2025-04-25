@@ -239,28 +239,6 @@ func (oh *operatorHelper) stopOperator() {
 	}
 }
 
-func (oh *operatorHelper) startOperator() {
-	err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-		deployment := appsv1.Deployment{}
-		err := oh.getK8sObject(
-			client.ObjectKey{Name: "mongodb-atlas-operator", Namespace: "mongodb-atlas-system"},
-			&deployment,
-			false,
-		)
-		if err != nil {
-			return err
-		}
-
-		deployment.Spec.Replicas = pointer.Get[int32](1)
-
-		return oh.k8sClient.Update(context.Background(), &deployment, &client.UpdateOptions{})
-	})
-
-	if err != nil {
-		oh.t.Errorf("unable to start operator: %v", err)
-	}
-}
-
 func (oh *operatorHelper) emulateCertifiedOperator() {
 	err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		deployment := appsv1.Deployment{}
@@ -306,23 +284,5 @@ func (oh *operatorHelper) restoreOperatorImage() {
 
 	if err != nil {
 		oh.t.Errorf("unable to restore operator image: %v", err)
-	}
-}
-
-func (oh *operatorHelper) cleanUpResources() {
-	for _, object := range oh.resourcesTracked {
-		if len(object.GetFinalizers()) > 0 {
-			object.SetFinalizers([]string{})
-
-			err := oh.k8sClient.Update(context.Background(), object, &client.UpdateOptions{})
-			if err != nil {
-				oh.t.Errorf("unable to update k8s resource: %v", err)
-			}
-		}
-
-		err := oh.k8sClient.Delete(context.Background(), object)
-		if err != nil {
-			oh.t.Errorf("unable to delete k8s resource: %v", err)
-		}
 	}
 }

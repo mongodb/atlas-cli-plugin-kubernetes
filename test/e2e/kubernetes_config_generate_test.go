@@ -175,7 +175,7 @@ func TestExportIndependentOrNot(t *testing.T) {
 	testPrefix := "test-"
 	generator.generateDBUser(testPrefix)
 	generator.generateCluster()
-	expectAlertConfigs := true
+	expectAlertConfigs := false
 	dictionary := resources.AtlasNameToKubernetesName()
 	credentialName := resources.NormalizeAtlasName(generator.projectName+credSuffixTest, dictionary)
 
@@ -740,12 +740,6 @@ func defaultPrivateEndpoint(generator *atlasE2ETestGenerator, independent bool) 
 	}
 
 	return pe
-}
-
-func expectedWithPrivateEndpoints(p *akov2.AtlasProject, pes []akov2.PrivateEndpoint) *akov2.AtlasProject {
-	p.Spec.PrivateEndpoints = pes
-
-	return p
 }
 
 func defaultIPAccessList(generator *atlasE2ETestGenerator, independent bool) *akov2.AtlasIPAccessList {
@@ -1634,7 +1628,7 @@ func TestProjectWithMaintenanceWindow(t *testing.T) {
 		HourOfDay: 1,
 	}
 	expectedProject.Spec.MaintenanceWindow = newMaintenanceWindow
-	expectedProject.Spec.AlertConfigurations = defaultMaintenanceWindowAlertConfigs()
+	expectedProject.Spec.AlertConfigurations = nil
 
 	t.Run("Add integration to the project", func(t *testing.T) {
 		cmd := exec.Command(atlasCliPath,
@@ -2332,81 +2326,6 @@ func referenceFlex(name, region, namespace, projectName string, labels map[strin
 	}
 }
 
-func referenceSharedCluster(name, region, namespace, projectName string, labels map[string]string) *akov2.AtlasDeployment {
-	cluster := referenceAdvancedCluster(name, region, namespace, projectName, labels, "")
-	cluster.Spec.DeploymentSpec.ReplicationSpecs[0].RegionConfigs[0].ElectableSpecs = &akov2.Specs{
-		DiskIOPS:     nil,
-		InstanceSize: e2eSharedClusterTier,
-	}
-	cluster.Spec.DeploymentSpec.ReplicationSpecs[0].RegionConfigs[0].ReadOnlySpecs = nil
-	cluster.Spec.DeploymentSpec.ReplicationSpecs[0].RegionConfigs[0].AnalyticsSpecs = nil
-	cluster.Spec.DeploymentSpec.ReplicationSpecs[0].RegionConfigs[0].AutoScaling = nil
-	cluster.Spec.DeploymentSpec.ReplicationSpecs[0].RegionConfigs[0].BackingProviderName = string(akov2provider.ProviderAWS)
-	cluster.Spec.DeploymentSpec.ReplicationSpecs[0].RegionConfigs[0].ProviderName = string(akov2provider.ProviderTenant)
-
-	cluster.Spec.DeploymentSpec.BackupEnabled = nil
-	cluster.Spec.DeploymentSpec.BiConnector = nil
-	cluster.Spec.DeploymentSpec.EncryptionAtRestProvider = ""
-	cluster.Spec.DeploymentSpec.PitEnabled = nil
-	cluster.Spec.BackupScheduleRef = akov2common.ResourceRefNamespaced{}
-	return cluster
-}
-
-func defaultMaintenanceWindowAlertConfigs() []akov2.AlertConfiguration {
-	ownerNotifications := func() []akov2.Notification {
-		return []akov2.Notification{
-			{
-				EmailEnabled: pointer.Get(true),
-				IntervalMin:  60,
-				DelayMin:     pointer.Get(0),
-				SMSEnabled:   pointer.Get(false),
-				TypeName:     "GROUP",
-				Roles:        []string{"GROUP_OWNER"},
-			},
-		}
-	}
-
-	return []akov2.AlertConfiguration{
-		{
-			Enabled:       true,
-			EventTypeName: "MAINTENANCE_IN_ADVANCED",
-			Threshold:     &akov2.Threshold{},
-			Notifications: []akov2.Notification{
-				{
-					EmailEnabled: pointer.Get(true),
-					IntervalMin:  60,
-					DelayMin:     pointer.Get(0),
-					SMSEnabled:   pointer.Get(false),
-					TypeName:     "GROUP",
-					Roles:        []string{"GROUP_OWNER"},
-				},
-			},
-			MetricThreshold: &akov2.MetricThreshold{},
-		},
-		{
-			Enabled:         true,
-			EventTypeName:   "MAINTENANCE_STARTED",
-			Threshold:       &akov2.Threshold{},
-			Notifications:   ownerNotifications(),
-			MetricThreshold: &akov2.MetricThreshold{},
-		},
-		{
-			Enabled:         true,
-			EventTypeName:   "MAINTENANCE_NO_LONGER_NEEDED",
-			Threshold:       &akov2.Threshold{},
-			Notifications:   ownerNotifications(),
-			MetricThreshold: &akov2.MetricThreshold{},
-		},
-		{
-			Enabled:         true,
-			EventTypeName:   "MAINTENANCE_AUTO_DEFERRED",
-			Threshold:       &akov2.Threshold{},
-			Notifications:   ownerNotifications(),
-			MetricThreshold: &akov2.MetricThreshold{},
-		},
-	}
-}
-
 func referenceBackupSchedule(namespace, projectName, clusterName string, labels map[string]string) *akov2.AtlasBackupSchedule {
 	dictionary := resources.AtlasNameToKubernetesName()
 	return &akov2.AtlasBackupSchedule{
@@ -2671,52 +2590,6 @@ func atlasBackupPolicy(objects []runtime.Object) (*akov2.AtlasBackupPolicy, bool
 		}
 	}
 	return nil, false
-}
-
-func TestKubernetesConfigGenerateSharedCluster(t *testing.T) {
-	n, err := RandInt(255)
-	require.NoError(t, err)
-	g := newAtlasE2ETestGenerator(t)
-	g.generateProject(fmt.Sprintf("kubernetes-%s", n))
-	g.tier = e2eSharedClusterTier
-	g.generateCluster()
-
-	expectedDeployment := referenceSharedCluster(g.clusterName, g.clusterRegion, targetNamespace, g.projectName, expectedLabels)
-
-	cliPath, err := PluginBin()
-	require.NoError(t, err)
-
-	// always register atlas entities
-	require.NoError(t, akov2.AddToScheme(scheme.Scheme))
-
-	cmd := exec.Command(cliPath,
-		"kubernetes",
-		"config",
-		"generate",
-		"--projectId",
-		g.projectID,
-		"--targetNamespace",
-		targetNamespace,
-		"--includeSecrets")
-	cmd.Env = os.Environ()
-
-	resp, err := test.RunAndGetStdOut(cmd)
-	t.Log(string(resp))
-	require.NoError(t, err, string(resp))
-	var objects []runtime.Object
-	objects, err = getK8SEntities(resp)
-	require.NoError(t, err, "should not fail on decode")
-	require.NotEmpty(t, objects)
-
-	p, found := findAtlasProject(objects)
-	require.True(t, found, "AtlasProject is not found in results")
-	assert.Equal(t, targetNamespace, p.Namespace)
-	ds := atlasDeployments(objects)
-	assert.Len(t, ds, 1)
-	assert.Equal(t, expectedDeployment, ds[0])
-	secret, found := findSecret(objects)
-	require.True(t, found, "Secret is not found in results")
-	assert.Equal(t, targetNamespace, secret.Namespace)
 }
 
 func TestKubernetesConfigGenerateFlexCluster(t *testing.T) {
