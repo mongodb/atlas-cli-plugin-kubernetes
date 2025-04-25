@@ -18,7 +18,7 @@ set -Eeou pipefail
 
 OS=$(uname -s)
 ARCH=$(uname -m)
-CLI_VERSION="1.41.0"
+CLI_VERSION=$(curl -s "https://api.github.com/repos/mongodb/mongodb-atlas-cli/releases/latest"  |jq -r .tag_name | sed 's|atlascli/v||g')
 
 echo "==> Fetching AtlasCLI binary..."
 if ls ./test/bin/atlas* 1> /dev/null 2>&1; then
@@ -31,21 +31,21 @@ mkdir -p ./test/bin
 
 if [ "$OS" = "Darwin" ]; then
     if [ "$ARCH" = "arm64" ]; then
-        curl -L https://fastdl.mongodb.org/mongocli/mongodb-atlas-cli_${CLI_VERSION}_macos_arm64.zip -o ./test/bin/mongodb-atlas-cli.zip
+        curl -L "https://fastdl.mongodb.org/mongocli/mongodb-atlas-cli_${CLI_VERSION}_macos_arm64.zip" -o ./test/bin/mongodb-atlas-cli.zip
     elif [ "$ARCH" = "x86_64" ]; then
-        curl -L https://fastdl.mongodb.org/mongocli/mongodb-atlas-cli_${CLI_VERSION}_macos_x86_64.zip -o ./test/bin/mongodb-atlas-cli.zip
+        curl -L "https://fastdl.mongodb.org/mongocli/mongodb-atlas-cli_${CLI_VERSION}_macos_x86_64.zip" -o ./test/bin/mongodb-atlas-cli.zip
     fi
     unzip -q ./test/bin/mongodb-atlas-cli.zip -d ./test/bin/tmp
 elif [ "$OS" = "Linux" ]; then
     if [ "$ARCH" = "x86_64" ]; then
-        curl -L https://fastdl.mongodb.org/mongocli/mongodb-atlas-cli_${CLI_VERSION}_linux_x86_64.tar.gz -o ./test/bin/mongodb-atlas-cli.tar.gz
+        curl -L "https://fastdl.mongodb.org/mongocli/mongodb-atlas-cli_${CLI_VERSION}_linux_x86_64.tar.gz" -o ./test/bin/mongodb-atlas-cli.tar.gz
     elif [ "$ARCH" = "aarch64" ]; then
-        curl -L https://fastdl.mongodb.org/mongocli/mongodb-atlas-cli_${CLI_VERSION}_linux_arm64.tar.gz -o ./test/bin/mongodb-atlas-cli.tar.gz
+        curl -L "https://fastdl.mongodb.org/mongocli/mongodb-atlas-cli_${CLI_VERSION}_linux_arm64.tar.gz" -o ./test/bin/mongodb-atlas-cli.tar.gz
     fi
     mkdir -p ./test/bin/tmp
     tar --strip-components=1 -xf ./test/bin/mongodb-atlas-cli.tar.gz -C ./test/bin/tmp
 elif [[ "$OS" =~ "MINGW" ]] || [[ "$OS" =~ "MSYS_NT" ]] || [[ "$OS" =~ "CYGWIN_NT" ]]; then
-    curl -L https://fastdl.mongodb.org/mongocli/mongodb-atlas-cli_${CLI_VERSION}_windows_x86_64.zip -o ./test/bin/mongodb-atlas-cli.zip
+    curl -L "https://fastdl.mongodb.org/mongocli/mongodb-atlas-cli_${CLI_VERSION}_windows_x86_64.zip" -o ./test/bin/mongodb-atlas-cli.zip
     unzip -q ./test/bin/mongodb-atlas-cli.zip -d ./test/bin/tmp
 else
     echo "Unsupported OS or architecture"
