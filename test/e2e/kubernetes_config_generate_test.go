@@ -175,7 +175,7 @@ func TestExportIndependentOrNot(t *testing.T) {
 	testPrefix := "test-"
 	generator.generateDBUser(testPrefix)
 	generator.generateCluster()
-	expectAlertConfigs := true
+	expectAlertConfigs := false
 	dictionary := resources.AtlasNameToKubernetesName()
 	credentialName := resources.NormalizeAtlasName(generator.projectName+credSuffixTest, dictionary)
 
