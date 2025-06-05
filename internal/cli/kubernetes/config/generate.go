@@ -77,7 +77,7 @@ func (opts *GenerateOpts) initStores(ctx context.Context) func() error {
 		}
 		opts.credsStore = profile
 
-		opts.crdsProvider = &crds.EmbeddedAtlasCRDProvider{}
+		opts.crdsProvider = crds.NewGithubAtlasCRDProvider()
 
 		return nil
 	}

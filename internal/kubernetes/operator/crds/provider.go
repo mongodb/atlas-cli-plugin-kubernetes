@@ -15,16 +15,19 @@
 package crds
 
 import (
-	"embed"
+	"context"
 	"fmt"
 	"io"
+	"net/http"
+	"time"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"sigs.k8s.io/yaml"
 )
 
 const (
-	embeddedBase = "versions/v%s/atlas.mongodb.com_%s.yaml"
+	urlTemplate    = "https://raw.githubusercontent.com/mongodb/mongodb-atlas-kubernetes/v%s/bundle/manifests/atlas.mongodb.com_%s.yaml"
+	requestTimeout = 10 * time.Second
 )
 
 //go:generate mockgen -destination=../../../mocks/mock_atlas_operator_crd_provider.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator/crds AtlasOperatorCRDProvider
@@ -32,30 +35,38 @@ type AtlasOperatorCRDProvider interface {
 	GetAtlasOperatorResource(resourceName, version string) (*apiextensionsv1.CustomResourceDefinition, error)
 }
 
-//go:embed versions/*
-var crdVersions embed.FS
+type GithubAtlasCRDProvider struct {
+	client *http.Client
+}
 
-type EmbeddedAtlasCRDProvider struct{}
+func NewGithubAtlasCRDProvider() *GithubAtlasCRDProvider {
+	return &GithubAtlasCRDProvider{client: &http.Client{}}
+}
 
-func (p EmbeddedAtlasCRDProvider) GetAtlasOperatorResource(resourceName, version string) (*apiextensionsv1.CustomResourceDefinition, error) {
-	embeddedPath := fmt.Sprintf(embeddedBase, version, resourceName)
-	f, err := crdVersions.Open(embeddedPath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to open embeddedPath path %q: %w", embeddedPath, err)
+func (p *GithubAtlasCRDProvider) GetAtlasOperatorResource(resourceName, version string) (res *apiextensionsv1.CustomResourceDefinition, err error) {
+	ctx, cancelF := context.WithTimeout(context.Background(), requestTimeout)
+	defer cancelF()
+
+	req, reqErr := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf(urlTemplate, version, resourceName), nil)
+	if reqErr != nil {
+		return nil, reqErr
 	}
-	//nolint:errcheck
-	defer f.Close()
 
-	data, err := io.ReadAll(f)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read embeddedPath file %q: %w", embeddedPath, err)
+	resp, respErr := p.client.Do(req)
+	if respErr != nil {
+		return nil, respErr
+	}
+	defer func(Body io.ReadCloser) {
+		err = Body.Close()
+	}(resp.Body)
+
+	data, dtErr := io.ReadAll(resp.Body)
+	if dtErr != nil {
+		return nil, dtErr
 	}
 
 	decoded := &apiextensionsv1.CustomResourceDefinition{}
 	err = yaml.Unmarshal(data, decoded)
-	if err != nil {
-		return nil, fmt.Errorf("failed to umarshall embeddedPath file %q: %w", embeddedPath, err)
-	}
 
-	return decoded, nil
+	return decoded, err
 }
