@@ -40,7 +40,7 @@ jobs:
           go-version-file: 'go.mod'
 
       - name: Generate dependency list
-        run: make gen-purls
+        run: make generate-purls
 
       - name: Commit updated purls.txt if changed
         env:
