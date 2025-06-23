@@ -12,7 +12,7 @@ else
 	E2E_ATLASCLI_BINARY_PATH=../bin/atlas
 endif
 PLUGIN_BINARY_PATH=./bin/$(PLUGIN_BINARY_NAME)
-PURLS_DEP_PATH=.build/package/
+PURLS_DEP_PATH=build/package
 MANIFEST_FILE?=manifest.yml
 WIN_MANIFEST_FILE?=manifest.windows.yml
 
@@ -114,21 +114,22 @@ generate-manifest-windows: ## Generate the manifest file for windows OSes
 	CLI_BINARY_NAME="${CLI_BINARY_NAME}.exe" MANIFEST_FILE="$(WIN_MANIFEST_FILE)" $(MAKE) generate-manifest
 
 .PHONY: generate-purls
-generate-purls:	## Generates the dependency list purls.txt
-	@echo "==> Generating dependency list purls.txt"
-	GOOS=linux GOARCH=amd64 go build -trimpath -mod=readonly -o $(PLUGIN_BINARY_PATH) ./cmd/plugin
+generate-purls: ## Generates the dependency list (default: purls.txt)
+	@echo "==> Generating dependency list"
+	@outfile="${PURLS_DEP_PATH}/$${PURLS_FILE:-purls.txt}"; \
+	echo "==> Writing dependencies to $$outfile"; \
+	GOOS=linux GOARCH=amd64 go build -trimpath -mod=readonly -o $(PLUGIN_BINARY_PATH) ./cmd/plugin; \
 	go version -m $(PLUGIN_BINARY_PATH) | \
 		awk '$$1 == "dep" || $$1 == "=>" { print "pkg:golang/" $$2 "@" $$3 }' | \
-		LC_ALL=C sort > ${PURLS_DEP_PATH}/purls.txt
+		LC_ALL=C sort > "$$outfile"
 
 .PHONY: check-purls
 check-purls: ## Checks that the dependency list purls.txt matches the current code
 	@echo "==> Checking dependency list purls.txt is up to date"
-	@mv ${PURLS_DEP_PATH}/purls.txt ${PURLS_DEP_PATH}/purls_check.txt
-	@${MAKE} generate-purls
+	${MAKE} generate-purls PURLS_FILE=purls_check.txt
 	@if ! diff ${PURLS_DEP_PATH}/purls.txt ${PURLS_DEP_PATH}/purls_check.txt > /dev/null; then \
 		echo "Dependency list is out of date! Please rerun 'make generate-purls' to update."; \
-		mv ${PURLS_DEP_PATH}/purls_check.txt ${PURLS_DEP_PATH}/purls.txt; \
+		rm -f ${PURLS_DEP_PATH}/purls_check.txt; \
 		exit 1; \
 	fi
 	@rm -f ${PURLS_DEP_PATH}/purls_check.txt

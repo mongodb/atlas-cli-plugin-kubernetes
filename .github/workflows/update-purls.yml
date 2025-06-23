@@ -8,45 +8,60 @@ permissions:
   pull-requests: write
   contents: write
   repository-projects: read
+
 jobs:
   update-purls:
     name: Update PURLs list of dependencies
     runs-on: ubuntu-latest
     steps:
-    - uses: GitHubSecurityLab/actions-permissions/monitor@v1
-      with:
-        config: ${{ vars.PERMISSIONS_CONFIG }}
-    - name: Generate GitHub App Token
-      id: generate_token
-      uses: actions/create-github-app-token@v2.0.6
-      with:
-        app-id: ${{ secrets.AKO_RELEASER_APP_ID }}
-        private-key: ${{ secrets.AKO_RELEASER_RSA_KEY }}
-        owner: ${{ github.repository_owner }}
-        repositories: atlas-cli-plugin-kubernetes
-    - name: Checkout code
-      uses: actions/checkout@v4.1.1
-      with:
-        ref: ${{ github.head_ref }}
-        token: ${{ steps.app-token.outputs.token }}
-        fetch-depth: 0
-    - name: Install go dependencies
-      uses: actions/setup-go@v5
-      with:
-        go-version-file: 'go.mod'
-    - name: Generate dependecy list
-      run: make gen-purls
-    - name: Commit updated purls.txt if changed
-      env:
-        BRANCH_NAME: ${{ github.head_ref }}
-      run: |
-        echo "Changes to purls.txt:"
-        if git diff --exit-code build/package/purls.txt; then
-          echo "No changes to purls.txt"
-        else 
-          git config --global user.name "${{ steps.app-token.outputs.user-name }}"
-          git config --global user.email "${{ steps.app-token.outputs.user-email }}"
-          git add build/package/purls.txt
-          git commit -m "chore: update purls.txt"
-          git push origin "$BRANCH_NAME"
-        fi
+      - uses: GitHubSecurityLab/actions-permissions/monitor@v1
+        with:
+          config: ${{ vars.PERMISSIONS_CONFIG }}
+
+      - name: Generate GitHub App Token
+        id: generate_token
+<<<<<<< HEAD
+<<<<<<< HEAD
+        uses: actions/create-github-app-token@v2
+=======
+        uses: actions/create-github-app-token@v2.0.6
+>>>>>>> refs/remotes/origin/CLOUDP-325378/SSDLC-plugin-kubernetes
+=======
+        uses: actions/create-github-app-token@v2.0.6
+>>>>>>> refs/remotes/origin/CLOUDP-325378/SSDLC-plugin-kubernetes
+        with:
+          app-id: ${{ secrets.AKO_RELEASER_APP_ID }}
+          private-key: ${{ secrets.AKO_RELEASER_RSA_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: atlas-cli-plugin-kubernetes
+
+      - name: Checkout code
+        uses: actions/checkout@v4.1.1
+        with:
+          ref: ${{ github.head_ref }}
+          token: ${{ steps.generate_token.outputs.token }}
+          fetch-depth: 0
+
+      - name: Install Go dependencies
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
+
+      - name: Generate dependency list
+        run: make gen-purls
+
+      - name: Commit updated purls.txt if changed
+        env:
+          BRANCH_NAME: ${{ github.head_ref }}
+        run: |
+          echo "Checking for changes to purls.txt..."
+          if git diff --quiet --exit-code -- build/package/purls.txt; then
+            echo "No changes to purls.txt"
+          else 
+            echo "Changes detected. Committing..."
+            git config --global user.name "${{ steps.generate_token.outputs.user-name }}"
+            git config --global user.email "${{ steps.generate_token.outputs.user-email }}"
+            git add build/package/purls.txt
+            git commit -m "chore: update purls.txt"
+            git push origin "$BRANCH_NAME"
+          fi
