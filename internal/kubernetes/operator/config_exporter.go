@@ -140,7 +140,6 @@ func (e *ConfigExporter) Run() (string, error) {
 		return "", err
 	}
 	r = append(r, projectResources...)
-
 	deploymentsResources, err := e.exportDeployments(projectName)
 	if err != nil {
 		return "", err
@@ -304,7 +303,7 @@ func (e *ConfigExporter) exportProject() ([]runtime.Object, string, error) {
 			project.NetworkContainersRequest{
 				ProjectName:         projectData.Project.Name,
 				ProjectID:           e.projectID,
-				TargetNamespace:     e.targetNamespace ,
+				TargetNamespace:     e.targetNamespace,
 				Version:             e.operatorVersion,
 				Credentials:         credentialsName,
 				IndependentResource: e.independentResources,
@@ -326,7 +325,7 @@ func (e *ConfigExporter) exportProject() ([]runtime.Object, string, error) {
 			project.NetworkPeeringsRequest{
 				ProjectName:         projectData.Project.Name,
 				ProjectID:           e.projectID,
-				TargetNamespace:     e.targetNamespace ,
+				TargetNamespace:     e.targetNamespace,
 				Version:             e.operatorVersion,
 				Credentials:         credentialsName,
 				IndependentResource: e.independentResources,
