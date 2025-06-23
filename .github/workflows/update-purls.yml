@@ -20,15 +20,7 @@ jobs:
 
       - name: Generate GitHub App Token
         id: generate_token
-<<<<<<< HEAD
-<<<<<<< HEAD
         uses: actions/create-github-app-token@v2
-=======
-        uses: actions/create-github-app-token@v2.0.6
->>>>>>> refs/remotes/origin/CLOUDP-325378/SSDLC-plugin-kubernetes
-=======
-        uses: actions/create-github-app-token@v2.0.6
->>>>>>> refs/remotes/origin/CLOUDP-325378/SSDLC-plugin-kubernetes
         with:
           app-id: ${{ secrets.AKO_RELEASER_APP_ID }}
           private-key: ${{ secrets.AKO_RELEASER_RSA_KEY }}
