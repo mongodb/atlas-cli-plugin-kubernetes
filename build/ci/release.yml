@@ -71,6 +71,32 @@ functions:
       params:
         <<: *go_options
         binary: build/package/generate-notices.sh
+  "generate sbom":
+    - command: ec2.assume_role
+      params:
+        role_arn: ${ecr_role_arn}
+    - command: shell.exec
+      params:
+        include_expansions_in_env:
+          [AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_SESSION_TOKEN]
+        working_dir: src/github.com/mongodb/atlas-cli-plugin-kubernetes/build/package
+        shell: bash
+        script: |
+          ./generate-sbom.sh
+  "upload sbom":
+    - command: ec2.assume_role
+      params:
+        role_arn: ${ecr_role_arn}
+    - command: shell.exec
+      params:
+        env:
+          KONDUKTO_TOKEN: ${kondukto_token}
+        include_expansions_in_env:
+          [AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_SESSION_TOKEN]
+        working_dir: src/github.com/mongodb/atlas-cli-plugin-kubernetes/build/package
+        shell: bash
+        script: |
+          ./upload-sbom.sh
   "package":
     - command: github.generate_token
       params:
@@ -138,11 +164,19 @@ tasks:
       - name: compile
         variant: "code_health"
     commands:
+      - func: "generate sbom"
       - func: "generate notices"
       - func: "install goreleaser"
       - func: "install macos notarization service"
       - func: "install gh-token"
       - func: "package"
+
+  - name: run_sbom
+    tags: ["code_health"]
+    commands:
+      - func: "generate sbom"
+      - func: "upload sbom"
+    
   - name: copybara
     depends_on:
       - name: package_goreleaser
