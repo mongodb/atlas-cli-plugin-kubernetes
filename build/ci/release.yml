@@ -71,6 +71,18 @@ functions:
       params:
         <<: *go_options
         binary: build/package/generate-notices.sh
+  "run sbom":
+    - command: shell.exec
+      params:
+        <<: *go_options
+        env:
+          AWS_ACCOUNT_ID: ${aws_account_id}
+          AWS_ACCESS_KEY_ID: ${aws_access_key_id}
+          AWS_SECRET_ACCESS_KEY: ${aws_secret_access_key}
+        working_dir: src/github.com/mongodb/atlas-cli-plugin-kubernetes/build/package
+        shell: bash
+        script: |
+          ./run-sbom.sh
   "package":
     - command: github.generate_token
       params:
@@ -133,16 +145,18 @@ functions:
           ./run-copybara.sh
 tasks:
   - name: package_goreleaser
-    tags: ["packaging"]
+    tags: ["code_health"] # To change to packaging when done testing
     depends_on:
       - name: compile
         variant: "code_health"
     commands:
+      - func: "run sbom"
       - func: "generate notices"
       - func: "install goreleaser"
       - func: "install macos notarization service"
       - func: "install gh-token"
       - func: "package"
+        
   - name: copybara
     depends_on:
       - name: package_goreleaser
