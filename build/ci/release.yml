@@ -164,17 +164,12 @@ tasks:
       - name: compile
         variant: "code_health"
     commands:
-<<<<<<< HEAD
       - func: "generate sbom"
-=======
-      - func: "run sbom"
->>>>>>> 09090f061ccac79dfa795a151a69b1d2480acccc
       - func: "generate notices"
       - func: "install goreleaser"
       - func: "install macos notarization service"
       - func: "install gh-token"
       - func: "package"
-<<<<<<< HEAD
 
   - name: run_sbom
     tags: ["code_health"]
@@ -182,9 +177,6 @@ tasks:
       - func: "generate sbom"
       - func: "upload sbom"
     
-=======
-        
->>>>>>> 09090f061ccac79dfa795a151a69b1d2480acccc
   - name: copybara
     depends_on:
       - name: package_goreleaser
