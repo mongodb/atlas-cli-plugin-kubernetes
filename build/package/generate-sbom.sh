@@ -16,27 +16,33 @@
 
 set -Eeou pipefail
 
-: "${AWS_ACCESS_KEY_ID:?Missing AWS_ACCESS_KEY_ID}"
-: "${AWS_SECRET_ACCESS_KEY:?Missing AWS_SECRET_ACCESS_KEY}"
-: "${AWS_SESSION_TOKEN:?Missing AWS_SESSION_TOKEN}"
+# Optional override: if SILKBOMB_IMAGE is set and the image exists, use it directly
+if [[ -n "${SILKBOMB_IMAGE:-}" ]] && podman image exists "${SILKBOMB_IMAGE}"; then
+  echo "Using existing local image: ${SILKBOMB_IMAGE}"
+else
+  #  Pull image from remote AWS repository
+  : "${AWS_ACCESS_KEY_ID:?Missing AWS_ACCESS_KEY_ID}"
+  : "${AWS_SECRET_ACCESS_KEY:?Missing AWS_SECRET_ACCESS_KEY}"
+  : "${AWS_SESSION_TOKEN:?Missing AWS_SESSION_TOKEN}"
 
-AWS_ACCOUNT_ID="${AWS_ACCOUNT_ID:-901841024863}"
-AWS_REGION="${AWS_DEFAULT_REGION:-us-east-1}"
+  AWS_ACCOUNT_ID="${AWS_ACCOUNT_ID:-901841024863}"
+  AWS_REGION="${AWS_DEFAULT_REGION:-us-east-1}"
 
-SILKBOMB_REGISTRY="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
-SILKBOMB_REPO="release-infrastructure/silkbomb"
-SILKBOMB_TAG="2.0"
-SILKBOMB_IMAGE="${SILKBOMB_REGISTRY}/${SILKBOMB_REPO}:${SILKBOMB_TAG}"
-SILKBOMB_PURLS="/pwd/purls.txt"
-SILKBOMB_SBOM_OUT="/pwd/sbom.json"
+  SILKBOMB_REGISTRY="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+  SILKBOMB_REPO="${SILKBOMB_REPO:-release-infrastructure/silkbomb}"
+  SILKBOMB_TAG="${SILKBOMB_TAG:-2.0}"
+  SILKBOMB_IMAGE="${SILKBOMB_IMAGE:-${SILKBOMB_REGISTRY}/${SILKBOMB_REPO}:${SILKBOMB_TAG}}"
 
-if ! podman image exists "${SILKBOMB_IMAGE}"; then
   echo "Logging in to ECR..."
   aws ecr get-login-password --region "${AWS_REGION}" | \
     podman login --username AWS --password-stdin "${SILKBOMB_REGISTRY}"
 fi
 
-echo "Generating SBOMs"
+# SBOM paths
+SILKBOMB_PURLS="${SILKBOMB_PURLS:-/pwd/purls.txt}"
+SILKBOMB_SBOM_OUT="${SILKBOMB_SBOM_OUT:-/pwd/sbom.json}"
+
+echo "Generating SBOMs with image: ${SILKBOMB_IMAGE}"
 podman run --rm \
   --pull=missing \
   -v "$(pwd):/pwd" \
@@ -45,4 +51,4 @@ podman run --rm \
   --purls "${SILKBOMB_PURLS}" \
   --sbom-out "${SILKBOMB_SBOM_OUT}"
 
-echo "SBOM generated at $(pwd)/sbom.json"
+echo "SBOM generated at ${SILKBOMB_SBOM_OUT}"

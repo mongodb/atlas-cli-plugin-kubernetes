@@ -159,12 +159,13 @@ functions:
           ./run-copybara.sh
 tasks:
   - name: package_goreleaser
-    tags: ["code_health"] # To change to packaging when done testing
+    tags: ["packaging"]
     depends_on:
       - name: compile
         variant: "code_health"
     commands:
       - func: "generate sbom"
+      - func: "upload sbom"
       - func: "generate notices"
       - func: "install goreleaser"
       - func: "install macos notarization service"
