@@ -30,6 +30,8 @@ SILKBOMB_IMAGE="${SILKBOMB_REGISTRY}/${SILKBOMB_REPO}:${SILKBOMB_TAG}"
 
 SBOM_INPUT="/pwd/sbom.json"
 KONDUKTO_CREDENTIALS_FILE="kondukto_credentials.env"
+KONDUKTO_REPO="mongodb_atlas-cli-plugin-kubernetes"
+KONDUKTO_BRANCH="test"
 
 if ! podman image exists "${SILKBOMB_IMAGE}"; then
   echo "Logging in to ECR..."
@@ -46,8 +48,8 @@ podman run --rm \
   "${SILKBOMB_IMAGE}" \
   upload \
   --sbom-in "${SBOM_INPUT}" \
-  --repo "mongodb_atlas-cli-plugin-kubernetes" \
-  --branch "test" \
+  --repo ${KONDUKTO_REPO} \
+  --branch ${KONDUKTO_BRANCH} \
 
 echo "Uploading complete."
 rm -f "${KONDUKTO_CREDENTIALS_FILE}"
