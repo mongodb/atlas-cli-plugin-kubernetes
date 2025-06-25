@@ -97,6 +97,20 @@ functions:
         shell: bash
         script: |
           ./upload-sbom.sh
+  # "trace artifacts":
+  #   - command: papertrail.trace
+  #     params:
+  #       env: 
+  #         key_id: ${papertrail_key_id}
+  #         secret_key: ${papertrail_secret_key}
+  #         product: ${product}
+  #         version: ${version}
+  #       filenames:
+  #         - "src/github.com/mongodb/atlas-cli-plugin-kubernetes/dist/*.tar.gz"
+  #         - "src/github.com/mongodb/atlas-cli-plugin-kubernetes/dist/*.zip"
+  #         - "src/github.com/mongodb/atlas-cli-plugin-kubernetes/dist/*.deb"
+  #         - "src/github.com/mongodb/atlas-cli-plugin-kubernetes/*.rpm"
+  #         - "src/github.com/mongodb/atlas-cli-plugin-kubernetes/dist/*.msi"
   "package":
     - command: github.generate_token
       params:
@@ -159,24 +173,21 @@ functions:
           ./run-copybara.sh
 tasks:
   - name: package_goreleaser
-    tags: ["code_health"] # To change to packaging when done testing
+    tags: ["code_health"]
     depends_on:
       - name: compile
         variant: "code_health"
     commands:
-      - func: "generate sbom"
       - func: "generate notices"
       - func: "install goreleaser"
       - func: "install macos notarization service"
       - func: "install gh-token"
       - func: "package"
-
   - name: run_sbom
     tags: ["code_health"]
     commands:
       - func: "generate sbom"
       - func: "upload sbom"
-    
   - name: copybara
     depends_on:
       - name: package_goreleaser
