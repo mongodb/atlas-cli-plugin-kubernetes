@@ -27,7 +27,7 @@ import (
 )
 
 const (
-	LatestOperatorMajorVersion          = "2.8.0"
+	LatestOperatorMajorVersion          = "2.9.0"
 	maxDepth                            = 100
 	ResourceVersion                     = "mongodb.com/atlas-resource-version"
 	ResourceAtlasProject                = "atlasprojects"
@@ -46,6 +46,7 @@ const (
 	ResourceAtlasIPAccessList           = "atlasipaccesslists"
 	ResourceAtlasNetworkContainer       = "atlasnetworkcontainers"
 	ResourceAtlasNetworkPeering         = "atlasnetworkpeerings"
+	ResourceAtlasThirdPartyIntegration  = "atlasthirdpartyintegrations"
 )
 
 var (
@@ -105,6 +106,25 @@ var (
 			resource{ResourceAtlasIPAccessList, NopPatcher()},
 			resource{ResourceAtlasNetworkContainer, NopPatcher()},
 			resource{ResourceAtlasNetworkPeering, NopPatcher()},
+		},
+		"2.9.0": {
+			resource{ResourceAtlasDatabaseUser, NopPatcher()},
+			resource{ResourceAtlasProject, NopPatcher()},
+			resource{ResourceAtlasDeployment, NopPatcher()},
+			resource{ResourceAtlasBackupSchedule, NopPatcher()},
+			resource{ResourceAtlasBackupPolicy, NopPatcher()},
+			resource{ResourceAtlasTeam, NopPatcher()},
+			resource{ResourceAtlasDataFederation, NopPatcher()},
+			resource{ResourceAtlasFederatedAuth, NopPatcher()},
+			resource{ResourceAtlasStreamInstance, NopPatcher()},
+			resource{ResourceAtlasStreamConnection, NopPatcher()},
+			resource{ResourceAtlasBackupCompliancePolicy, NopPatcher()},
+			resource{ResourceAtlasPrivateEndpoint, NopPatcher()},
+			resource{ResourceAtlasCustomRole, NopPatcher()},
+			resource{ResourceAtlasIPAccessList, NopPatcher()},
+			resource{ResourceAtlasNetworkContainer, NopPatcher()},
+			resource{ResourceAtlasNetworkPeering, NopPatcher()},
+			resource{ResourceAtlasThirdPartyIntegration, NopPatcher()},
 		},
 	}
 )

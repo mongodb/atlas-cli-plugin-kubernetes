@@ -42,22 +42,14 @@ func (s *Store) PeeringConnections(projectID string) ([]atlasv2.BaseNetworkPeeri
 }
 
 func (s *Store) peeringConnectionsFor(projectID string, provider akov2provider.ProviderName) ([]atlasv2.BaseNetworkPeeringConnectionSettings, error) {
-	allPages := []atlasv2.BaseNetworkPeeringConnectionSettings{}
-	pageNum := 1
-	itemsPerPage := MaxItems
-	for {
-		result, _, err := s.clientv2.NetworkPeeringApi.ListPeeringConnections(s.ctx, projectID).
+	return AllPages(func(pageNum, itemsPerPage int) ([]atlasv2.BaseNetworkPeeringConnectionSettings, error) {
+		page, _, err := s.clientv2.NetworkPeeringApi.ListPeeringConnections(s.ctx, projectID).
 			ItemsPerPage(itemsPerPage).
 			PageNum(pageNum).
 			ProviderName(string(provider)).Execute()
 		if err != nil {
 			return nil, fmt.Errorf("failed to list network peerings: %w", err)
 		}
-		allPages = append(allPages, result.GetResults()...)
-		if len(result.GetResults()) < itemsPerPage {
-			break
-		}
-		pageNum += 1
-	}
-	return allPages, nil
+		return page.GetResults(), nil
+	})
 }

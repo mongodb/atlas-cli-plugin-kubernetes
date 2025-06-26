@@ -304,7 +304,7 @@ func (e *ConfigExporter) exportProject() ([]runtime.Object, string, error) {
 			project.NetworkContainersRequest{
 				ProjectName:         projectData.Project.Name,
 				ProjectID:           e.projectID,
-				TargetNamespace:     e.targetNamespace ,
+				TargetNamespace:     e.targetNamespace,
 				Version:             e.operatorVersion,
 				Credentials:         credentialsName,
 				IndependentResource: e.independentResources,
@@ -326,7 +326,7 @@ func (e *ConfigExporter) exportProject() ([]runtime.Object, string, error) {
 			project.NetworkPeeringsRequest{
 				ProjectName:         projectData.Project.Name,
 				ProjectID:           e.projectID,
-				TargetNamespace:     e.targetNamespace ,
+				TargetNamespace:     e.targetNamespace,
 				Version:             e.operatorVersion,
 				Credentials:         credentialsName,
 				IndependentResource: e.independentResources,
@@ -340,6 +340,26 @@ func (e *ConfigExporter) exportProject() ([]runtime.Object, string, error) {
 		for _, peering := range networkPeerings {
 			r = append(r, &peering)
 		}
+	}
+
+	if e.featureValidator.IsResourceSupported(features.ResourceAtlasThirdPartyIntegration) {
+		integrations, err := project.BuildThirdPartyIntegrations(
+			e.dataProvider,
+			project.ThirdPartyIntegrationRequest{
+				ProjectName:         projectData.Project.Name,
+				ProjectID:           e.projectID,
+				TargetNamespace:     e.targetNamespace,
+				Version:             e.operatorVersion,
+				Credentials:         credentialsName,
+				IndependentResource: e.independentResources,
+				Dictionary:          e.dictionaryForAtlasNames,
+			},
+		)
+		if err != nil {
+			return nil, "", err
+		}
+
+		r = append(r, integrations...)
 	}
 
 	// DB users

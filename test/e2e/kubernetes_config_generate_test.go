@@ -36,6 +36,7 @@ import (
 	akov2common "github.com/mongodb/mongodb-atlas-kubernetes/v2/api/v1/common"
 	akov2project "github.com/mongodb/mongodb-atlas-kubernetes/v2/api/v1/project"
 	akov2provider "github.com/mongodb/mongodb-atlas-kubernetes/v2/api/v1/provider"
+	"github.com/mongodb/mongodb-atlas-kubernetes/v2/api/v1/status"
 	akov2status "github.com/mongodb/mongodb-atlas-kubernetes/v2/api/v1/status"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -405,6 +406,175 @@ func TestExportIPAccessList(t *testing.T) {
 			require.NoError(t, err, "should not fail on decode but got:\n"+string(resp))
 			require.NotEmpty(t, objects)
 			require.Equal(t, tc.expected, objects)
+		})
+	}
+}
+
+func TestExportIntegrations(t *testing.T) {
+	s := InitialSetup(t)
+	operatorVersion := "2.9.0"
+	datadogKey := "00000000000000000000000000000012"
+
+	cmd := exec.Command(s.atlasCliPath,
+		integrationsEntity,
+		"create",
+		datadogEntity,
+		"--apiKey",
+		datadogKey,
+		"--projectId",
+		s.generator.projectID,
+		"-o=json")
+	out, err := test.RunAndGetStdOut(cmd)
+	require.NoError(t, err)
+	reply := struct {
+		Results []struct {
+			ID string `json:"id"`
+		} `json:"results"`
+	}{}
+	require.NoError(t, json.Unmarshal(out, &reply))
+	integrationID := reply.Results[0].ID
+
+	datadogKeyMasked := "****************************0012"
+	integrationName := strings.ToLower(s.generator.projectName) + "-datadog-integration"
+	secretName := integrationName + "-secret"
+	expectedProjectName := strings.ToLower(s.generator.projectName)
+
+	expectedSecret := &corev1.Secret{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Secret",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: secretName,
+			Labels: map[string]string{
+				"atlas.mongodb.com/project-id":   s.generator.projectID,
+				"atlas.mongodb.com/project-name": expectedProjectName,
+				"atlas.mongodb.com/type":         "credentials",
+			},
+		},
+		Data: map[string][]byte{
+			"apiKey": ([]byte)(datadogKeyMasked),
+		},
+	}
+
+	for _, tc := range []struct {
+		title                string
+		independentResources bool
+		want                 []runtime.Object
+	}{
+		{
+			title:                "independent integration",
+			independentResources: true,
+			want: []runtime.Object{
+				&akov2.AtlasThirdPartyIntegration{
+					TypeMeta: metav1.TypeMeta{
+						Kind:       "AtlasThirdPartyIntegration",
+						APIVersion: "atlas.mongodb.com/v1",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: integrationName,
+						Labels: map[string]string{
+							"mongodb.com/atlas-resource-version": "2.9.0",
+						},
+					},
+					Spec: akov2.AtlasThirdPartyIntegrationSpec{
+						ProjectDualReference: akov2.ProjectDualReference{
+							ExternalProjectRef: &akov2.ExternalProjectReference{
+								ID: s.generator.projectID,
+							},
+							ConnectionSecret: &akoapi.LocalObjectReference{
+								Name: expectedProjectName + "-credentials",
+							},
+						},
+						Type: "DATADOG",
+						Datadog: &akov2.DatadogIntegration{
+							APIKeySecretRef: akoapi.LocalObjectReference{
+								Name: secretName,
+							},
+							Region:                       "US",
+							SendCollectionLatencyMetrics: pointer.Get("disabled"),
+							SendDatabaseMetrics:          pointer.Get("disabled"),
+						},
+					},
+					Status: status.AtlasThirdPartyIntegrationStatus{
+						ID: integrationID,
+					},
+				},
+				expectedSecret,
+			},
+		},
+		{
+			title:                "dependent integration",
+			independentResources: false,
+			want: []runtime.Object{
+				&akov2.AtlasThirdPartyIntegration{
+					TypeMeta: metav1.TypeMeta{
+						Kind:       "AtlasThirdPartyIntegration",
+						APIVersion: "atlas.mongodb.com/v1",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: integrationName,
+						Labels: map[string]string{
+							"mongodb.com/atlas-resource-version": "2.9.0",
+						},
+					},
+					Spec: akov2.AtlasThirdPartyIntegrationSpec{
+						ProjectDualReference: akov2.ProjectDualReference{
+							ProjectRef: &akov2common.ResourceRefNamespaced{
+								Name: expectedProjectName,
+							},
+						},
+						Type: "DATADOG",
+						Datadog: &akov2.DatadogIntegration{
+							APIKeySecretRef: akoapi.LocalObjectReference{
+								Name: secretName,
+							},
+							Region:                       "US",
+							SendCollectionLatencyMetrics: pointer.Get("disabled"),
+							SendDatabaseMetrics:          pointer.Get("disabled"),
+						},
+					},
+					Status: status.AtlasThirdPartyIntegrationStatus{
+						ID: integrationID,
+					},
+				},
+				expectedSecret,
+			},
+		},
+	} {
+		t.Run(tc.title, func(t *testing.T) {
+			cmdArgs := []string{
+				"kubernetes",
+				"config",
+				"generate",
+				"--projectId",
+				s.generator.projectID,
+				"--operatorVersion",
+				operatorVersion,
+			}
+			if tc.independentResources {
+				cmdArgs = append(cmdArgs, "--independentResources")
+			}
+			cmd := exec.Command(s.cliPath, cmdArgs...) //nolint:gosec
+			cmd.Env = os.Environ()
+			resp, err := cmd.CombinedOutput()
+			require.NoError(t, err, string(resp))
+
+			var objects []runtime.Object
+			objects, err = getK8SEntities(resp)
+			objects = filtered(objects).byKind(globalKinds...)
+			require.NoError(t, err, "should not fail on decode but got:\n"+string(resp))
+			require.NotEmpty(t, objects)
+			credentialsName := resources.NormalizeAtlasName(
+				strings.ToLower(s.generator.projectName)+"-credentials",
+				resources.AtlasNameToKubernetesName(),
+			)
+			want := []runtime.Object{
+				defaultTestProject(s.generator.projectName, "", expectedLabelsAtLeast("2.9.0"), false),
+				defaultTestAtlasConnSecret(credentialsName, ""),
+			}
+			want = append(want, tc.want...)
+			require.Equal(t, want, objects)
 		})
 	}
 }
@@ -1673,7 +1843,7 @@ func TestProjectWithNetworkPeering(t *testing.T) {
 	cliPath := s.cliPath
 	atlasCliPath := s.atlasCliPath
 	generator := s.generator
-	expectedProject := referenceProject(s.generator.projectName, targetNamespace, map[string]string{features.ResourceVersion: "2.7.0"})
+	expectedProject := referenceProject(s.generator.projectName, targetNamespace, map[string]string{features.ResourceVersion: "2.9.0"})
 
 	atlasCidrBlock := "10.8.0.0/18"
 	networkPeer := akov2.NetworkPeer{
@@ -1717,7 +1887,7 @@ func TestProjectWithNetworkPeering(t *testing.T) {
 			"generate",
 			"--projectId", generator.projectID,
 			"--targetNamespace", targetNamespace,
-			"--operatorVersion", "2.7.0",
+			"--operatorVersion", "2.9.0",
 			"--includeSecrets")
 		cmd.Env = os.Environ()
 
