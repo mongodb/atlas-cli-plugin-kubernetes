@@ -1849,6 +1849,8 @@ func TestProjectWithNetworkPeering(t *testing.T) {
 	atlasCliPath := s.atlasCliPath
 	generator := s.generator
 	expectedProject := referenceProject(s.generator.projectName, targetNamespace, map[string]string{features.ResourceVersion: "2.9.0"})
+	// TODO: remove test when this last version using embedded integrations is deprecated
+	operatorVersion := "2.7.1"
 
 	atlasCidrBlock := "10.8.0.0/18"
 	networkPeer := akov2.NetworkPeer{
@@ -1885,6 +1887,7 @@ func TestProjectWithNetworkPeering(t *testing.T) {
 		err = json.Unmarshal(resp, &createdNetworkPeer)
 		require.NoError(t, err)
 		expectedProject.Spec.NetworkPeers[0].ContainerID = createdNetworkPeer.ContainerId
+		expectedProject.Labels["mongodb.com/atlas-resource-version"] = "2.7.1"
 
 		cmd = exec.Command(cliPath,
 			"kubernetes",
@@ -1892,7 +1895,7 @@ func TestProjectWithNetworkPeering(t *testing.T) {
 			"generate",
 			"--projectId", generator.projectID,
 			"--targetNamespace", targetNamespace,
-			"--operatorVersion", "2.9.0",
+			"--operatorVersion", operatorVersion,
 			"--includeSecrets")
 		cmd.Env = os.Environ()
 
