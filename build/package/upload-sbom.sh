@@ -41,7 +41,7 @@ else
   SILKBOMB_REGISTRY="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
   SILKBOMB_REPO="${SILKBOMB_REPO:-release-infrastructure/silkbomb}"
   SILKBOMB_TAG="${SILKBOMB_TAG:-2.0}"
-  SILKBOMB_IMAGE="${SILKBOMB_IMAGE:-${SILKBOMB_REGISTRY}/${SILKBOMB_REPO}:${SILKBOMB_TAG}}"
+  SILKBOMB_IMAGE="${SILKBOMB_REGISTRY}/${SILKBOMB_REPO}:${SILKBOMB_TAG}"
 
   echo "Logging in to ECR..."
   aws ecr get-login-password --region "${AWS_REGION}" | \
