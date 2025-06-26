@@ -581,7 +581,7 @@ func TestExportIntegrations(t *testing.T) {
 
 func TestExportNetworkContainerAndPeerings(t *testing.T) {
 	s := InitialSetup(t)
-	operatorVersion := "2.8.0"
+	operatorVersion := "2.9.0"
 
 	awsContainerCIDR := "10.0.0.0/21"
 	awsContainerID := s.generator.generateAWSContainer(awsContainerCIDR, "EU_CENTRAL_1")
@@ -1729,6 +1729,8 @@ func TestProjectWithIntegration(t *testing.T) {
 	atlasCliPath := s.atlasCliPath
 	generator := s.generator
 	expectedProject := s.expectedProject
+	// TODO: remove test when this last version using embedded integrations is deprecated
+	operatorVersion := "2.8.2"
 
 	datadogKey := "00000000000000000000000000000012"
 	newIntegration := akov2project.Integration{
@@ -1742,6 +1744,7 @@ func TestProjectWithIntegration(t *testing.T) {
 	expectedProject.Spec.Integrations = []akov2project.Integration{
 		newIntegration,
 	}
+	expectedProject.Labels["mongodb.com/atlas-resource-version"] = operatorVersion
 
 	t.Run("Add integration to the project", func(t *testing.T) {
 		cmd := exec.Command(atlasCliPath,
@@ -1765,7 +1768,8 @@ func TestProjectWithIntegration(t *testing.T) {
 			generator.projectID,
 			"--targetNamespace",
 			targetNamespace,
-			"--includeSecrets")
+			"--includeSecrets",
+			"--operatorVersion", operatorVersion)
 		cmd.Env = os.Environ()
 
 		resp, err := test.RunAndGetStdOut(cmd)
@@ -1777,9 +1781,10 @@ func TestProjectWithIntegration(t *testing.T) {
 		objects, err = getK8SEntities(resp)
 		require.NoError(t, err, "should not fail on decode")
 		require.NotEmpty(t, objects)
+		objects = filtered(objects).byKind(globalKinds...)
 
 		checkProject(t, objects, expectedProject)
-		assert.Len(t, objects, 4, "should have 4 objects in the output: project, integration secret, atlas secret, federated-auth secret")
+		assert.Len(t, objects, 3, "should have 3 objects in the output: project, integration secret, atlas secret")
 		integrationSecret := objects[1].(*corev1.Secret)
 		password, ok := integrationSecret.Data["password"]
 		assert.True(t, ok, "should have password field in the integration secret")
