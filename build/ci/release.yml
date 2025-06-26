@@ -34,6 +34,13 @@ variables:
     working_dir: src/github.com/mongodb/atlas-cli-plugin-kubernetes
     env:
       <<: *go_env
+  - &silkbomb_container_config
+      SILKBOMB_REPO: "release-infrastructure/silkbomb"
+      SILKBOMB_TAG: "2.0"
+      SILKBOMB_REGISTRY: "901841024863.dkr.ecr.us-east-1.amazonaws.com"
+      SILKBOMB_IMAGE: 901841024863.dkr.ecr.us-east-1.amazonaws.com/release-infrastructure/silkbomb:2.0
+      SILKBOMB_PURLS_FILE: "/pwd/purls.txt"
+      SILKBOMB_SBOM_FILE: "/pwd/sbom.json"
 functions:
   "install gh-token":
     - command: shell.exec
@@ -71,6 +78,54 @@ functions:
       params:
         <<: *go_options
         binary: build/package/generate-notices.sh
+  "generate sbom":
+    - command: ec2.assume_role
+      params:
+        role_arn: ${ecr_role_arn}
+    - command: shell.exec
+      params:
+        env:
+          <<: *silkbomb_container_config
+        include_expansions_in_env:
+          [AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_SESSION_TOKEN]
+        working_dir: src/github.com/mongodb/atlas-cli-plugin-kubernetes/build/package
+        shell: bash
+        script: |
+          ./generate-sbom.sh
+  "upload sbom":
+    - command: ec2.assume_role
+      params:
+        role_arn: ${kondukto_role_arn}
+    - command: shell.exec
+      params:
+        silent: true
+        shell: bash
+        include_expansions_in_env:
+          [AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_SESSION_TOKEN]
+        working_dir: src/github.com/mongodb/atlas-cli-plugin-kubernetes/build/package
+        script: |
+          set -e
+          kondukto_token=$(
+            aws secretsmanager get-secret-value \
+              --secret-id "kondukto-token" \
+              --region "us-east-1" \
+              --query 'SecretString' \
+              --output text
+          )
+          echo "KONDUKTO_TOKEN=$kondukto_token" > kondukto_credentials.env
+    - command: shell.exec
+      params:
+        env:
+          <<: *silkbomb_container_config
+          KONDUKTO_CREDENTIALS_FILE: kondukto_credentials.env
+          KONDUKTO_REPO: mongodb-atlas-cli-plugin-kubernetes
+          KONDUKTO_BRANCH: test
+        include_expansions_in_env:
+          [AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_SESSION_TOKEN]
+        working_dir: src/github.com/mongodb/atlas-cli-plugin-kubernetes/build/package
+        shell: bash
+        script: |
+          ./upload-sbom.sh
   "package":
     - command: github.generate_token
       params:
@@ -132,12 +187,18 @@ functions:
         script: |
           ./run-copybara.sh
 tasks:
+  - name: run-sbom
+    tags: ["code_health"]
+    commands:
+      - func: "generate sbom"
+      - func: "upload sbom"
   - name: package_goreleaser
     tags: ["packaging"]
     depends_on:
       - name: compile
         variant: "code_health"
     commands:
+      - func: "generate sbom"
       - func: "generate notices"
       - func: "install goreleaser"
       - func: "install macos notarization service"
