@@ -1,0 +1,54 @@
+name: Update PURLs list of dependencies with dependabot
+
+on:
+  pull_request:
+
+permissions:
+  pull-requests: write
+  contents: write
+
+jobs:
+  update-purls:
+    name: Update PURLs list of dependencies
+    runs-on: ubuntu-latest
+    if: github.actor == 'dependabot[bot]'
+    steps:
+      - name: Generate GitHub App Token
+        id: generate_token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.APIXBOT_APP_ID }}
+          private-key: ${{ secrets.APIXBOT_APP_PEM }}
+          owner: ${{ github.repository_owner }}
+          repositories: atlas-cli-plugin-kubernetes
+
+      - name: Checkout code
+        uses: actions/checkout@v4.1.1
+        with:
+          ref: ${{ github.head_ref }}
+          token: ${{ steps.generate_token.outputs.token }}
+          fetch-depth: 0
+
+      - name: Install Go dependencies
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
+
+      - name: Generate dependency list
+        run: make generate-purls
+
+      - name: Commit updated purls.txt if changed
+        env:
+          BRANCH_NAME: ${{ github.head_ref }}
+        run: |
+          echo "Checking for changes to purls.txt..."
+          if git diff --quiet --exit-code -- build/package/purls.txt; then
+            echo "No changes to purls.txt"
+          else 
+            echo "Changes detected. Committing..."
+            git config --global user.name "dependabot[bot]"
+            git config --global user.email "49699333+dependabot[bot]@users.noreply.github.com"
+            git add build/package/purls.txt
+            git commit -m "chore: update purls.txt"
+            git push origin "$BRANCH_NAME"
+          fi
