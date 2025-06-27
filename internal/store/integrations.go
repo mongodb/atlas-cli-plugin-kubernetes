@@ -15,6 +15,8 @@
 package store
 
 import (
+	"fmt"
+
 	atlasv2 "go.mongodb.org/atlas-sdk/v20241113004/admin"
 )
 
@@ -22,10 +24,44 @@ import (
 
 type IntegrationLister interface {
 	Integrations(string) (*atlasv2.PaginatedIntegration, error)
+	AllIntegrations(string) ([]atlasv2.ThirdPartyIntegration, error)
 }
 
 // Integrations encapsulates the logic to manage different cloud providers.
 func (s *Store) Integrations(projectID string) (*atlasv2.PaginatedIntegration, error) {
 	resp, _, err := s.clientv2.ThirdPartyIntegrationsApi.ListThirdPartyIntegrations(s.ctx, projectID).Execute()
 	return resp, err
+}
+
+// AllIntegrations encapsulates the logic to retrieve all integrations from a project all at once.
+func (s *Store) AllIntegrations(projectID string) ([]atlasv2.ThirdPartyIntegration, error) {
+	return AllPages(func(pageNum, itemsPerPage int) ([]atlasv2.ThirdPartyIntegration, error) {
+		page, _, err := s.clientv2.ThirdPartyIntegrationsApi.ListThirdPartyIntegrations(s.ctx, projectID).
+			ItemsPerPage(itemsPerPage).
+			PageNum(pageNum).Execute()
+		if err != nil {
+			return nil, fmt.Errorf("failed to list integrations: %w", err)
+		}
+		return page.GetResults(), nil
+	})
+}
+
+type getPageFn[T any] func(int, int) ([]T, error)
+
+func AllPages[T any](getPageFn getPageFn[T]) ([]T, error) {
+	allPages := []T{}
+	pageNum := 1
+	itemsPerPage := MaxItems
+	for {
+		page, err := getPageFn(pageNum, itemsPerPage)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get all pages: %w", err)
+		}
+		allPages = append(allPages, page...)
+		if len(page) < itemsPerPage {
+			break
+		}
+		pageNum += 1
+	}
+	return allPages, nil
 }

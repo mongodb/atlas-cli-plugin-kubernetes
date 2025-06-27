@@ -620,19 +620,6 @@ func TestBuildAtlasProject(t *testing.T) {
 					AlertConfigurationSyncEnabled: false,
 					WithDefaultAlertsSettings:     false,
 					X509CertRef:                   nil,
-					Integrations: []akov2project.Integration{
-						{
-							Type:     thirdPartyIntegrations.GetResults()[0].GetType(),
-							UserName: thirdPartyIntegrations.GetResults()[0].GetUsername(),
-							PasswordRef: akov2common.ResourceRefNamespaced{
-								Name: fmt.Sprintf("%s-integration-%s",
-									strings.ToLower(projectID),
-									strings.ToLower(thirdPartyIntegrations.GetResults()[0].GetType())),
-								Namespace: targetNamespace,
-							},
-							ServiceDiscovery: thirdPartyIntegrations.GetResults()[0].GetServiceDiscovery(),
-						},
-					},
 					EncryptionAtRest: &akov2.EncryptionAtRest{
 						AwsKms: akov2.AwsKms{
 							SecretRef: akov2common.ResourceRefNamespaced{},
@@ -689,7 +676,6 @@ func TestBuildAtlasProject(t *testing.T) {
 		featureValidator := mocks.NewMockFeatureValidator(ctl)
 		t.Run(name, func(t *testing.T) {
 			projectStore.EXPECT().MaintenanceWindow(projectID).Return(mw, nil)
-			projectStore.EXPECT().Integrations(projectID).Return(thirdPartyIntegrations, nil)
 			projectStore.EXPECT().EncryptionAtRest(projectID).Return(encryptionAtRest, nil)
 			projectStore.EXPECT().CloudProviderAccessRoles(projectID).Return(cpas, nil)
 			projectStore.EXPECT().ProjectSettings(projectID).Return(projectSettings, nil)
@@ -704,6 +690,7 @@ func TestBuildAtlasProject(t *testing.T) {
 				projectStore.EXPECT().ProjectIPAccessLists(projectID, listOption).Return(ipAccessLists, nil)
 				projectStore.EXPECT().DatabaseRoles(projectID).Return(customRoles, nil)
 				projectStore.EXPECT().PeeringConnections(projectID).Return(peeringConnections, nil)
+				projectStore.EXPECT().Integrations(projectID).Return(thirdPartyIntegrations, nil)
 			}
 
 			featureValidator.EXPECT().FeatureExist(features.ResourceAtlasProject, featureAccessLists).Return(true)
@@ -723,6 +710,7 @@ func TestBuildAtlasProject(t *testing.T) {
 			featureValidator.EXPECT().IsResourceSupported(features.ResourceAtlasCustomRole).Return(tt.independentResource)
 			featureValidator.EXPECT().IsResourceSupported(features.ResourceAtlasIPAccessList).Return(tt.independentResource)
 			featureValidator.EXPECT().IsResourceSupported(features.ResourceAtlasNetworkPeering).Return(tt.independentResource)
+			featureValidator.EXPECT().IsResourceSupported(features.ResourceAtlasThirdPartyIntegration).Return(tt.independentResource)
 
 			projectResult, err := BuildAtlasProject(&AtlasProjectBuildRequest{
 				ProjectStore:    projectStore,

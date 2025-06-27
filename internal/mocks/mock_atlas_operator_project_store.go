@@ -50,6 +50,21 @@ func (mr *MockOperatorProjectStoreMockRecorder) AlertConfigurations(arg0 interfa
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AlertConfigurations", reflect.TypeOf((*MockOperatorProjectStore)(nil).AlertConfigurations), arg0)
 }
 
+// AllIntegrations mocks base method.
+func (m *MockOperatorProjectStore) AllIntegrations(arg0 string) ([]admin.ThirdPartyIntegration, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AllIntegrations", arg0)
+	ret0, _ := ret[0].([]admin.ThirdPartyIntegration)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// AllIntegrations indicates an expected call of AllIntegrations.
+func (mr *MockOperatorProjectStoreMockRecorder) AllIntegrations(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AllIntegrations", reflect.TypeOf((*MockOperatorProjectStore)(nil).AllIntegrations), arg0)
+}
+
 // Auditing mocks base method.
 func (m *MockOperatorProjectStore) Auditing(arg0 string) (*admin.AuditLog, error) {
 	m.ctrl.T.Helper()

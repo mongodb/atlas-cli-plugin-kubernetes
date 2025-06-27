@@ -82,7 +82,7 @@ func TestBuildPrivateEndpoints(t *testing.T) {
 						Name:      "projectname-1-pe-aws-useast1",
 						Namespace: targetNamespace,
 						Labels: map[string]string{
-							features.ResourceVersion: "2.6.0",
+							features.ResourceVersion: "2.7.0",
 						},
 					},
 					Spec: akov2.AtlasPrivateEndpointSpec{
@@ -110,7 +110,7 @@ func TestBuildPrivateEndpoints(t *testing.T) {
 						Name:      "projectname-1-pe-azure-europenorth",
 						Namespace: targetNamespace,
 						Labels: map[string]string{
-							features.ResourceVersion: "2.6.0",
+							features.ResourceVersion: "2.7.0",
 						},
 					},
 					Spec: akov2.AtlasPrivateEndpointSpec{
@@ -138,7 +138,7 @@ func TestBuildPrivateEndpoints(t *testing.T) {
 						Name:      "projectname-1-pe-gcp-southamericaeast1",
 						Namespace: targetNamespace,
 						Labels: map[string]string{
-							features.ResourceVersion: "2.6.0",
+							features.ResourceVersion: "2.7.0",
 						},
 					},
 					Spec: akov2.AtlasPrivateEndpointSpec{
@@ -215,7 +215,7 @@ func TestBuildPrivateEndpoints(t *testing.T) {
 						Name:      "projectname-1-pe-aws-useast1",
 						Namespace: targetNamespace,
 						Labels: map[string]string{
-							features.ResourceVersion: "2.6.0",
+							features.ResourceVersion: "2.7.0",
 						},
 					},
 					Spec: akov2.AtlasPrivateEndpointSpec{
@@ -250,7 +250,7 @@ func TestBuildPrivateEndpoints(t *testing.T) {
 						Name:      "projectname-1-pe-azure-europenorth",
 						Namespace: targetNamespace,
 						Labels: map[string]string{
-							features.ResourceVersion: "2.6.0",
+							features.ResourceVersion: "2.7.0",
 						},
 					},
 					Spec: akov2.AtlasPrivateEndpointSpec{
@@ -286,7 +286,7 @@ func TestBuildPrivateEndpoints(t *testing.T) {
 						Name:      "projectname-1-pe-gcp-southamericaeast1",
 						Namespace: targetNamespace,
 						Labels: map[string]string{
-							features.ResourceVersion: "2.6.0",
+							features.ResourceVersion: "2.7.0",
 						},
 					},
 					Spec: akov2.AtlasPrivateEndpointSpec{
@@ -354,7 +354,7 @@ func TestBuildPrivateEndpoints(t *testing.T) {
 					ProjectName:         projectName,
 					ProjectID:           projectID,
 					TargetNamespace:     targetNamespace,
-					Version:             "2.6.0",
+					Version:             "2.7.0",
 					Credentials:         credentialName,
 					IndependentResource: tt.independentResource,
 					Dictionary:          dictionary,

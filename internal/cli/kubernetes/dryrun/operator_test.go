@@ -46,7 +46,7 @@ func TestWorkerRunSuccess(t *testing.T) {
 	worker := NewWorker().WithK8SClient(k8sClient).
 		WithTargetNamespace("test").
 		WithWatchNamespaces("test").
-		WithOperatorVersion("v2.6.1").
+		WithOperatorVersion("v2.7.1").
 		WithWaitTimeoutSec(10).
 		WithWaitForCompletion(true)
 	go func() {
@@ -79,7 +79,7 @@ func TestWorkerFailure(t *testing.T) {
 	worker := NewWorker().WithK8SClient(k8sClient).
 		WithTargetNamespace("test").
 		WithWatchNamespaces("test").
-		WithOperatorVersion("v2.6.1").
+		WithOperatorVersion("v2.7.1").
 		WithWaitTimeoutSec(10).
 		WithWaitForCompletion(true)
 	assert.Error(t, worker.Run())

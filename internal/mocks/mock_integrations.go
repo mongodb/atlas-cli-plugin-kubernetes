@@ -34,6 +34,21 @@ func (m *MockIntegrationLister) EXPECT() *MockIntegrationListerMockRecorder {
 	return m.recorder
 }
 
+// AllIntegrations mocks base method.
+func (m *MockIntegrationLister) AllIntegrations(arg0 string) ([]admin.ThirdPartyIntegration, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AllIntegrations", arg0)
+	ret0, _ := ret[0].([]admin.ThirdPartyIntegration)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// AllIntegrations indicates an expected call of AllIntegrations.
+func (mr *MockIntegrationListerMockRecorder) AllIntegrations(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AllIntegrations", reflect.TypeOf((*MockIntegrationLister)(nil).AllIntegrations), arg0)
+}
+
 // Integrations mocks base method.
 func (m *MockIntegrationLister) Integrations(arg0 string) (*admin.PaginatedIntegration, error) {
 	m.ctrl.T.Helper()
