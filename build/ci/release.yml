@@ -38,9 +38,18 @@ variables:
       SILKBOMB_REPO: "release-infrastructure/silkbomb"
       SILKBOMB_TAG: "2.0"
       SILKBOMB_REGISTRY: "901841024863.dkr.ecr.us-east-1.amazonaws.com"
-      SILKBOMB_IMAGE: 901841024863.dkr.ecr.us-east-1.amazonaws.com/release-infrastructure/silkbomb:2.0
+      SILKBOMB_IMAGE: "901841024863.dkr.ecr.us-east-1.amazonaws.com/release-infrastructure/silkbomb:2.0"
       SILKBOMB_PURLS_FILE: "/pwd/purls.txt"
       SILKBOMB_SBOM_FILE: "/pwd/sbom.json"
+  - &kondukto_config
+      KONDUKTO_CREDENTIALS_FILE: kondukto_credentials.env
+      KONDUKTO_REPO: atlascli-plugin-kubernetes
+      KONDUKTO_BRANCH: test
+  - &silkbomb_options
+    working_dir: src/github.com/mongodb/atlas-cli-plugin-kubernetes/build/package
+    include_expansions_in_env: [AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_SESSION_TOKEN]
+    env:
+      <<: [*silkbomb_container_config, *kondukto_config]
 functions:
   "install gh-token":
     - command: shell.exec
@@ -84,11 +93,7 @@ functions:
         role_arn: ${ecr_role_arn}
     - command: shell.exec
       params:
-        env:
-          <<: *silkbomb_container_config
-        include_expansions_in_env:
-          [AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_SESSION_TOKEN]
-        working_dir: src/github.com/mongodb/atlas-cli-plugin-kubernetes/build/package
+        <<: *silkbomb_options
         shell: bash
         script: |
           ./generate-sbom.sh
@@ -98,11 +103,9 @@ functions:
         role_arn: ${kondukto_role_arn}
     - command: shell.exec
       params:
+        <<: *silkbomb_options
         silent: true
         shell: bash
-        include_expansions_in_env:
-          [AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_SESSION_TOKEN]
-        working_dir: src/github.com/mongodb/atlas-cli-plugin-kubernetes/build/package
         script: |
           set -e
           kondukto_token=$(
@@ -115,14 +118,7 @@ functions:
           echo "KONDUKTO_TOKEN=$kondukto_token" > kondukto_credentials.env
     - command: shell.exec
       params:
-        env:
-          <<: *silkbomb_container_config
-          KONDUKTO_CREDENTIALS_FILE: kondukto_credentials.env
-          KONDUKTO_REPO: mongodb-atlas-cli-plugin-kubernetes
-          KONDUKTO_BRANCH: test
-        include_expansions_in_env:
-          [AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_SESSION_TOKEN]
-        working_dir: src/github.com/mongodb/atlas-cli-plugin-kubernetes/build/package
+        <<: *silkbomb_options
         shell: bash
         script: |
           ./upload-sbom.sh
