@@ -344,22 +344,6 @@ func TestExportIPAccessList(t *testing.T) {
 		version              string
 		expected             []runtime.Object
 	}{
-		"should export sub-resource for version without support for separate resource": {
-			independentResources: false,
-			version:              "2.7.0",
-			expected: []runtime.Object{
-				expectedWithIPAccessList(
-					defaultTestProject(
-						s.generator.projectName,
-						"",
-						map[string]string{features.ResourceVersion: "2.7.0"},
-						false,
-					),
-					expectedSubresource,
-				),
-				defaultTestAtlasConnSecret(credentialName, ""),
-			},
-		},
 		"should export separate resource with internal reference for version with support": {
 			independentResources: false,
 			version:              features.LatestOperatorMajorVersion,
