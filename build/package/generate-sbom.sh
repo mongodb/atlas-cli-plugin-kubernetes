@@ -16,29 +16,18 @@
 
 set -Eeou pipefail
 
-# SBOM paths
-SILKBOMB_PURLS="${SILKBOMB_PURLS:-/pwd/purls.txt}"
-SILKBOMB_SBOM_OUT="${SILKBOMB_SBOM_OUT:-/pwd/sbom.json}"
+: "${SILKBOMB_IMAGE:?Missing SILKBOMB_IMAGE}"
 
 # Check if SILKBOMB_IMAGE is set and available locally
-if [[ -n "${SILKBOMB_IMAGE:-}" ]] && podman image exists "${SILKBOMB_IMAGE}"; then
+if podman image exists "${SILKBOMB_IMAGE}"; then
   echo "Using existing local image: ${SILKBOMB_IMAGE}"
-else
-  #  Pull image from remote AWS repository
+else # Else image will need to be pulled from AWS registry
   : "${AWS_ACCESS_KEY_ID:?Missing AWS_ACCESS_KEY_ID}"
   : "${AWS_SECRET_ACCESS_KEY:?Missing AWS_SECRET_ACCESS_KEY}"
   : "${AWS_SESSION_TOKEN:?Missing AWS_SESSION_TOKEN}"
 
-  AWS_ACCOUNT_ID="${AWS_ACCOUNT_ID:-901841024863}"
-  AWS_REGION="${AWS_DEFAULT_REGION:-us-east-1}"
-
-  SILKBOMB_REGISTRY="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
-  SILKBOMB_REPO="${SILKBOMB_REPO:-release-infrastructure/silkbomb}"
-  SILKBOMB_TAG="${SILKBOMB_TAG:-2.0}"
-  SILKBOMB_IMAGE="${SILKBOMB_REGISTRY}/${SILKBOMB_REPO}:${SILKBOMB_TAG}"
-
   echo "Logging in to ECR..."
-  aws ecr get-login-password --region "${AWS_REGION}" | \
+  aws ecr get-login-password --region us-east-1 | \
     podman login --username AWS --password-stdin "${SILKBOMB_REGISTRY}"
 fi
 
@@ -48,7 +37,7 @@ podman run --rm \
   -v "$(pwd):/pwd" \
   "${SILKBOMB_IMAGE}" \
   update \
-  --purls "${SILKBOMB_PURLS}" \
-  --sbom-out "${SILKBOMB_SBOM_OUT}"
+  --purls "${SILKBOMB_PURLS_FILE}" \
+  --sbom-out "${SILKBOMB_SBOM_FILE}"
 
-echo "SBOM generated at ${SILKBOMB_SBOM_OUT}"
+echo "SBOM generated at ${SILKBOMB_SBOM_FILE}"
