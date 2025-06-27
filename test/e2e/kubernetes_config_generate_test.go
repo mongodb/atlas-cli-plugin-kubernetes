@@ -29,7 +29,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Masterminds/semver/v3"
 	"github.com/mongodb/mongodb-atlas-kubernetes/v2/api"
 	akoapi "github.com/mongodb/mongodb-atlas-kubernetes/v2/api"
 	akov2 "github.com/mongodb/mongodb-atlas-kubernetes/v2/api/v1"
@@ -570,7 +569,7 @@ func TestExportIntegrations(t *testing.T) {
 				resources.AtlasNameToKubernetesName(),
 			)
 			want := []runtime.Object{
-				defaultTestProject(s.generator.projectName, "", expectedLabelsAtLeast("2.9.0"), false),
+				defaultTestProject(s.generator.projectName, "", expectedLabels, false),
 				defaultTestAtlasConnSecret(credentialsName, ""),
 			}
 			want = append(want, tc.want...)
@@ -667,7 +666,7 @@ func TestExportNetworkContainerAndPeerings(t *testing.T) {
 				resources.AtlasNameToKubernetesName(),
 			)
 			want := []runtime.Object{
-				defaultTestProject(s.generator.projectName, "", expectedLabelsAtLeast("2.8.0"), false),
+				defaultTestProject(s.generator.projectName, "", expectedLabels, false),
 				defaultTestAtlasConnSecret(credentialsName, ""),
 			}
 			want = append(want, tc.want...)
@@ -728,7 +727,7 @@ func customContainer(generator *atlasE2ETestGenerator, independent bool, resourc
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   resourceName,
-			Labels: expectedLabelsAtLeast("2.8.0"),
+			Labels: expectedLabels,
 		},
 		Spec: *spec,
 		Status: akov2status.AtlasNetworkContainerStatus{
@@ -832,7 +831,7 @@ func customPeering(generator *atlasE2ETestGenerator, independent bool, resourceN
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   resourceName,
-			Labels: expectedLabelsAtLeast("2.8.0"),
+			Labels: expectedLabels,
 		},
 		Spec: *spec,
 		Status: akov2status.AtlasNetworkPeeringStatus{
@@ -860,17 +859,6 @@ func customPeering(generator *atlasE2ETestGenerator, independent bool, resourceN
 		}
 	}
 	return &peering
-}
-
-func expectedLabelsAtLeast(version string) map[string]string {
-	minVersion := semver.MustParse(version)
-	current := semver.MustParse(features.LatestOperatorMajorVersion)
-	if minVersion.GreaterThan(current) {
-		return map[string]string{
-			features.ResourceVersion: version,
-		}
-	}
-	return expectedLabels
 }
 
 func defaultPrivateEndpoint(generator *atlasE2ETestGenerator, independent bool) *akov2.AtlasPrivateEndpoint {
@@ -1723,14 +1711,17 @@ func verifyCustomRole(t *testing.T, objects []runtime.Object, expectedRole *akov
 	assert.Equal(t, expectedRole, role)
 }
 
+// TestProjectWithIntegration tests integratiosn embedded in the project
+// TODO: remove test when this last version using embedded integrations is deprecated
 func TestProjectWithIntegration(t *testing.T) {
 	s := InitialSetup(t)
 	cliPath := s.cliPath
 	atlasCliPath := s.atlasCliPath
 	generator := s.generator
-	expectedProject := s.expectedProject
-	// TODO: remove test when this last version using embedded integrations is deprecated
 	operatorVersion := "2.8.2"
+	expectedProject := referenceProject(s.generator.projectName, targetNamespace, map[string]string{
+		features.ResourceVersion: operatorVersion,
+	})
 
 	datadogKey := "00000000000000000000000000000012"
 	newIntegration := akov2project.Integration{
@@ -1744,7 +1735,7 @@ func TestProjectWithIntegration(t *testing.T) {
 	expectedProject.Spec.Integrations = []akov2project.Integration{
 		newIntegration,
 	}
-	expectedProject.Labels["mongodb.com/atlas-resource-version"] = operatorVersion
+	expectedProject.Labels[features.ResourceVersion] = operatorVersion
 
 	t.Run("Add integration to the project", func(t *testing.T) {
 		cmd := exec.Command(atlasCliPath,
@@ -1843,14 +1834,17 @@ func TestProjectWithMaintenanceWindow(t *testing.T) {
 	})
 }
 
+// TestProjectWithNetworkPeering embedded in project
+// TODO: remove test when this last version using embedded integrations is deprecated
 func TestProjectWithNetworkPeering(t *testing.T) {
 	s := InitialSetup(t)
 	cliPath := s.cliPath
 	atlasCliPath := s.atlasCliPath
 	generator := s.generator
-	expectedProject := referenceProject(s.generator.projectName, targetNamespace, map[string]string{features.ResourceVersion: "2.9.0"})
-	// TODO: remove test when this last version using embedded integrations is deprecated
 	operatorVersion := "2.7.1"
+	expectedProject := referenceProject(s.generator.projectName, targetNamespace, map[string]string{
+		features.ResourceVersion: operatorVersion,
+	})
 
 	atlasCidrBlock := "10.8.0.0/18"
 	networkPeer := akov2.NetworkPeer{
@@ -1887,7 +1881,6 @@ func TestProjectWithNetworkPeering(t *testing.T) {
 		err = json.Unmarshal(resp, &createdNetworkPeer)
 		require.NoError(t, err)
 		expectedProject.Spec.NetworkPeers[0].ContainerID = createdNetworkPeer.ContainerId
-		expectedProject.Labels["mongodb.com/atlas-resource-version"] = "2.7.1"
 
 		cmd = exec.Command(cliPath,
 			"kubernetes",
