@@ -29,13 +29,13 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Masterminds/semver/v3"
 	"github.com/mongodb/mongodb-atlas-kubernetes/v2/api"
 	akoapi "github.com/mongodb/mongodb-atlas-kubernetes/v2/api"
 	akov2 "github.com/mongodb/mongodb-atlas-kubernetes/v2/api/v1"
 	akov2common "github.com/mongodb/mongodb-atlas-kubernetes/v2/api/v1/common"
 	akov2project "github.com/mongodb/mongodb-atlas-kubernetes/v2/api/v1/project"
 	akov2provider "github.com/mongodb/mongodb-atlas-kubernetes/v2/api/v1/provider"
+	"github.com/mongodb/mongodb-atlas-kubernetes/v2/api/v1/status"
 	akov2status "github.com/mongodb/mongodb-atlas-kubernetes/v2/api/v1/status"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -344,22 +344,6 @@ func TestExportIPAccessList(t *testing.T) {
 		version              string
 		expected             []runtime.Object
 	}{
-		"should export sub-resource for version without support for separate resource": {
-			independentResources: false,
-			version:              "2.6.0",
-			expected: []runtime.Object{
-				expectedWithIPAccessList(
-					defaultTestProject(
-						s.generator.projectName,
-						"",
-						map[string]string{features.ResourceVersion: "2.6.0"},
-						false,
-					),
-					expectedSubresource,
-				),
-				defaultTestAtlasConnSecret(credentialName, ""),
-			},
-		},
 		"should export separate resource with internal reference for version with support": {
 			independentResources: false,
 			version:              features.LatestOperatorMajorVersion,
@@ -409,9 +393,178 @@ func TestExportIPAccessList(t *testing.T) {
 	}
 }
 
+func TestExportIntegrations(t *testing.T) {
+	s := InitialSetup(t)
+	operatorVersion := "2.9.0"
+	datadogKey := "00000000000000000000000000000012"
+
+	cmd := exec.Command(s.atlasCliPath,
+		integrationsEntity,
+		"create",
+		datadogEntity,
+		"--apiKey",
+		datadogKey,
+		"--projectId",
+		s.generator.projectID,
+		"-o=json")
+	out, err := test.RunAndGetStdOut(cmd)
+	require.NoError(t, err)
+	reply := struct {
+		Results []struct {
+			ID string `json:"id"`
+		} `json:"results"`
+	}{}
+	require.NoError(t, json.Unmarshal(out, &reply))
+	integrationID := reply.Results[0].ID
+
+	datadogKeyMasked := "****************************0012"
+	integrationName := strings.ToLower(s.generator.projectName) + "-datadog-integration"
+	secretName := integrationName + "-secret"
+	expectedProjectName := strings.ToLower(s.generator.projectName)
+
+	expectedSecret := &corev1.Secret{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Secret",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: secretName,
+			Labels: map[string]string{
+				"atlas.mongodb.com/project-id":   s.generator.projectID,
+				"atlas.mongodb.com/project-name": expectedProjectName,
+				"atlas.mongodb.com/type":         "credentials",
+			},
+		},
+		Data: map[string][]byte{
+			"apiKey": ([]byte)(datadogKeyMasked),
+		},
+	}
+
+	for _, tc := range []struct {
+		title                string
+		independentResources bool
+		want                 []runtime.Object
+	}{
+		{
+			title:                "independent integration",
+			independentResources: true,
+			want: []runtime.Object{
+				&akov2.AtlasThirdPartyIntegration{
+					TypeMeta: metav1.TypeMeta{
+						Kind:       "AtlasThirdPartyIntegration",
+						APIVersion: "atlas.mongodb.com/v1",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: integrationName,
+						Labels: map[string]string{
+							"mongodb.com/atlas-resource-version": "2.9.0",
+						},
+					},
+					Spec: akov2.AtlasThirdPartyIntegrationSpec{
+						ProjectDualReference: akov2.ProjectDualReference{
+							ExternalProjectRef: &akov2.ExternalProjectReference{
+								ID: s.generator.projectID,
+							},
+							ConnectionSecret: &akoapi.LocalObjectReference{
+								Name: expectedProjectName + "-credentials",
+							},
+						},
+						Type: "DATADOG",
+						Datadog: &akov2.DatadogIntegration{
+							APIKeySecretRef: akoapi.LocalObjectReference{
+								Name: secretName,
+							},
+							Region:                       "US",
+							SendCollectionLatencyMetrics: pointer.Get("disabled"),
+							SendDatabaseMetrics:          pointer.Get("disabled"),
+						},
+					},
+					Status: status.AtlasThirdPartyIntegrationStatus{
+						ID: integrationID,
+					},
+				},
+				expectedSecret,
+			},
+		},
+		{
+			title:                "dependent integration",
+			independentResources: false,
+			want: []runtime.Object{
+				&akov2.AtlasThirdPartyIntegration{
+					TypeMeta: metav1.TypeMeta{
+						Kind:       "AtlasThirdPartyIntegration",
+						APIVersion: "atlas.mongodb.com/v1",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: integrationName,
+						Labels: map[string]string{
+							"mongodb.com/atlas-resource-version": "2.9.0",
+						},
+					},
+					Spec: akov2.AtlasThirdPartyIntegrationSpec{
+						ProjectDualReference: akov2.ProjectDualReference{
+							ProjectRef: &akov2common.ResourceRefNamespaced{
+								Name: expectedProjectName,
+							},
+						},
+						Type: "DATADOG",
+						Datadog: &akov2.DatadogIntegration{
+							APIKeySecretRef: akoapi.LocalObjectReference{
+								Name: secretName,
+							},
+							Region:                       "US",
+							SendCollectionLatencyMetrics: pointer.Get("disabled"),
+							SendDatabaseMetrics:          pointer.Get("disabled"),
+						},
+					},
+					Status: status.AtlasThirdPartyIntegrationStatus{
+						ID: integrationID,
+					},
+				},
+				expectedSecret,
+			},
+		},
+	} {
+		t.Run(tc.title, func(t *testing.T) {
+			cmdArgs := []string{
+				"kubernetes",
+				"config",
+				"generate",
+				"--projectId",
+				s.generator.projectID,
+				"--operatorVersion",
+				operatorVersion,
+			}
+			if tc.independentResources {
+				cmdArgs = append(cmdArgs, "--independentResources")
+			}
+			cmd := exec.Command(s.cliPath, cmdArgs...) //nolint:gosec
+			cmd.Env = os.Environ()
+			resp, err := cmd.CombinedOutput()
+			require.NoError(t, err, string(resp))
+
+			var objects []runtime.Object
+			objects, err = getK8SEntities(resp)
+			objects = filtered(objects).byKind(globalKinds...)
+			require.NoError(t, err, "should not fail on decode but got:\n"+string(resp))
+			require.NotEmpty(t, objects)
+			credentialsName := resources.NormalizeAtlasName(
+				strings.ToLower(s.generator.projectName)+"-credentials",
+				resources.AtlasNameToKubernetesName(),
+			)
+			want := []runtime.Object{
+				defaultTestProject(s.generator.projectName, "", expectedLabels, false),
+				defaultTestAtlasConnSecret(credentialsName, ""),
+			}
+			want = append(want, tc.want...)
+			require.Equal(t, want, objects)
+		})
+	}
+}
+
 func TestExportNetworkContainerAndPeerings(t *testing.T) {
 	s := InitialSetup(t)
-	operatorVersion := "2.8.0"
+	operatorVersion := "2.9.0"
 
 	awsContainerCIDR := "10.0.0.0/21"
 	awsContainerID := s.generator.generateAWSContainer(awsContainerCIDR, "EU_CENTRAL_1")
@@ -497,7 +650,7 @@ func TestExportNetworkContainerAndPeerings(t *testing.T) {
 				resources.AtlasNameToKubernetesName(),
 			)
 			want := []runtime.Object{
-				defaultTestProject(s.generator.projectName, "", expectedLabelsAtLeast("2.8.0"), false),
+				defaultTestProject(s.generator.projectName, "", expectedLabels, false),
 				defaultTestAtlasConnSecret(credentialsName, ""),
 			}
 			want = append(want, tc.want...)
@@ -558,7 +711,7 @@ func customContainer(generator *atlasE2ETestGenerator, independent bool, resourc
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   resourceName,
-			Labels: expectedLabelsAtLeast("2.8.0"),
+			Labels: expectedLabels,
 		},
 		Spec: *spec,
 		Status: akov2status.AtlasNetworkContainerStatus{
@@ -662,7 +815,7 @@ func customPeering(generator *atlasE2ETestGenerator, independent bool, resourceN
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   resourceName,
-			Labels: expectedLabelsAtLeast("2.8.0"),
+			Labels: expectedLabels,
 		},
 		Spec: *spec,
 		Status: akov2status.AtlasNetworkPeeringStatus{
@@ -690,17 +843,6 @@ func customPeering(generator *atlasE2ETestGenerator, independent bool, resourceN
 		}
 	}
 	return &peering
-}
-
-func expectedLabelsAtLeast(version string) map[string]string {
-	minVersion := semver.MustParse(version)
-	current := semver.MustParse(features.LatestOperatorMajorVersion)
-	if minVersion.GreaterThan(current) {
-		return map[string]string{
-			features.ResourceVersion: version,
-		}
-	}
-	return expectedLabels
 }
 
 func defaultPrivateEndpoint(generator *atlasE2ETestGenerator, independent bool) *akov2.AtlasPrivateEndpoint {
@@ -1553,12 +1695,17 @@ func verifyCustomRole(t *testing.T, objects []runtime.Object, expectedRole *akov
 	assert.Equal(t, expectedRole, role)
 }
 
+// TestProjectWithIntegration tests integratiosn embedded in the project
+// TODO: remove test when 2.8 is deprecated, last version with embedded integrations
 func TestProjectWithIntegration(t *testing.T) {
 	s := InitialSetup(t)
 	cliPath := s.cliPath
 	atlasCliPath := s.atlasCliPath
 	generator := s.generator
-	expectedProject := s.expectedProject
+	operatorVersion := "2.8.2"
+	expectedProject := referenceProject(s.generator.projectName, targetNamespace, map[string]string{
+		features.ResourceVersion: operatorVersion,
+	})
 
 	datadogKey := "00000000000000000000000000000012"
 	newIntegration := akov2project.Integration{
@@ -1572,6 +1719,7 @@ func TestProjectWithIntegration(t *testing.T) {
 	expectedProject.Spec.Integrations = []akov2project.Integration{
 		newIntegration,
 	}
+	expectedProject.Labels[features.ResourceVersion] = operatorVersion
 
 	t.Run("Add integration to the project", func(t *testing.T) {
 		cmd := exec.Command(atlasCliPath,
@@ -1595,7 +1743,8 @@ func TestProjectWithIntegration(t *testing.T) {
 			generator.projectID,
 			"--targetNamespace",
 			targetNamespace,
-			"--includeSecrets")
+			"--includeSecrets",
+			"--operatorVersion", operatorVersion)
 		cmd.Env = os.Environ()
 
 		resp, err := test.RunAndGetStdOut(cmd)
@@ -1607,9 +1756,10 @@ func TestProjectWithIntegration(t *testing.T) {
 		objects, err = getK8SEntities(resp)
 		require.NoError(t, err, "should not fail on decode")
 		require.NotEmpty(t, objects)
+		objects = filtered(objects).byKind(globalKinds...)
 
 		checkProject(t, objects, expectedProject)
-		assert.Len(t, objects, 4, "should have 4 objects in the output: project, integration secret, atlas secret, federated-auth secret")
+		assert.Len(t, objects, 3, "should have 3 objects in the output: project, integration secret, atlas secret")
 		integrationSecret := objects[1].(*corev1.Secret)
 		password, ok := integrationSecret.Data["password"]
 		assert.True(t, ok, "should have password field in the integration secret")
@@ -1668,12 +1818,17 @@ func TestProjectWithMaintenanceWindow(t *testing.T) {
 	})
 }
 
+// TestProjectWithNetworkPeering embedded in project
+// TODO: remove test when 2.7 is deprecated, last version with embedded network peerings
 func TestProjectWithNetworkPeering(t *testing.T) {
 	s := InitialSetup(t)
 	cliPath := s.cliPath
 	atlasCliPath := s.atlasCliPath
 	generator := s.generator
-	expectedProject := referenceProject(s.generator.projectName, targetNamespace, map[string]string{features.ResourceVersion: "2.7.0"})
+	operatorVersion := "2.7.1"
+	expectedProject := referenceProject(s.generator.projectName, targetNamespace, map[string]string{
+		features.ResourceVersion: operatorVersion,
+	})
 
 	atlasCidrBlock := "10.8.0.0/18"
 	networkPeer := akov2.NetworkPeer{
@@ -1717,7 +1872,7 @@ func TestProjectWithNetworkPeering(t *testing.T) {
 			"generate",
 			"--projectId", generator.projectID,
 			"--targetNamespace", targetNamespace,
-			"--operatorVersion", "2.7.0",
+			"--operatorVersion", operatorVersion,
 			"--includeSecrets")
 		cmd.Env = os.Environ()
 

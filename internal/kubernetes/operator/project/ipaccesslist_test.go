@@ -82,7 +82,7 @@ func TestBuildIPAccessList(t *testing.T) {
 					Name:      "projectname-ial-ip-access-list",
 					Namespace: targetNamespace,
 					Labels: map[string]string{
-						features.ResourceVersion: "2.7.0",
+						features.ResourceVersion: "2.9.0",
 					},
 				},
 				Spec: akov2.AtlasIPAccessListSpec{
@@ -140,7 +140,7 @@ func TestBuildIPAccessList(t *testing.T) {
 					Name:      "projectname-ial-ip-access-list",
 					Namespace: targetNamespace,
 					Labels: map[string]string{
-						features.ResourceVersion: "2.7.0",
+						features.ResourceVersion: "2.9.0",
 					},
 				},
 				Spec: akov2.AtlasIPAccessListSpec{
@@ -186,7 +186,7 @@ func TestBuildIPAccessList(t *testing.T) {
 					ProjectName:         projectName,
 					ProjectID:           projectID,
 					TargetNamespace:     targetNamespace,
-					Version:             "2.7.0",
+					Version:             "2.9.0",
 					Credentials:         credentialName,
 					IndependentResource: tt.independentResource,
 					Dictionary:          dictionary,
