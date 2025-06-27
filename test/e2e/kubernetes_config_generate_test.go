@@ -346,13 +346,13 @@ func TestExportIPAccessList(t *testing.T) {
 	}{
 		"should export sub-resource for version without support for separate resource": {
 			independentResources: false,
-			version:              "2.6.0",
+			version:              "2.7.0",
 			expected: []runtime.Object{
 				expectedWithIPAccessList(
 					defaultTestProject(
 						s.generator.projectName,
 						"",
-						map[string]string{features.ResourceVersion: "2.6.0"},
+						map[string]string{features.ResourceVersion: "2.7.0"},
 						false,
 					),
 					expectedSubresource,
@@ -1712,7 +1712,7 @@ func verifyCustomRole(t *testing.T, objects []runtime.Object, expectedRole *akov
 }
 
 // TestProjectWithIntegration tests integratiosn embedded in the project
-// TODO: remove test when this last version using embedded integrations is deprecated
+// TODO: remove test when 2.8 is deprecated, last version with embedded integrations
 func TestProjectWithIntegration(t *testing.T) {
 	s := InitialSetup(t)
 	cliPath := s.cliPath
@@ -1835,7 +1835,7 @@ func TestProjectWithMaintenanceWindow(t *testing.T) {
 }
 
 // TestProjectWithNetworkPeering embedded in project
-// TODO: remove test when this last version using embedded integrations is deprecated
+// TODO: remove test when 2.7 is deprecated, last version with embedded network peerings
 func TestProjectWithNetworkPeering(t *testing.T) {
 	s := InitialSetup(t)
 	cliPath := s.cliPath
