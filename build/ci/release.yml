@@ -44,12 +44,10 @@ variables:
   - &kondukto_config
       KONDUKTO_CREDENTIALS_FILE: kondukto_credentials.env
       KONDUKTO_REPO: mongodb_atlas-cli-plugin-kubernetes
-      KONDUKTO_BRANCH: main
+      KONDUKTO_BRANCH: test
   - &silkbomb_options
     working_dir: src/github.com/mongodb/atlas-cli-plugin-kubernetes/build/package
     include_expansions_in_env: [AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_SESSION_TOKEN]
-    env:
-      <<: [*silkbomb_container_config, *kondukto_config]
 functions:
   "install gh-token":
     - command: shell.exec
@@ -94,6 +92,8 @@ functions:
     - command: shell.exec
       params:
         <<: *silkbomb_options
+        env:
+          <<: *silkbomb_container_config
         shell: bash
         script: |
           ./generate-sbom.sh
@@ -119,6 +119,8 @@ functions:
     - command: shell.exec
       params:
         <<: *silkbomb_options
+        env:
+          <<: [*silkbomb_container_config, *kondukto_config]
         shell: bash
         script: |
           ./upload-sbom.sh
@@ -217,7 +219,7 @@ functions:
 tasks:
   - name: test-sbom
     tags: ["code_health"]
-    patch_only: true
+    allowed_requesters: ["patch"]
     commands:
       - func: "generate sbom"
       - func: "upload sbom"
