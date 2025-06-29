@@ -1,0 +1,113 @@
+name: Update Compliance Report
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'atlas-cli-plugin tag version (e.g. 1.42.2)'
+        required: true
+        type: string
+
+jobs:
+  update-compliance-report:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate GitHub App Token
+        id: generate_token
+        uses: mongodb/apix-action/token@v8
+        with:
+          app-id: ${{ secrets.APIXBOT_APP_ID }}
+          private-key: ${{ secrets.APIXBOT_APP_PEM }}
+          owner: ${{ github.repository_owner }}
+          repositories: test-atlas-plugin-action # to change to atlas-cli-plugin-kubernetes
+
+      - name: Checkout code
+        uses: actions/checkout@v4.1.1
+        with:
+          ref: ${{ github.ref_name }}
+          token: ${{ steps.generate_token.outputs.token }}
+          fetch-depth: 0
+
+      - name: Extract AUTHOR and VERSION
+        id: extract
+        run: |
+          if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
+            TAG="${{ github.event.inputs.tag }}"
+            VERSION="${TAG#atlas-cli-plugin/v}"
+            AUTHOR="${{ github.actor }}"
+          else
+            VERSION="${GITHUB_REF#refs/tags/atlas-cli-plugin/v}"
+            AUTHOR="${{ github.event.release.author.login }}"
+          fi
+          echo "author=$AUTHOR" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Generate Compliance Report
+        env: 
+          AUTHOR: ${{ steps.extract.outputs.author }}
+          VERSION: ${{ steps.extract.outputs.version }}
+        run: ./build/package/generate-ssdlc-report.sh
+
+      - name: Find JIRA ticket
+        id: find-jira
+        uses: mongodb/apix-action/find-jira@v8
+        with:
+          token: ${{ secrets.JIRA_API_TOKEN }}
+          jql: project = CLOUDP AND 
+               status NOT IN (Closed, Resolved) AND 
+               summary ~ "Update Compliance Report" AND
+               component = "AtlasCLI Kubernetes Plugin"
+    
+      - name: Create JIRA ticket
+        id: create-jira
+        uses: mongodb/apix-action/create-jira@v4
+        if: steps.find-jira.outputs.found == 'false'
+        with:
+          token: ${{ secrets.JIRA_API_TOKEN }}
+          project-key: CLOUDP
+          summary: "[AtlasCLI Kubernetes Plugin] Update Compliance Report"
+          issuetype: Story
+          description: Update Compliance Report
+          components: AtlasCLI Kubernetes Plugin
+          assignee: andrei.pacurar
+          extra-data: | # Assigned Team is required and only passed as extra (customfield_12751)
+            {
+              "fields": {
+                "customfield_12751": [{
+                    "value": "Kubernetes Atlas"
+                }]
+              }
+            }
+      
+      - name: Set JIRA ticket (after create)
+        run: |
+          if ${{ steps.find-jira.outputs.found == 'true' }}; then
+            echo "JIRA_KEY=${{ steps.find-jira.outputs.issue-key }}" >> "$GITHUB_ENV"
+          else
+            echo "JIRA_KEY=${{ steps.create-jira.outputs.issue-key }}" >> "$GITHUB_ENV"
+          fi
+
+      - name: Commit and create PR
+        id: pr
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ steps.generate_token.outputs.token }}
+          title: "${{ env.JIRA_KEY }}: Update compliance report for v${{ steps.extract.outputs.version }}"
+          commit-message: "${{ env.JIRA_KEY }}: Update compliance report for v${{ steps.extract.outputs.version }}"
+          branch: "${{ env.JIRA_KEY }}/Compliance-report"
+          base: ${{ github.event.repository.default_branch }}
+          body: |
+            ## Proposed changes
+            Update compliance report for v${{ steps.extract.outputs.version }}
+            _Jira ticket:_ [${{ env.JIRA_KEY }}](https://jira.mongodb.org/browse/${{ env.JIRA_KEY }})
+
+            Note: Jira ticket will be closed automatically when this PR is merged.
+            
+      - name: Merge on release
+        if: github.event_name == 'release'
+        env:
+          GH_TOKEN: ${{ steps.generate_token.outputs.token }}
+        run: |
+          gh pr merge "${{ steps.pr.outputs.pull-request-url }}" --auto --squash
