@@ -116,7 +116,7 @@ func BuildAtlasProject(br *AtlasProjectBuildRequest) (*AtlasProjectResult, error
 	}
 	projectResult.Spec.ConnectionSecret = secretRef
 
-	if br.Validator.FeatureExist(features.ResourceAtlasProject, featureIntegrations) {
+	if br.Validator.FeatureExist(features.ResourceAtlasProject, featureIntegrations) && !br.Validator.IsResourceSupported(features.ResourceAtlasThirdPartyIntegration) {
 		integrations, intSecrets, ferr := buildIntegrations(br.ProjectStore, br.ProjectID, br.TargetNamespace, true, br.Dictionary)
 		if ferr != nil {
 			return nil, ferr
