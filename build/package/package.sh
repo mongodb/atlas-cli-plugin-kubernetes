@@ -28,8 +28,16 @@ export VERSION
 
 make generate-all-manifests
 
-# avoid race conditions on the notarization step by using `-p 1`
-./bin/goreleaser release --config "build/package/.goreleaser.yml" --clean -p 1
+ "${test_mode:=false}"
+
+ # If test mode is set, do not create a release on GitHub, just package locally 
+ if [[ "${test_mode}" == "true" ]]; then
+ 	# avoid race conditions on the notarization step by using `-p 1`
+ 	./bin/goreleaser release --snapshot --config "build/package/.goreleaser.yml" --clean -p 1
+ else 
+ 	# avoid race conditions on the notarization step by using `-p 1`
+ 	./bin/goreleaser release --config "build/package/.goreleaser.yml" --clean -p 1
+ fi
 
 # check that the notarization service signed the mac binaries
 SIGNED_FILE_NAME=atlas-cli-plugin-kubernetes_macos_signed.zip
