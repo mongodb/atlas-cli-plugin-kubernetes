@@ -17,6 +17,7 @@
 set -Eeou pipefail
 
 : "${SILKBOMB_IMAGE:?Missing SILKBOMB_IMAGE}"
+: "${SILKBOMB_SBOM_FILE:?Missing SILKBOMB_SBOM_FILE}"
 : "${KONDUKTO_CREDENTIALS_FILE:?Missing KONDUKTO_CREDENTIALS_FILE}"
 : "${KONDUKTO_REPO:?Missing KONDUKTO_REPO}"
 : "${KONDUKTO_BRANCH:?Missing KONDUKTO_BRANCH}"
@@ -33,22 +34,37 @@ else # Else image will need to be pulled from AWS registry
   : "${AWS_ACCESS_KEY_ID:?Missing AWS_ACCESS_KEY_ID}"
   : "${AWS_SECRET_ACCESS_KEY:?Missing AWS_SECRET_ACCESS_KEY}"
   : "${AWS_SESSION_TOKEN:?Missing AWS_SESSION_TOKEN}"
+  : "${SILKBOMB_REGISTRY:?Missing SILKBOMB_REGISTRY}"
 
   echo "Logging in to ECR..."
   aws ecr get-login-password --region us-east-1 | \
     podman login --username AWS --password-stdin "${SILKBOMB_REGISTRY}"
 fi
 
-echo "Uploading SBOM to Kondukto..."
-podman run --rm \
-  --pull=missing \
-  -v "$(pwd):/pwd" \
-  --env-file "${KONDUKTO_CREDENTIALS_FILE}" \
-  "${SILKBOMB_IMAGE}" \
-  upload \
-  --sbom-in "${SILKBOMB_SBOM_FILE}" \
-  --repo "${KONDUKTO_REPO}" \
-  --branch "${KONDUKTO_BRANCH}"
+# Note, augment by default uploads to Kondukto
+if [[ -n "${AUGMENTED_SILKBOMB_SBOM_FILE}" ]]; then
+  echo "Uploading SBOM to Kondukto and outputting augmented version..."
+  podman run --rm \
+    --pull=missing \
+    -v "$(pwd):/pwd" \
+    --env-file "${KONDUKTO_CREDENTIALS_FILE}" \
+    "${SILKBOMB_IMAGE}" \
+    augment \
+    --sbom-in "${SILKBOMB_SBOM_FILE}" \
+    --sbom-out "${AUGMENTED_SILKBOMB_SBOM_FILE}" \
+    --repo "${KONDUKTO_REPO}" \
+    --branch "${KONDUKTO_BRANCH}"
+else
+  echo "Uploading SBOM to Kondukto..."
+  podman run --rm \
+    --pull=missing \
+    -v "$(pwd):/pwd" \
+    --env-file "${KONDUKTO_CREDENTIALS_FILE}" \
+    "${SILKBOMB_IMAGE}" \
+    upload \
+    --sbom-in "${SILKBOMB_SBOM_FILE}" \
+    --repo "${KONDUKTO_REPO}" \
+    --branch "${KONDUKTO_BRANCH}"
+fi
 
-echo "Uploading complete."
 rm -f "${KONDUKTO_CREDENTIALS_FILE}"

@@ -42,6 +42,7 @@ variables:
       SILKBOMB_PURLS_FILE: "/pwd/purls.txt"
       SILKBOMB_SBOM_FILE: "/pwd/sbom.json"
   - &kondukto_config
+      AUGMENTED_SILKBOMB_SBOM_FILE: "/pwd/augmented-sbom.json"
       KONDUKTO_CREDENTIALS_FILE: kondukto_credentials.env
       KONDUKTO_REPO: mongodb_atlas-cli-plugin-kubernetes
       KONDUKTO_BRANCH: test
