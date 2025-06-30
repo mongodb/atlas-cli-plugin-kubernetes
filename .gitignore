@@ -29,6 +29,8 @@ manifest.windows.yml
 gon_x86_64.json
 gon_arm64.json
 *.xml
+sbom.json
+augmented-sbom.json
 
 # We don't want to commit env variables
 *.env

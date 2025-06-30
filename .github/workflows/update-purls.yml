@@ -2,6 +2,7 @@ name: Update PURLs list of dependencies with dependabot
 
 on:
   pull_request:
+  workflow_dispatch:
 
 permissions:
   pull-requests: write
@@ -11,16 +12,13 @@ jobs:
   update-purls:
     name: Update PURLs list of dependencies
     runs-on: ubuntu-latest
-    if: github.actor == 'dependabot[bot]'
     steps:
       - name: Generate GitHub App Token
         id: generate_token
-        uses: actions/create-github-app-token@v2
+        uses: mongodb/apix-action/token@v8
         with:
           app-id: ${{ secrets.APIXBOT_APP_ID }}
           private-key: ${{ secrets.APIXBOT_APP_PEM }}
-          owner: ${{ github.repository_owner }}
-          repositories: atlas-cli-plugin-kubernetes
 
       - name: Checkout code
         uses: actions/checkout@v4.1.1
@@ -46,8 +44,8 @@ jobs:
             echo "No changes to purls.txt"
           else 
             echo "Changes detected. Committing..."
-            git config --global user.name "dependabot[bot]"
-            git config --global user.email "49699333+dependabot[bot]@users.noreply.github.com"
+            git config --global user.name "${{ steps.generate_token.outputs.user-name }}"
+            git config --global user.email "${{ steps.generate_token.outputs.user-email }}"
             git add build/package/purls.txt
             git commit -m "chore: update purls.txt"
             git push origin "$BRANCH_NAME"
