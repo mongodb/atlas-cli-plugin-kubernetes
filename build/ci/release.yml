@@ -148,7 +148,38 @@ functions:
           - notary_service_url
           - goreleaser_key
           - version
+          - test_mode
         binary: build/package/package.sh
+  "trace artifacts":
+     - command: shell.exec
+       params:
+         include_expansions_in_env:
+           - test_mode
+         script: |
+           if [ "$test_mode" = "true" ]; then
+             product="atlas-cli-plugin-kubernetes-test"
+           else
+             product="atlas-cli-plugin-kubernetes"
+           fi
+           cat <<EOT > src/github.com/mongodb/atlas-cli-plugin-kubernetes/expansions.yaml
+           product: "$product"
+           EOT
+     - command: expansions.update
+       params:
+         ignore_missing_file: true
+         file: src/github.com/mongodb/atlas-cli-plugin-kubernetes/expansions.yaml
+     - command: papertrail.trace
+       params:
+         key_id: ${papertrail_key_id}
+         secret_key: ${papertrail_secret_key}
+         product: ${product}
+         version: ${version}
+         filenames:
+           - "src/github.com/mongodb/atlas-cli-plugin-kubernetes/dist/*.tar.gz"
+           - "src/github.com/mongodb/atlas-cli-plugin-kubernetes/dist/*.zip"
+           - "src/github.com/mongodb/atlas-cli-plugin-kubernetes/dist/*.deb"
+           - "src/github.com/mongodb/atlas-cli-plugin-kubernetes/dist/*.rpm"
+           - "src/github.com/mongodb/atlas-cli-plugin-kubernetes/dist/*.msi"
   "build-copybara":
     - command: subprocess.exec
       params:
@@ -194,6 +225,22 @@ tasks:
     commands:
       - func: "generate sbom"
       - func: "upload sbom"
+  - name: test-trace
+    tags: ["code_health"]
+    allowed_requesters: ["patch"]
+    depends_on:
+    - name: check_purls
+      status: "success"
+    commands:
+      - func: "generate sbom"
+      - func: "generate notices"
+      - func: "install goreleaser"
+      - func: "install macos notarization service"
+      - func: "install gh-token"
+      - func: "package"
+        vars:
+          test_mode: "true"
+      - func: "trace artifacts"
   - name: package_goreleaser
     tags: ["packaging"]
     depends_on:
@@ -209,6 +256,7 @@ tasks:
       - func: "install macos notarization service"
       - func: "install gh-token"
       - func: "package"
+      - func: "trace artifacts"
   - name: copybara
     depends_on:
       - name: package_goreleaser
