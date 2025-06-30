@@ -188,12 +188,17 @@ tasks:
   - name: test-sbom
     tags: ["code_health"]
     allowed_requesters: ["patch"]
+    depends_on:
+    - name: check_purls
+      status: "success"
     commands:
       - func: "generate sbom"
       - func: "upload sbom"
   - name: package_goreleaser
     tags: ["packaging"]
     depends_on:
+      - name: check_purls
+        status: "success"
       - name: compile
         variant: "code_health"
     commands:
