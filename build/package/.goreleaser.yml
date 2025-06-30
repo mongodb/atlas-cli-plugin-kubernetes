@@ -91,3 +91,4 @@ release:
   name_template: "Atlas CLI Plugin Kubernetes v{{.Version}}"
   extra_files:
     - glob: ./*.asc
+    - glob: ./sbom.json
