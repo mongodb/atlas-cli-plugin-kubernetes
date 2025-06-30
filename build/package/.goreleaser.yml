@@ -92,3 +92,4 @@ release:
   extra_files:
     - glob: ./*.asc
     - glob: ./sbom.json
+    - glob: ./augmented-sbom.json

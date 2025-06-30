@@ -17,6 +17,8 @@
 set -Eeou pipefail
 
 : "${SILKBOMB_IMAGE:?Missing SILKBOMB_IMAGE}"
+: "${SILKBOMB_PURLS_FILE:?Missing SILKBOMB_PURLS_FILE}"
+: "${SILKBOMB_SBOM_FILE:?Missing SILKBOMB_SBOM_FILE}"
 
 # Check if SILKBOMB_IMAGE is set and available locally
 if podman image exists "${SILKBOMB_IMAGE}"; then
@@ -25,6 +27,7 @@ else # Else image will need to be pulled from AWS registry
   : "${AWS_ACCESS_KEY_ID:?Missing AWS_ACCESS_KEY_ID}"
   : "${AWS_SECRET_ACCESS_KEY:?Missing AWS_SECRET_ACCESS_KEY}"
   : "${AWS_SESSION_TOKEN:?Missing AWS_SESSION_TOKEN}"
+  : "${SILKBOMB_REGISTRY:?Missing SILKBOMB_REGISTRY}"
 
   echo "Logging in to ECR..."
   aws ecr get-login-password --region us-east-1 | \
