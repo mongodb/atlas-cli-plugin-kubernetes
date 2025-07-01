@@ -16,9 +16,11 @@
 
 set -Eeou pipefail
 
-export AUTHOR=$(git config user.name)
-export VERSION=$(git tag --list 'atlas-cli-plugin-kubernetes/v*' --sort=-taggerdate | head -1 | cut -d 'v' -f 2)
-export DATE="${DATE:-$(date -u '+%Y-%m-%d')}"
+: "${AUTHOR:=$(git config user.name)}"
+: "${VERSION:=$(git tag --list 'atlas-cli-plugin-kubernetes/v*' --sort=-taggerdate | head -1 | cut -d 'v' -f 2)}"
+: "${DATE:=$(date -u '+%Y-%m-%d')}"
+
+export AUTHOR VERSION DATE
 
 REPORT_OUT="${REPORT_OUT:-ssdlc-compliance-report.md}"
 echo "Generating SSDLC checklist for atlas-cli-plugin version ${VERSION}, author ${AUTHOR}, release date ${DATE}..."

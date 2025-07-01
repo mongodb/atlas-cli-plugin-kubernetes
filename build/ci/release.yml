@@ -147,8 +147,6 @@ functions:
     - command: subprocess.exec
       type: test
       params:
-        env:
-          REPORT_OUT: ssdlc-compliance-report.md
         working_dir: src/github.com/mongodb/atlas-cli-plugin-kubernetes
         binary: build/package/generate-ssdlc-report.sh
   "package":
@@ -248,7 +246,6 @@ tasks:
     allowed_requesters: ["patch"]
     depends_on:
     - name: check_purls
-      status: "success"
     commands:
       - func: "generate sbom"
       - func: "upload sbom"
@@ -266,7 +263,6 @@ tasks:
     allowed_requesters: ["patch"]
     depends_on:
     - name: check_purls
-      status: "success"
     commands:
       - func: "generate sbom"
       - func: "generate notices"
@@ -281,7 +277,7 @@ tasks:
     tags: ["packaging"]
     depends_on:
       - name: check_purls
-        status: "success"
+        variant: "code_health"
       - name: compile
         variant: "code_health"
     commands:
