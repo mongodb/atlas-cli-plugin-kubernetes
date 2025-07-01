@@ -20,7 +20,10 @@ set -Eeou pipefail
 : "${SILKBOMB_PURLS_FILE:?Missing SILKBOMB_PURLS_FILE}"
 : "${SILKBOMB_SBOM_FILE:?Missing SILKBOMB_SBOM_FILE}"
 
-# Check if SILKBOMB_IMAGE is set and available locally
+# Resolve absolute path of the purls file directory
+PURLS_DIR="$(cd "$(dirname "${SILKBOMB_PURLS_FILE}")" && pwd)"
+
+# Check if image exists locally
 if podman image exists "${SILKBOMB_IMAGE}"; then
   echo "Using existing local image: ${SILKBOMB_IMAGE}"
 else # Else image will need to be pulled from AWS registry
@@ -37,10 +40,10 @@ fi
 echo "Generating SBOMs with image: ${SILKBOMB_IMAGE}"
 podman run --rm \
   --pull=missing \
-  -v "$(pwd):/pwd" \
+  -v "${PURLS_DIR}:/pwd" \
   "${SILKBOMB_IMAGE}" \
   update \
-  --purls "${SILKBOMB_PURLS_FILE}" \
-  --sbom-out "${SILKBOMB_SBOM_FILE}"
+  --purls "/pwd/$(basename "${SILKBOMB_PURLS_FILE}")" \
+  --sbom-out "/pwd/$(basename "${SILKBOMB_SBOM_FILE}")"
 
 echo "SBOM generated at ${SILKBOMB_SBOM_FILE}"
