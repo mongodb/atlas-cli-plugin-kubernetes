@@ -39,10 +39,10 @@ variables:
       SILKBOMB_TAG: "2.0"
       SILKBOMB_REGISTRY: "901841024863.dkr.ecr.us-east-1.amazonaws.com"
       SILKBOMB_IMAGE: "901841024863.dkr.ecr.us-east-1.amazonaws.com/release-infrastructure/silkbomb:2.0"
-      SILKBOMB_PURLS_FILE: "/pwd/purls.txt"
-      SILKBOMB_SBOM_FILE: "/pwd/sbom.json"
+      SILKBOMB_PURLS_FILE: "purls.txt"
+      SILKBOMB_SBOM_FILE: "sbom.json"
   - &kondukto_config
-      AUGMENTED_SILKBOMB_SBOM_FILE: "/pwd/augmented-sbom.json"
+      AUGMENTED_SILKBOMB_SBOM_FILE: "augmented-sbom.json"
       KONDUKTO_CREDENTIALS_FILE: kondukto_credentials.env
       KONDUKTO_REPO: mongodb_atlas-cli-plugin-kubernetes
       KONDUKTO_BRANCH: test
@@ -125,6 +125,24 @@ functions:
         shell: bash
         script: |
           ./upload-sbom.sh
+  "move sboms":
+    - command: shell.exec
+      params:
+        shell: bash
+        working_dir: src/github.com/mongodb/atlas-cli-plugin-kubernetes
+        script: |
+          if [[ ! -f ./build/package/sbom.json ]]; then
+            echo "ERROR: sbom.json not found in ./build/package/"
+            exit 1
+          fi
+          if [[ ! -f ./build/package/augmented-sbom.json ]]; then
+            echo "ERROR: augmented-sbom.json not found in ./build/package/"
+            exit 1
+          fi
+
+          mv ./build/package/sbom.json sbom.json
+          mv ./build/package/augmented-sbom.json augmented-sbom.json
+          echo "Moved SBOMs to repository root."
   "package":
     - command: github.generate_token
       params:
@@ -226,6 +244,7 @@ tasks:
     commands:
       - func: "generate sbom"
       - func: "upload sbom"
+      - func: "move sboms"
   - name: test-trace
     tags: ["code_health"]
     allowed_requesters: ["patch"]
@@ -253,6 +272,7 @@ tasks:
       - func: "generate sbom"
       - func: "upload sbom"
       - func: "generate notices"
+      - func: "move sboms"
       - func: "install goreleaser"
       - func: "install macos notarization service"
       - func: "install gh-token"

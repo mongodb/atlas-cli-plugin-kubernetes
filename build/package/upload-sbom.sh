@@ -22,6 +22,9 @@ set -Eeou pipefail
 : "${KONDUKTO_REPO:?Missing KONDUKTO_REPO}"
 : "${KONDUKTO_BRANCH:?Missing KONDUKTO_BRANCH}"
 
+# Resolve the absolute directory containing the SBOM file
+SBOM_DIR="$(cd "$(dirname "${SILKBOMB_SBOM_FILE}")" && pwd)"
+
 # load the token
 if [[ ! -s "${KONDUKTO_CREDENTIALS_FILE}" ]]; then
   echo "ERROR: credentials file is missing or empty: ${KONDUKTO_CREDENTIALS_FILE}" >&2
@@ -41,28 +44,28 @@ else # Else image will need to be pulled from AWS registry
     podman login --username AWS --password-stdin "${SILKBOMB_REGISTRY}"
 fi
 
-# Note, augment by default uploads to Kondukto
-if [[ -n "${AUGMENTED_SILKBOMB_SBOM_FILE}" ]]; then
+# Upload or augment
+if [[ -n "${AUGMENTED_SILKBOMB_SBOM_FILE:-}" ]]; then
   echo "Uploading SBOM to Kondukto and outputting augmented version..."
   podman run --rm \
     --pull=missing \
-    -v "$(pwd):/pwd" \
+    -v "${SBOM_DIR}:/pwd" \
     --env-file "${KONDUKTO_CREDENTIALS_FILE}" \
     "${SILKBOMB_IMAGE}" \
     augment \
-    --sbom-in "${SILKBOMB_SBOM_FILE}" \
-    --sbom-out "${AUGMENTED_SILKBOMB_SBOM_FILE}" \
+    --sbom-in "/pwd/$(basename "${SILKBOMB_SBOM_FILE}")" \
+    --sbom-out "/pwd/$(basename "${AUGMENTED_SILKBOMB_SBOM_FILE}")" \
     --repo "${KONDUKTO_REPO}" \
     --branch "${KONDUKTO_BRANCH}"
 else
   echo "Uploading SBOM to Kondukto..."
   podman run --rm \
     --pull=missing \
-    -v "$(pwd):/pwd" \
+    -v "${SBOM_DIR}:/pwd" \
     --env-file "${KONDUKTO_CREDENTIALS_FILE}" \
     "${SILKBOMB_IMAGE}" \
     upload \
-    --sbom-in "${SILKBOMB_SBOM_FILE}" \
+    --sbom-in "/pwd/$(basename "${SILKBOMB_SBOM_FILE}")" \
     --repo "${KONDUKTO_REPO}" \
     --branch "${KONDUKTO_BRANCH}"
 fi
