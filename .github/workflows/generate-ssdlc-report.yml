@@ -1,0 +1,144 @@
+name: Create SBOMs and SSDLC report PR
+
+on:
+  push:
+    branches:
+      - '**'
+  workflow_dispatch:
+    inputs:
+      version:
+        type: string
+        description: "Version of the release to extract the SBOM and obtain SSDLC report"
+        required: true
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sboms:
+    environment: release
+    name: Create SBOMs PR
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ github.event.inputs.version || '1.1.3' }}
+
+    steps:
+      - name: Generate GitHub App Token
+        id: generate_token
+        uses: mongodb/apix-action/token@v8
+        with:
+          app-id: ${{ secrets.APIXBOT_APP_ID }}
+          private-key: ${{ secrets.APIXBOT_APP_PEM }}
+
+      - name: Install tools
+        run: |
+          sudo apt update
+          sudo apt install -y podman unzip
+
+      - name: Checkout code
+        uses: actions/checkout@v4.1.1
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
+
+      - name: Download all plugin binaries
+        run: |
+          BASE_URL="https://github.com/mongodb/atlas-cli-plugin-kubernetes/releases/download/v${VERSION}"
+          curl -L "${BASE_URL}/atlas-cli-plugin-kubernetes_${VERSION}_linux_arm64.tar.gz" -o "linux_arm64.tar.gz"
+          curl -L "${BASE_URL}/atlas-cli-plugin-kubernetes_${VERSION}_linux_x86_64.tar.gz" -o "linux_x86_64.tar.gz"
+          curl -L "${BASE_URL}/atlas-cli-plugin-kubernetes_${VERSION}_darwin_arm64.zip" -o "darwin_arm64.zip"
+          curl -L "${BASE_URL}/atlas-cli-plugin-kubernetes_${VERSION}_darwin_x86_64.zip" -o "darwin_x86_64.zip"
+          curl -L "${BASE_URL}/atlas-cli-plugin-kubernetes_${VERSION}_windows_x86_64.zip" -o "windows_x86_64.zip"
+
+      - name: Extract all binaries
+        run: |
+          mkdir -p extracted/linux_arm64
+          mkdir -p extracted/linux_x86_64
+          mkdir -p extracted/darwin_arm64
+          mkdir -p extracted/darwin_x86_64
+          mkdir -p extracted/windows_x86_64
+
+          # Extract and move Linux ARM64 binary
+          tar -xzf linux_arm64.tar.gz
+          mv atlas-cli-plugin-kubernetes_*_linux_arm64/atlas-cli-plugin-kubernetes extracted/linux_arm64/
+
+          # Extract and move Linux x86_64 binary
+          tar -xzf linux_x86_64.tar.gz
+          mv atlas-cli-plugin-kubernetes_*_linux_x86_64/atlas-cli-plugin-kubernetes extracted/linux_x86_64/
+
+          # Extract macOS and Windows into their dirs
+          unzip -o darwin_arm64.zip -d extracted/darwin_arm64
+          unzip -o darwin_x86_64.zip -d extracted/darwin_x86_64
+          unzip -o windows_x86_64.zip -d extracted/windows_x86_64
+
+      - name: Generate PURLs from all binaries
+        run: |
+          mkdir -p build/package
+
+          binaries=(
+            "extracted/linux_arm64/atlas-cli-plugin-kubernetes"
+            "extracted/linux_x86_64/atlas-cli-plugin-kubernetes"
+            "extracted/darwin_arm64/atlas-cli-plugin-kubernetes"
+            "extracted/darwin_x86_64/atlas-cli-plugin-kubernetes"
+            "extracted/windows_x86_64/atlas-cli-plugin-kubernetes.exe"
+          )
+
+          tmp_files=()
+
+          for bin in "${binaries[@]}"; do
+            if [[ -f "$bin" ]]; then
+              echo "==> Extracting from $bin"
+              tmp_file=$(mktemp)
+              go version -m "$bin" | \
+                awk '$1 == "dep" || $1 == "=>" { print "pkg:golang/" $2 "@" $3 }' | \
+                LC_ALL=C sort > "$tmp_file"
+              tmp_files+=("$tmp_file")
+            else
+              echo "==> Skipping missing binary: $bin"
+            fi
+          done
+
+          cat "${tmp_files[@]}" | LC_ALL=C sort | uniq > build/package/purls.txt
+          echo "==> Final purls.txt:"
+          cat build/package/purls.txt
+
+      - name: Fetch Silkbomb image
+        run: |
+          set -e
+          podman pull "${{ secrets.silkbomb_image }}"
+
+      - name: Generate SBOM
+        env:
+          SILKBOMB_PURLS_FILE: "./build/package/purls.txt"
+          SILKBOMB_SBOM_FILE: "./build/package/sbom.json"
+          SILKBOMB_IMAGE: ${{ secrets.silkbomb_image }}
+        run: ./build/package/generate-sbom.sh
+
+      - name: Check if SBOM was generated
+        run: |
+          if [[ ! -f build/package/sbom.json ]]; then
+            echo "Error: SBOM file not found at build/package/sbom.json"
+            exit 1
+          fi
+          echo "SBOM file exists"
+
+      - name: Set current date
+        id: set_date
+        run: echo "date=$(date +%F)" >> "$GITHUB_OUTPUT"
+
+      - name: Create branch, commit, and open PR
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ steps.generate_token.outputs.token }}
+          branch-suffix: timestamp
+          commit-message: |
+            chore: Add SBOM for v${{ env.VERSION }}
+          title: |
+            Add SBOM for v${{ env.VERSION }}
+          body: |
+            This PR adds the SBOM for v${{ env.VERSION }}.
+          branch: compliance/${{ github.actor }}-v${{ env.VERSION }}-${{ steps.set_date.outputs.date }}
+          base: ${{ github.ref_name }}
