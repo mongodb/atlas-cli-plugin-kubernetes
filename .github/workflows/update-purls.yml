@@ -12,7 +12,6 @@ jobs:
   update-purls:
     name: Update PURLs list of dependencies
     runs-on: ubuntu-latest
-    if: github.actor == 'dependabot[bot]'
     steps:
       - name: Generate GitHub App Token
         id: generate_token
