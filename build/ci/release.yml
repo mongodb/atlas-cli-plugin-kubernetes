@@ -202,9 +202,6 @@ functions:
          filenames:
            - "src/github.com/mongodb/atlas-cli-plugin-kubernetes/dist/*.tar.gz"
            - "src/github.com/mongodb/atlas-cli-plugin-kubernetes/dist/*.zip"
-           - "src/github.com/mongodb/atlas-cli-plugin-kubernetes/dist/*.deb"
-           - "src/github.com/mongodb/atlas-cli-plugin-kubernetes/dist/*.rpm"
-           - "src/github.com/mongodb/atlas-cli-plugin-kubernetes/dist/*.msi"
   "build-copybara":
     - command: subprocess.exec
       params:
