@@ -196,9 +196,6 @@ functions:
          filenames:
            - "src/github.com/mongodb/atlas-cli-plugin-kubernetes/dist/*.tar.gz"
            - "src/github.com/mongodb/atlas-cli-plugin-kubernetes/dist/*.zip"
-           - "src/github.com/mongodb/atlas-cli-plugin-kubernetes/dist/*.deb"
-           - "src/github.com/mongodb/atlas-cli-plugin-kubernetes/dist/*.rpm"
-           - "src/github.com/mongodb/atlas-cli-plugin-kubernetes/dist/*.msi"
   "build-copybara":
     - command: subprocess.exec
       params:
@@ -240,7 +237,6 @@ tasks:
     allowed_requesters: ["patch"]
     depends_on:
     - name: check_purls
-      status: "success"
     commands:
       - func: "generate sbom"
       - func: "upload sbom"
@@ -250,7 +246,6 @@ tasks:
     allowed_requesters: ["patch"]
     depends_on:
     - name: check_purls
-      status: "success"
     commands:
       - func: "generate sbom"
       - func: "generate notices"
@@ -265,7 +260,7 @@ tasks:
     tags: ["packaging"]
     depends_on:
       - name: check_purls
-        status: "success"
+        variant: "code_health"
       - name: compile
         variant: "code_health"
     commands:
