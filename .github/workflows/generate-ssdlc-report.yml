@@ -1,9 +1,6 @@
 name: Create SBOMs and SSDLC report PR
 
 on:
-  push:
-    branches:
-      - '**'
   workflow_dispatch:
     inputs:
       version:
@@ -12,26 +9,17 @@ on:
         required: true
 
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
 
 jobs:
   sboms:
-    environment: release
-    name: Create SBOMs PR
+    name: Create SBOMs and SSDLC compliance reports as workflow artifacts
     runs-on: ubuntu-latest
     env:
-      VERSION: ${{ github.event.inputs.version || '1.1.3' }}
+      VERSION: ${{ github.event.inputs.version }}
 
     steps:
-      - name: Generate GitHub App Token
-        id: generate_token
-        uses: mongodb/apix-action/token@v8
-        with:
-          app-id: ${{ secrets.APIXBOT_APP_ID }}
-          private-key: ${{ secrets.APIXBOT_APP_PEM }}
-
-      - name: Install tools
+      - name: Install tools (podman)
         run: |
           sudo apt update
           sudo apt install -y podman unzip
