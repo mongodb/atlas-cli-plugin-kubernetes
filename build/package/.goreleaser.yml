@@ -93,3 +93,4 @@ release:
     - glob: ./*.asc
     - glob: ./sbom.json
     - glob: ./augmented-sbom.json
+    - glob: ./ssdlc-compliance-report.md

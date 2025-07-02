@@ -143,6 +143,12 @@ functions:
           mv ./build/package/sbom.json sbom.json
           mv ./build/package/augmented-sbom.json augmented-sbom.json
           echo "Moved SBOMs to repository root."
+  "generate ssdlc report":
+    - command: subprocess.exec
+      type: test
+      params:
+        working_dir: src/github.com/mongodb/atlas-cli-plugin-kubernetes
+        binary: build/package/generate-ssdlc-report.sh
   "package":
     - command: github.generate_token
       params:
@@ -241,6 +247,14 @@ tasks:
       - func: "generate sbom"
       - func: "upload sbom"
       - func: "move sboms"
+  - name: test-ssdlc-report
+    tags: ["code_health"]
+    allowed_requesters: ["patch"]
+    depends_on:
+    - name: test-sbom
+      tags: "success"
+    commands:
+    - func: "generate ssdlc report"
   - name: test-trace
     tags: ["code_health"]
     allowed_requesters: ["patch"]
@@ -266,8 +280,9 @@ tasks:
     commands:
       - func: "generate sbom"
       - func: "upload sbom"
-      - func: "generate notices"
       - func: "move sboms"
+      - func: "generate ssdlc report"
+      - func: "generate notices"
       - func: "install goreleaser"
       - func: "install macos notarization service"
       - func: "install gh-token"
