@@ -16,15 +16,18 @@
 
 set -Eeou pipefail
 
-: "${AUTHOR:=$(git config user.name)}"
-: "${VERSION:=$(git tag --list 'v*' --sort=-taggerdate | head -1 | cut -d 'v' -f 2)}"
-: "${DATE:=$(date -u '+%Y-%m-%d')}"
+: "${TAG:=$(git tag --list 'v*' --sort=-taggerdate | head -1)}"
+: "${VERSION:=${TAG#v}}"
+: "${AUTHOR:=$(git for-each-ref --format '%(taggername)' "refs/tags/${TAG}")}"
+: "${DATE:=$(git for-each-ref --format '%(taggerdate:short)' "refs/tags/${TAG}")}"
 
+# Fallbacks in case tag is missing or doesn't have tagger metadata
+AUTHOR="${AUTHOR:-Unknown Author}"
+DATE="${DATE:-$(date -u '+%Y-%m-%d')}"
 export AUTHOR VERSION DATE
 
 REPORT_OUT="${REPORT_OUT:-ssdlc-compliance-report.md}"
 echo "Generating SSDLC checklist for atlas-cli-plugin version ${VERSION}, author ${AUTHOR}, release date ${DATE}..."
 echo "Report will be part of the release: ${REPORT_OUT}"
 
-# Render the template with environment variable substitution
 envsubst < docs/releases/ssdlc-compliance.template.md > "${REPORT_OUT}"
