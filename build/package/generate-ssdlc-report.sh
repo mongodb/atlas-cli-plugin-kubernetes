@@ -17,7 +17,7 @@
 set -Eeou pipefail
 
 : "${AUTHOR:=$(git config user.name)}"
-: "${VERSION:=$(git tag --list 'atlas-cli-plugin-kubernetes/v*' --sort=-taggerdate | head -1 | cut -d 'v' -f 2)}"
+: "${VERSION:=$(git tag --list 'v*' --sort=-taggerdate | head -1 | cut -d 'v' -f 2)}"
 : "${DATE:=$(date -u '+%Y-%m-%d')}"
 
 export AUTHOR VERSION DATE

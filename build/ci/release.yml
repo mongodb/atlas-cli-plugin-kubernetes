@@ -149,6 +149,8 @@ functions:
       params:
         working_dir: src/github.com/mongodb/atlas-cli-plugin-kubernetes
         binary: build/package/generate-ssdlc-report.sh
+        include_expansions_in_env:
+          - version
   "package":
     - command: github.generate_token
       params:

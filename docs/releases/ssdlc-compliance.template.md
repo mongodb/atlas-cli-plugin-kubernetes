@@ -12,6 +12,9 @@ SSDLC Compliance Report: Atlas CLI Plugin Kubernetes v${VERSION}
 - **Process Documentation**
   - [How MongoDB Protects Against Supply Chain Vulnerabilities](https://www.mongodb.com/blog/post/how-mongodb-protects-against-supply-chain-vulnerabilities)
 
+- **Tool used to track third party vulnerabilities**
+  - [Kondukto](https://arcticglow.kondukto.io/)
+
 - **Dependency Information**
   - The Software Bill of Materials (SBOM) is:
     - a) part of this release as `sbom.json` and `augmented-sbom.json` with vulnerabilities found from Kondukto  
