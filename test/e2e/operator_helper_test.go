@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//go:build e2e || install || generate || apply
+// //go:build e2e || install || generate || apply
 
 package e2e
 
@@ -107,6 +107,7 @@ func deleteK8SCluster(name string) error {
 func (oh *operatorHelper) getK8SClient() client.Client {
 	return oh.k8sClient
 }
+
 func (oh *operatorHelper) getK8sObject(key client.ObjectKey, object client.Object, track bool) error {
 	err := oh.k8sClient.Get(context.Background(), key, object, &client.GetOptions{})
 	if err != nil {
@@ -233,7 +234,6 @@ func (oh *operatorHelper) stopOperator() {
 
 		return oh.k8sClient.Update(context.Background(), &deployment, &client.UpdateOptions{})
 	})
-
 	if err != nil {
 		oh.t.Errorf("unable to stop operator: %v", err)
 	}
@@ -257,7 +257,6 @@ func (oh *operatorHelper) emulateCertifiedOperator() {
 
 		return oh.k8sClient.Update(context.Background(), &deployment, &client.UpdateOptions{})
 	})
-
 	if err != nil {
 		oh.t.Errorf("unable to emulate certified operator: %v", err)
 	}
@@ -281,7 +280,6 @@ func (oh *operatorHelper) restoreOperatorImage() {
 
 		return oh.k8sClient.Update(context.Background(), &deployment, &client.UpdateOptions{})
 	})
-
 	if err != nil {
 		oh.t.Errorf("unable to restore operator image: %v", err)
 	}

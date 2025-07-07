@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//go:build e2e || install || generate || apply
+// //go:build e2e || install || generate || apply
 
 package e2e
 
@@ -303,7 +303,6 @@ func newAvailableRegion(projectID, tier, provider string) (string, error) {
 	cmd := exec.Command(cliPath, args...)
 	cmd.Env = os.Environ()
 	resp, err := test.RunAndGetStdOut(cmd)
-
 	if err != nil {
 		return "", fmt.Errorf("error getting regions %w: %s", err, string(resp))
 	}

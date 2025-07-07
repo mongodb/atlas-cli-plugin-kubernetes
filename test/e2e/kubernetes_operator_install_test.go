@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build e2e || install
+// //go:build e2e || install
 
 package e2e
 
@@ -243,7 +243,6 @@ func TestKubernetesOperatorInstall(t *testing.T) {
 				akoProject,
 				true,
 			)
-
 			if err != nil {
 				projectDeleted = true
 				break

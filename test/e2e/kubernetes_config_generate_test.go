@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build e2e || generate
+// //go:build e2e || generate
 
 package e2e
 
@@ -53,20 +53,24 @@ import (
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/test"
 )
 
-const targetNamespace = "importer-namespace"
-const credSuffixTest = "-credentials"
-const activeStatus = "ACTIVE"
+const (
+	targetNamespace = "importer-namespace"
+	credSuffixTest  = "-credentials"
+	activeStatus    = "ACTIVE"
+)
 
 // These kinds represent global types in AKO which are independent of any Atlas Project.
 // They can be filtered in concurrent e2e tests if they are not relevant for assertion.
 var globalKinds = []string{"AtlasFederatedAuth"}
 
-var federationSettingsID string
-var identityProviderStatus string
-var samlIdentityProviderID string
-var expectedLabels = map[string]string{
-	features.ResourceVersion: features.LatestOperatorMajorVersion,
-}
+var (
+	federationSettingsID   string
+	identityProviderStatus string
+	samlIdentityProviderID string
+	expectedLabels         = map[string]string{
+		features.ResourceVersion: features.LatestOperatorMajorVersion,
+	}
+)
 
 func getK8SEntities(data []byte) ([]runtime.Object, error) {
 	b := bufio.NewReader(bytes.NewReader(data))
@@ -1330,6 +1334,7 @@ func TestFederatedAuthTest(t *testing.T) {
 		a.Equal(targetNamespace, secret.Namespace)
 	})
 }
+
 func federatedAuthentification(objects []runtime.Object) []*akov2.AtlasFederatedAuth {
 	var ds []*akov2.AtlasFederatedAuth
 	for i := range objects {

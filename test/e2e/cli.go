@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build e2e || cli || install || generate || apply
+// //go:build e2e || cli || install || generate || apply
 
 package e2e
 
@@ -37,6 +37,7 @@ func PluginBin() (string, error) {
 	if _, err := os.Stat(cliPath); err != nil {
 		return "", fmt.Errorf("%w: invalid bin %q", err, path)
 	}
+	fmt.Println("using plugin path", cliPath)
 	return cliPath, nil
 }
 
