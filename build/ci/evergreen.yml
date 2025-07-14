@@ -344,18 +344,9 @@ buildvariants:
       <<: *go_linux_version
     tasks:
       - name: ".e2e .required"
-patch_aliases:
-  - alias: "cleanup"
-    variant_tags: ["cleanup cron"]
-    task: ".*"
-  - alias: "snyk"
-    variant_tags: ["snyk cron"]
-    task: ".*"
 github_pr_aliases:
   - variant: "code_health"
     task_tags: ["code_health"]
-  - variant: "e2e_generic"
-    task_tags: ["e2e", "generic"]
   - variant: "e2e_required"
     task_tags: ["e2e", "required"]
 git_tag_aliases:
