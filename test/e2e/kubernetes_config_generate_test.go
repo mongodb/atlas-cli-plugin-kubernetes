@@ -3080,6 +3080,6 @@ func TestGenerateMany(t *testing.T) {
 		assert.NotNil(t, findGeneratedUser(objects, projectID, user), "not found user %d", i)
 	}
 	for i, flex := range []string{flex1, flex2} {
-		assert.NotNil(t, findGeneratedFlexCluster(objects, projectName, flex), "not found flex cluster %d", i)
+		assert.NotNil(t, findGeneratedFlexCluster(objects, projectID, flex), "not found flex cluster %d", i)
 	}
 }

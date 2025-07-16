@@ -423,7 +423,7 @@ func (e *ConfigExporter) exportDeployments(projectName string) ([]runtime.Object
 		}
 
 		// Try flex  cluster next
-		if flexCluster, err := deployment.BuildFlexDeployments(e.dataProvider, e.projectID, projectName, deploymentName, e.targetNamespace, e.dictionaryForAtlasNames, e.operatorVersion); err == nil {
+		if flexCluster, err := deployment.BuildFlexDeployments(e.dataProvider, e.projectID, projectName, deploymentName, e.targetNamespace, credentials, e.dictionaryForAtlasNames, e.operatorVersion, e.independentResources); err == nil {
 			if flexCluster != nil {
 				result = append(result, flexCluster)
 			}
@@ -431,7 +431,7 @@ func (e *ConfigExporter) exportDeployments(projectName string) ([]runtime.Object
 		}
 
 		// Try serverless cluster last
-		serverlessCluster, err := deployment.BuildServerlessDeployments(e.dataProvider, e.projectID, projectName, deploymentName, e.targetNamespace, e.dictionaryForAtlasNames, e.operatorVersion)
+		serverlessCluster, err := deployment.BuildServerlessDeployments(e.dataProvider, e.projectID, projectName, deploymentName, e.targetNamespace, credentials, e.dictionaryForAtlasNames, e.operatorVersion, e.independentResources)
 		if err == nil {
 			if serverlessCluster != nil {
 				result = append(result, serverlessCluster)
