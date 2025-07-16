@@ -40,6 +40,7 @@ import (
 	atlasv20250219001 "go.mongodb.org/atlas-sdk/v20250219001/admin"
 	"go.mongodb.org/atlas/mongodbatlas"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	rt "k8s.io/apimachinery/pkg/runtime"
 )
 
 const (
@@ -349,6 +350,14 @@ func RandProjectName() (string, error) {
 		return "", err
 	}
 	return fmt.Sprintf("e2e-%v", n), nil
+}
+
+func RandomName(prefix string) (string, error) {
+	n, err := RandInt(1000)
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%s-%v", prefix, n), nil
 }
 
 func RandTeamNameWithPrefix(prefix string) (string, error) {
@@ -848,4 +857,86 @@ func referenceDataFederation(name, namespace, projectName string, labels map[str
 			},
 		},
 	}
+}
+
+func mustGenerateTestProject(t *testing.T) (string, string) {
+	projectName, err := RandProjectName()
+	require.NoError(t, err, "failed to get random project name")
+	id, err := createProject(projectName)
+	require.NoErrorf(t, err, "failed to create project")
+	return id, projectName
+}
+
+func clearTestProject(t *testing.T, projectID string) {
+	require.NoError(t, deleteProject(projectID))
+}
+
+func findGeneratedProject(objects []rt.Object, projectName string) *akov2.AtlasProject {
+	for _, obj := range objects {
+		if prj, ok := (obj).(*akov2.AtlasProject); ok && prj.Spec.Name == projectName {
+			return prj
+		}
+	}
+	return nil
+}
+
+func generateTestDBUser(t *testing.T, projectID string) string {
+	username, err := RandomName("user")
+	require.NoError(t, err, "failed to get random user name")
+	require.NoError(t, createDBUserWithCert(projectID, username))
+	return username
+}
+
+func findGeneratedUser(objects []rt.Object, projectID, username string) *akov2.AtlasDatabaseUser {
+	for _, obj := range objects {
+		if user, ok := (obj).(*akov2.AtlasDatabaseUser); ok &&
+			user.Spec.ExternalProjectRef != nil &&
+			user.Spec.ExternalProjectRef.ID == projectID &&
+			user.Spec.Username == username {
+			return user
+		}
+	}
+	return nil
+}
+
+func generateTestFlexCluster(t *testing.T, projectID string) string {
+	cliPath, err := AtlasCLIBin()
+	require.NoError(t, err, "%w: invalid bin", err)
+	clusterName, err := RandomName("flex")
+	args := []string{
+		clustersEntity,
+		"create",
+		clusterName,
+		"--projectId", projectID,
+		"--provider", "AWS",
+		"--region", "US_EAST_1",
+		"--tier", "FLEX",
+		"-o=json",
+	}
+	cmd := exec.Command(cliPath, args...)
+	cmd.Env = os.Environ()
+	resp, err := test.RunAndGetStdOut(cmd)
+	require.NoError(t, err, "%s (%w)", string(resp), err)
+
+	var project atlasv2.Group
+	require.NoError(t, json.Unmarshal(resp, &project), "invalid response: %s (%w)", string(resp), err)
+
+	return clusterName
+}
+
+func clearTestCluster(t *testing.T, projectID, flexClusterName string) {
+	require.NoError(t, deleteClusterForProject(projectID, flexClusterName))
+}
+
+func findGeneratedFlexCluster(objects []rt.Object, projectName, flexClusterName string) *akov2.AtlasDeployment {
+	for _, obj := range objects {
+		if flex, ok := (obj).(*akov2.AtlasDeployment); ok &&
+			flex.Spec.ProjectRef != nil &&
+			flex.Spec.ProjectRef.Name == projectName &&
+			flex.Spec.FlexSpec != nil &&
+			flex.Spec.FlexSpec.Name == flexClusterName {
+			return flex
+		}
+	}
+	return nil
 }
