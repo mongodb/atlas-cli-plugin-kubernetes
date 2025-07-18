@@ -39,7 +39,7 @@ type AtlasClusterConfigurationOptionsDescriber interface {
 func (s *Store) ProjectClusters(projectID string, opts *ListOptions) (*atlasClustersPinned.PaginatedAdvancedClusterDescription, error) {
 	res := s.clientClusters.ClustersApi.ListClusters(s.ctx, projectID)
 	if opts != nil {
-		res = res.PageNum(opts.PageNum).ItemsPerPage(opts.ItemsPerPage).IncludeCount(opts.IncludeCount)
+		res = res.PageNum(opts.PageNum).ItemsPerPage(fixPageSize(opts.ItemsPerPage)).IncludeCount(opts.IncludeCount)
 	}
 	result, _, err := res.Execute()
 	return result, err

@@ -51,7 +51,7 @@ type getPageFn[T any] func(int, int) ([]T, error)
 func AllPages[T any](getPageFn getPageFn[T]) ([]T, error) {
 	allPages := []T{}
 	pageNum := 1
-	itemsPerPage := MaxItems
+	itemsPerPage := MaxAPIPageSize
 	for {
 		page, err := getPageFn(pageNum, itemsPerPage)
 		if err != nil {

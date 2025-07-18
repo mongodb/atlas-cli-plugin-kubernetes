@@ -37,7 +37,7 @@ func (s *Store) ServerlessInstances(projectID string, listOps *ListOptions) (*at
 		return nil, fmt.Errorf("%w: %s", errUnsupportedService, s.service)
 	}
 	result, _, err := s.clientClusters.ServerlessInstancesApi.ListServerlessInstances(s.ctx, projectID).
-		ItemsPerPage(listOps.ItemsPerPage).
+		ItemsPerPage(fixPageSize(listOps.ItemsPerPage)).
 		PageNum(listOps.PageNum).
 		IncludeCount(listOps.IncludeCount).
 		Execute()
