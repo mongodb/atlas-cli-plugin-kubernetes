@@ -46,7 +46,7 @@ type ProjectTeamLister interface {
 func (s *Store) Projects(opts *ListOptions) (*atlasv2.PaginatedAtlasGroup, error) {
 	res := s.clientv2.ProjectsApi.ListProjects(s.ctx)
 	if opts != nil {
-		res = res.PageNum(opts.PageNum).ItemsPerPage(opts.ItemsPerPage)
+		res = res.PageNum(opts.PageNum).ItemsPerPage(fixPageSize(opts.ItemsPerPage))
 	}
 	result, _, err := res.Execute()
 	return result, err
@@ -56,7 +56,7 @@ func (s *Store) Projects(opts *ListOptions) (*atlasv2.PaginatedAtlasGroup, error
 func (s *Store) GetOrgProjects(orgID string, opts *ListOptions) (*atlasv2.PaginatedAtlasGroup, error) {
 	res := s.clientv2.OrganizationsApi.ListOrganizationProjects(s.ctx, orgID)
 	if opts != nil {
-		res = res.PageNum(opts.PageNum).ItemsPerPage(opts.ItemsPerPage)
+		res = res.PageNum(opts.PageNum).ItemsPerPage(fixPageSize(opts.ItemsPerPage))
 	}
 	result, _, err := res.Execute()
 	return result, err
@@ -88,9 +88,16 @@ func (s *Store) ProjectTeams(projectID string, opts *ListOptions) (*atlasv2.Pagi
 		res.
 			IncludeCount(opts.IncludeCount).
 			PageNum(opts.PageNum).
-			ItemsPerPage(opts.ItemsPerPage)
+			ItemsPerPage(fixPageSize(opts.ItemsPerPage))
 	}
 
 	result, _, err := res.Execute()
 	return result, err
+}
+
+func fixPageSize(itemsPerPage int) int {
+	if itemsPerPage < 1 {
+		return MaxAPIPageSize
+	}
+	return itemsPerPage
 }

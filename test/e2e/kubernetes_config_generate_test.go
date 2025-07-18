@@ -929,12 +929,6 @@ func defaultIPAccessList(generator *atlasE2ETestGenerator, independent bool) *ak
 	return ial
 }
 
-func expectedWithIPAccessList(p *akov2.AtlasProject, ial []akov2project.IPAccessList) *akov2.AtlasProject {
-	p.Spec.ProjectIPAccessList = ial
-
-	return p
-}
-
 type filtered []runtime.Object
 
 func (f filtered) byKind(kinds ...string) []runtime.Object {
@@ -1296,7 +1290,7 @@ func TestFederatedAuthTest(t *testing.T) {
 		objects, err = getK8SEntities(resp)
 
 		a := assert.New(t)
-		a.Equal(&akov2.AtlasFederatedAuth{
+		expectedInCloudDev := &akov2.AtlasFederatedAuth{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "AtlasFederatedAuth",
 				APIVersion: "atlas.mongodb.com/v1",
@@ -1322,7 +1316,63 @@ func TestFederatedAuthTest(t *testing.T) {
 					Conditions: []akoapi.Condition{},
 				},
 			},
-		}, federatedAuthentification(objects)[0])
+		}
+		fedAuths := federatedAuthentification(objects)
+		require.Len(t, fedAuths, 1)
+		expectedInCloudQA := &akov2.AtlasFederatedAuth{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "AtlasFederatedAuth",
+				APIVersion: "atlas.mongodb.com/v1",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      resources.NormalizeAtlasName(fmt.Sprintf("%s-%s", s.generator.projectName, federationSettingsID), dictionary),
+				Namespace: targetNamespace,
+			},
+			Spec: akov2.AtlasFederatedAuthSpec{
+				ConnectionSecretRef: akov2common.ResourceRefNamespaced{
+					Name:      resources.NormalizeAtlasName(s.generator.projectName+credSuffixTest, dictionary),
+					Namespace: targetNamespace,
+				},
+				Enabled: true,
+				DomainAllowList: []string{
+					"qa-27092023.com",
+					"cloud-qa.mongodb.com",
+					"mongodb.com",
+				},
+				PostAuthRoleGrants:       []string{"ORG_MEMBER"},
+				DomainRestrictionEnabled: pointer.Get(true),
+				SSODebugEnabled:          pointer.Get(false),
+				RoleMappings: []akov2.RoleMapping{
+					{
+						ExternalGroupName: "test",
+						RoleAssignments: []akov2.RoleAssignment{
+							{
+								ProjectName: "",
+								Role:        "ORG_BILLING_ADMIN",
+							},
+							{
+								ProjectName: "",
+								Role:        "ORG_GROUP_CREATOR",
+							},
+							{
+								ProjectName: "",
+								Role:        "ORG_OWNER",
+							},
+						},
+					},
+				},
+			},
+			Status: akov2status.AtlasFederatedAuthStatus{
+				Common: akoapi.Common{
+					Conditions: []akoapi.Condition{},
+				},
+			},
+		}
+		expected := expectedInCloudDev
+		if isQAEnv(os.Getenv("MCLI_OPS_MANAGER_URL")) {
+			expected = expectedInCloudQA
+		}
+		a.Equal(expected, normalizedFedAuth(fedAuths[0]))
 		require.NoError(t, err, "should not fail on decode")
 		require.NotEmpty(t, objects)
 		secret, found := findSecret(objects)
@@ -1330,6 +1380,19 @@ func TestFederatedAuthTest(t *testing.T) {
 		a.Equal(targetNamespace, secret.Namespace)
 	})
 }
+
+func normalizedFedAuth(fedAuth *akov2.AtlasFederatedAuth) *akov2.AtlasFederatedAuth {
+	for _, rm := range fedAuth.Spec.RoleMappings {
+		slices.SortFunc(rm.RoleAssignments, func(a, b akov2.RoleAssignment) int {
+			return strings.Compare(a.ProjectName+a.Role, b.ProjectName+b.Role)
+		})
+	}
+	slices.SortFunc(fedAuth.Spec.RoleMappings, func(a, b akov2.RoleMapping) int {
+		return strings.Compare(a.ExternalGroupName, b.ExternalGroupName)
+	})
+	return fedAuth
+}
+
 func federatedAuthentification(objects []runtime.Object) []*akov2.AtlasFederatedAuth {
 	var ds []*akov2.AtlasFederatedAuth
 	for i := range objects {
@@ -2975,4 +3038,48 @@ func checkDataFederationData(t *testing.T, dataFederations []*akov2.AtlasDataFed
 		}
 	}
 	assert.ElementsMatch(t, dataFedNames, entries)
+}
+
+func TestGenerateMany(t *testing.T) {
+	// always register atlas entities
+	require.NoError(t, akov2.AddToScheme(scheme.Scheme))
+
+	projectID, projectName := mustGenerateTestProject(t)
+	defer clearTestProject(t, projectID)
+	user1 := generateTestDBUser(t, projectID)
+	user2 := generateTestDBUser(t, projectID)
+	flex1 := generateTestFlexCluster(t, projectID)
+	defer clearTestCluster(t, projectID, flex1)
+	flex2 := generateTestFlexCluster(t, projectID)
+	defer clearTestCluster(t, projectID, flex2)
+
+	cliPath, err := PluginBin()
+	require.NoError(t, err)
+	cmd := exec.Command(cliPath,
+		"kubernetes",
+		"config",
+		"generate",
+		"--projectId",
+		projectID,
+		"--targetNamespace",
+		targetNamespace,
+		"--independentResources") // independent resources generating the project ID is required for this test
+	cmd.Env = os.Environ()
+
+	resp, err := test.RunAndGetStdOut(cmd)
+	t.Log(string(resp))
+	require.NoError(t, err, string(resp))
+
+	var objects []runtime.Object
+	objects, err = getK8SEntities(resp)
+	require.NoError(t, err, "should not fail on decode")
+	require.NotEmpty(t, objects, "result should not be empty")
+
+	assert.NotNil(t, findGeneratedProject(objects, projectName))
+	for i, user := range []string{user1, user2} {
+		assert.NotNil(t, findGeneratedUser(objects, projectID, user), "not found user %d", i)
+	}
+	for i, flex := range []string{flex1, flex2} {
+		assert.NotNil(t, findGeneratedFlexCluster(objects, projectName, flex), "not found flex cluster %d", i)
+	}
 }
