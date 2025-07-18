@@ -28,7 +28,7 @@ pkg:golang/github.com/modern-go/concurrent@v0.0.0-20180306012644-bacd9c7ef1dd
 pkg:golang/github.com/modern-go/reflect2@v1.0.2
 pkg:golang/github.com/mongodb-forks/digest@v1.1.0
 pkg:golang/github.com/mongodb/atlas-cli-core@v0.0.0-20250214162807-8f937b802e87
-pkg:golang/github.com/mongodb/mongodb-atlas-kubernetes/v2@v2.9.0
+pkg:golang/github.com/mongodb/mongodb-atlas-kubernetes/v2@v2.9.1
 pkg:golang/github.com/munnerz/goautoneg@v0.0.0-20191010083416-a7dc8b61c822
 pkg:golang/github.com/pelletier/go-toml/v2@v2.2.2
 pkg:golang/github.com/pelletier/go-toml@v1.9.5
