@@ -86,12 +86,10 @@ functions:
           - workdir
           - ATLAS_TEST_ENV
           - QA_MCLI_ORG_ID
-          - QA_MCLI_PROJECT_ID
           - QA_MCLI_PRIVATE_API_KEY
           - QA_MCLI_PUBLIC_API_KEY
           - QA_MCLI_OPS_MANAGER_URL
           - MCLI_ORG_ID
-          - MCLI_PROJECT_ID
           - MCLI_PRIVATE_API_KEY
           - MCLI_PUBLIC_API_KEY
           - MCLI_SERVICE
@@ -246,12 +244,10 @@ tasks:
         vars:
           ATLAS_TEST_ENV: ${atlas_test_env} # "QA" activates the switch, anything else fallbacks to DEV
           QA_MCLI_ORG_ID: ${qa_atlas_org_id}
-          QA_MCLI_PROJECT_ID: ${qa_atlas_project_id}
           QA_MCLI_PRIVATE_API_KEY: ${qa_atlas_private_api_key}
           QA_MCLI_PUBLIC_API_KEY: ${qa_atlas_public_api_key}
           QA_MCLI_OPS_MANAGER_URL: ${qa_mcli_ops_manager_url}
           MCLI_ORG_ID: ${atlas_org_id}
-          MCLI_PROJECT_ID: ${atlas_project_id}
           MCLI_PRIVATE_API_KEY: ${atlas_private_api_key}
           MCLI_PUBLIC_API_KEY: ${atlas_public_api_key}
           MCLI_OPS_MANAGER_URL: ${mcli_ops_manager_url}
@@ -276,12 +272,10 @@ tasks:
         vars:
           ATLAS_TEST_ENV: ${atlas_test_env} # "QA" activates the switch, anything else fallbacks to DEV
           QA_MCLI_ORG_ID: ${qa_atlas_org_id}
-          QA_MCLI_PROJECT_ID: ${qa_atlas_project_id}
           QA_MCLI_PRIVATE_API_KEY: ${qa_atlas_private_api_key}
           QA_MCLI_PUBLIC_API_KEY: ${qa_atlas_public_api_key}
           QA_MCLI_OPS_MANAGER_URL: ${qa_mcli_ops_manager_url}
           MCLI_ORG_ID: ${atlas_org_id}
-          MCLI_PROJECT_ID: ${atlas_project_id}
           MCLI_PRIVATE_API_KEY: ${atlas_private_api_key}
           MCLI_PUBLIC_API_KEY: ${atlas_public_api_key}
           MCLI_OPS_MANAGER_URL: ${mcli_ops_manager_url}
@@ -306,12 +300,10 @@ tasks:
         vars:
           ATLAS_TEST_ENV: ${atlas_test_env} # "QA" activates the switch, anything else fallbacks to DEV
           QA_MCLI_ORG_ID: ${qa_atlas_org_id}
-          QA_MCLI_PROJECT_ID: ${qa_atlas_project_id}
           QA_MCLI_PRIVATE_API_KEY: ${qa_atlas_private_api_key}
           QA_MCLI_PUBLIC_API_KEY: ${qa_atlas_public_api_key}
           QA_MCLI_OPS_MANAGER_URL: ${qa_mcli_ops_manager_url}
           MCLI_ORG_ID: ${atlas_org_id}
-          MCLI_PROJECT_ID: ${atlas_project_id}
           MCLI_PRIVATE_API_KEY: ${atlas_private_api_key}
           MCLI_PUBLIC_API_KEY: ${atlas_public_api_key}
           MCLI_OPS_MANAGER_URL: ${mcli_ops_manager_url}
@@ -336,12 +328,10 @@ tasks:
         vars:
           ATLAS_TEST_ENV: ${atlas_test_env} # "QA" activates the switch, anything else fallbacks to DEV
           QA_MCLI_ORG_ID: ${qa_atlas_org_id}
-          QA_MCLI_PROJECT_ID: ${qa_atlas_project_id}
           QA_MCLI_PRIVATE_API_KEY: ${qa_atlas_private_api_key}
           QA_MCLI_PUBLIC_API_KEY: ${qa_atlas_public_api_key}
           QA_MCLI_OPS_MANAGER_URL: ${qa_mcli_ops_manager_url}
           MCLI_ORG_ID: ${atlas_org_id}
-          MCLI_PROJECT_ID: ${atlas_project_id}
           MCLI_PRIVATE_API_KEY: ${atlas_private_api_key}
           MCLI_PUBLIC_API_KEY: ${atlas_public_api_key}
           MCLI_OPS_MANAGER_URL: ${mcli_ops_manager_url}

@@ -25,6 +25,7 @@ import (
 func TestMain(m *testing.M) {
 	if isQASelected() {
 		setQACredentialsEnvVars()
+		setQAProject()
 	}
 	exitVal := m.Run()
 	restoreEnvVars()
@@ -46,7 +47,6 @@ func isQASelected() bool {
 func areQASettingsPresent() bool {
 	return hasEnv("QA_MCLI_ORG_ID") &&
 		hasEnv("QA_MCLI_OPS_MANAGER_URL") &&
-		hasEnv("QA_MCLI_PROJECT_ID") &&
 		hasEnv("QA_MCLI_PUBLIC_API_KEY") &&
 		hasEnv("QA_MCLI_PRIVATE_API_KEY")
 }
@@ -59,12 +59,10 @@ func hasEnv(envvar string) bool {
 func setQACredentialsEnvVars() {
 	saveEnv("MCLI_ORG_ID")
 	saveEnv("MCLI_OPS_MANAGER_URL")
-	saveEnv("MCLI_PROJECT_ID")
 	saveEnv("MCLI_PUBLIC_API_KEY")
 	saveEnv("MCLI_PRIVATE_API_KEY")
 	os.Setenv("MCLI_ORG_ID", os.Getenv("QA_MCLI_ORG_ID"))
 	os.Setenv("MCLI_OPS_MANAGER_URL", os.Getenv("QA_MCLI_OPS_MANAGER_URL"))
-	os.Setenv("MCLI_PROJECT_ID", os.Getenv("QA_MCLI_PROJECT_ID"))
 	os.Setenv("MCLI_PUBLIC_API_KEY", os.Getenv("QA_MCLI_PUBLIC_API_KEY"))
 	os.Setenv("MCLI_PRIVATE_API_KEY", os.Getenv("QA_MCLI_PRIVATE_API_KEY"))
 }
@@ -72,7 +70,6 @@ func setQACredentialsEnvVars() {
 func restoreEnvVars() {
 	restoreEnv("MCLI_ORG_ID")
 	restoreEnv("MCLI_OPS_MANAGER_URL")
-	restoreEnv("MCLI_PROJECT_ID")
 	restoreEnv("MCLI_PUBLIC_API_KEY")
 	restoreEnv("MCLI_PRIVATE_API_KEY")
 }
@@ -87,4 +84,8 @@ func restoreEnv(envvar string) {
 
 func savedEnvVar(envvar string) string {
 	return fmt.Sprintf("%s_SAVED", envvar)
+}
+
+func setQAProject() {
+	
 }
