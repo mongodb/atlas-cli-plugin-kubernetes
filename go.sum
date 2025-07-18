@@ -172,8 +172,8 @@ github.com/mongodb-labs/cobra2snooty v1.19.1 h1:GDEQZWy8f/DeJlImNgVvStu6sgNi8nuS
 github.com/mongodb-labs/cobra2snooty v1.19.1/go.mod h1:Hyq4YadN8dwdOiz56MXwTuVN63p0WlkQwxdLxOSGdX8=
 github.com/mongodb/atlas-cli-core v0.0.0-20250214162807-8f937b802e87 h1:Y9Gh8mkiHbDE7pXPWprLgNo0onWLtrQe25sTfqvlS5c=
 github.com/mongodb/atlas-cli-core v0.0.0-20250214162807-8f937b802e87/go.mod h1:zeBvF+hvzhmHwvjT9QuLeGrKQlsY1YlQo8v25wWzQug=
-github.com/mongodb/mongodb-atlas-kubernetes/v2 v2.9.0 h1:Xh1HtGD+AdUONYxgHBV530CBUf/tgnUhl9rM/eNRQGA=
-github.com/mongodb/mongodb-atlas-kubernetes/v2 v2.9.0/go.mod h1:jeTsY94BdbsmH8UAXWBxahj79ve52wl2VzcVxBg/aa0=
+github.com/mongodb/mongodb-atlas-kubernetes/v2 v2.9.1 h1:CT8kDo/O6mNactCDEF7TmkAIwYg56wMz8zcXtYHHJPM=
+github.com/mongodb/mongodb-atlas-kubernetes/v2 v2.9.1/go.mod h1:ZQ5Srxau/3wSBmfREd6cPo/XX4AVFryqC7+YIkhVX88=
 github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 h1:C3w9PqII01/Oq1c1nUAm88MOHcQC9l5mIlSMApZMrHA=
 github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822/go.mod h1:+n7T8mK8HuQTcFwEeznm/DIxMOiR9yIdICNftLE1DvQ=
 github.com/onsi/ginkgo/v2 v2.23.4 h1:ktYTpKJAVZnDT4VjxSbiBenUjmlL/5QkBEocaWXiQus=
