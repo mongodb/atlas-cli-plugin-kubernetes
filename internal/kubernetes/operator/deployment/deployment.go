@@ -478,7 +478,7 @@ func buildReplicationSpec(atlasRepSpec []atlasClustersPinned.ReplicationSpec) []
 	return result
 }
 
-func BuildServerlessDeployments(deploymentStore store.OperatorClusterStore, projectID, projectName, clusterID, targetNamespace string, dictionary map[string]string, version string) (*akov2.AtlasDeployment, error) {
+func BuildServerlessDeployments(deploymentStore store.OperatorClusterStore, projectID, projectName, clusterID, targetNamespace string, credentials string, dictionary map[string]string, version string, independentResource bool) (*akov2.AtlasDeployment, error) {
 	deployment, err := deploymentStore.GetServerlessInstance(projectID, clusterID)
 	if err != nil {
 		return nil, err
@@ -513,12 +513,6 @@ func BuildServerlessDeployments(deploymentStore store.OperatorClusterStore, proj
 			},
 		},
 		Spec: akov2.AtlasDeploymentSpec{
-			ProjectDualReference: akov2.ProjectDualReference{
-				ProjectRef: &akov2common.ResourceRefNamespaced{
-					Name:      resources.NormalizeAtlasName(projectName, dictionary),
-					Namespace: targetNamespace,
-				},
-			},
 			BackupScheduleRef: akov2common.ResourceRefNamespaced{},
 			ServerlessSpec:    serverlessSpec,
 			ProcessArgs:       nil,
@@ -529,11 +523,13 @@ func BuildServerlessDeployments(deploymentStore store.OperatorClusterStore, proj
 			},
 		},
 	}
+	normalizedProjectName := resources.NormalizeAtlasName(projectName, dictionary)
+	atlasDeployment = setReference(atlasDeployment, independentResource, projectID, normalizedProjectName, targetNamespace, credentials, dictionary)
 
 	return atlasDeployment, nil
 }
 
-func BuildFlexDeployments(deploymentStore store.OperatorClusterStore, projectID, projectName, clusterID, targetNamespace string, dictionary map[string]string, version string) (*akov2.AtlasDeployment, error) {
+func BuildFlexDeployments(deploymentStore store.OperatorClusterStore, projectID, projectName, clusterID, targetNamespace string, credentials string, dictionary map[string]string, version string, independentResource bool) (*akov2.AtlasDeployment, error) {
 	deployment, err := deploymentStore.FlexCluster(projectID, clusterID)
 	if err != nil {
 		return nil, err
@@ -567,12 +563,6 @@ func BuildFlexDeployments(deploymentStore store.OperatorClusterStore, projectID,
 			},
 		},
 		Spec: akov2.AtlasDeploymentSpec{
-			ProjectDualReference: akov2.ProjectDualReference{
-				ProjectRef: &akov2common.ResourceRefNamespaced{
-					Name:      resources.NormalizeAtlasName(projectName, dictionary),
-					Namespace: targetNamespace,
-				},
-			},
 			BackupScheduleRef: akov2common.ResourceRefNamespaced{},
 			FlexSpec:          flexSpec,
 			ProcessArgs:       nil,
@@ -583,6 +573,8 @@ func BuildFlexDeployments(deploymentStore store.OperatorClusterStore, projectID,
 			},
 		},
 	}
+	normalizedProjectName := resources.NormalizeAtlasName(projectName, dictionary)
+	atlasDeployment = setReference(atlasDeployment, independentResource, projectID, normalizedProjectName, targetNamespace, credentials, dictionary)
 
 	return atlasDeployment, nil
 }
