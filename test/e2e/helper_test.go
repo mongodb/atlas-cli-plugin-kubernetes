@@ -928,11 +928,11 @@ func clearTestCluster(t *testing.T, projectID, flexClusterName string) {
 	require.NoError(t, deleteClusterForProject(projectID, flexClusterName))
 }
 
-func findGeneratedFlexCluster(objects []rt.Object, projectName, flexClusterName string) *akov2.AtlasDeployment {
+func findGeneratedFlexCluster(objects []rt.Object, projectID, flexClusterName string) *akov2.AtlasDeployment {
 	for _, obj := range objects {
 		if flex, ok := (obj).(*akov2.AtlasDeployment); ok &&
-			flex.Spec.ProjectRef != nil &&
-			flex.Spec.ProjectRef.Name == projectName &&
+			flex.Spec.ExternalProjectRef != nil &&
+			flex.Spec.ExternalProjectRef.ID == projectID &&
 			flex.Spec.FlexSpec != nil &&
 			flex.Spec.FlexSpec.Name == flexClusterName {
 			return flex

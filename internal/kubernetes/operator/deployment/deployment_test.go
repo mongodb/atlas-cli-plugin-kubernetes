@@ -34,6 +34,7 @@ import (
 	akov2common "github.com/mongodb/mongodb-atlas-kubernetes/v2/api/v1/common"
 	akov2provider "github.com/mongodb/mongodb-atlas-kubernetes/v2/api/v1/provider"
 	akov2status "github.com/mongodb/mongodb-atlas-kubernetes/v2/api/v1/status"
+	"github.com/stretchr/testify/assert"
 	atlasClustersPinned "go.mongodb.org/atlas-sdk/v20240530005/admin"
 	atlasv2 "go.mongodb.org/atlas-sdk/v20241113004/admin"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -439,75 +440,109 @@ func TestBuildServerlessDeployments(t *testing.T) {
 	clusterStore := mocks.NewMockOperatorClusterStore(ctl)
 	dictionary := resources.AtlasNameToKubernetesName()
 
-	t.Run("Can import Serverless deployment", func(t *testing.T) {
-		cluster := &atlasClustersPinned.ServerlessInstanceDescription{
-			Id:             pointer.Get("TestClusterID"),
-			GroupId:        pointer.Get("TestGroupID"),
-			MongoDBVersion: pointer.Get("5.0"),
-			Name:           pointer.Get(clusterName),
-			CreateDate:     pointer.Get(time.Date(2021, time.January, 1, 0, 0, 0, 0, time.UTC)),
-			ProviderSettings: atlasClustersPinned.ServerlessProviderSettings{
-				BackingProviderName: "AWS",
-				ProviderName:        pointer.Get("AWS"),
-				RegionName:          "US_EAST_1",
-			},
-			StateName:               pointer.Get(""),
-			ServerlessBackupOptions: nil,
-			ConnectionStrings:       nil,
-			Links:                   nil,
-		}
+	sampleCredentials := "fake-credentials-name"
 
-		clusterStore.EXPECT().GetServerlessInstance(projectID, clusterName).Return(cluster, nil)
-
-		expected := &akov2.AtlasDeployment{
-			TypeMeta: metav1.TypeMeta{
-				Kind:       "AtlasDeployment",
-				APIVersion: "atlas.mongodb.com/v1",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      strings.ToLower(fmt.Sprintf("%s-%s", projectName, clusterName)),
-				Namespace: targetNamespace,
-				Labels: map[string]string{
-					features.ResourceVersion: resourceVersion,
+	for _, tc := range []struct {
+		title       string
+		independent bool
+	}{
+		{
+			title:       "Can import Serverless deployment with Kuberntes references",
+			independent: false,
+		},
+		{
+			title:       "Can import Serverless deployment with independent resource with direct IDs",
+			independent: true,
+		},
+	} {
+		t.Run(tc.title, func(t *testing.T) {
+			cluster := &atlasClustersPinned.ServerlessInstanceDescription{
+				Id:             pointer.Get("TestClusterID"),
+				GroupId:        pointer.Get("TestGroupID"),
+				MongoDBVersion: pointer.Get("5.0"),
+				Name:           pointer.Get(clusterName),
+				CreateDate:     pointer.Get(time.Date(2021, time.January, 1, 0, 0, 0, 0, time.UTC)),
+				ProviderSettings: atlasClustersPinned.ServerlessProviderSettings{
+					BackingProviderName: "AWS",
+					ProviderName:        pointer.Get("AWS"),
+					RegionName:          "US_EAST_1",
 				},
-			},
-			Spec: akov2.AtlasDeploymentSpec{
-				ProjectDualReference: akov2.ProjectDualReference{
-					ProjectRef: &akov2common.ResourceRefNamespaced{
-						Name:      strings.ToLower(projectName),
-						Namespace: targetNamespace,
+				StateName:               pointer.Get(""),
+				ServerlessBackupOptions: nil,
+				ConnectionStrings:       nil,
+				Links:                   nil,
+			}
+
+			clusterStore.EXPECT().GetServerlessInstance(projectID, clusterName).Return(cluster, nil)
+
+			expected := &akov2.AtlasDeployment{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "AtlasDeployment",
+					APIVersion: "atlas.mongodb.com/v1",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      strings.ToLower(fmt.Sprintf("%s-%s", projectName, clusterName)),
+					Namespace: targetNamespace,
+					Labels: map[string]string{
+						features.ResourceVersion: resourceVersion,
 					},
 				},
-				BackupScheduleRef: akov2common.ResourceRefNamespaced{},
-				ServerlessSpec: &akov2.ServerlessSpec{
-					Name: cluster.GetName(),
-					ProviderSettings: &akov2.ServerlessProviderSettingsSpec{
-						BackingProviderName: cluster.ProviderSettings.BackingProviderName,
-						ProviderName:        akov2provider.ProviderName(cluster.ProviderSettings.GetProviderName()),
-						RegionName:          cluster.ProviderSettings.RegionName,
+				Spec: akov2.AtlasDeploymentSpec{
+					ProjectDualReference: akov2.ProjectDualReference{
+						ProjectRef: &akov2common.ResourceRefNamespaced{
+							Name:      strings.ToLower(projectName),
+							Namespace: targetNamespace,
+						},
+					},
+					BackupScheduleRef: akov2common.ResourceRefNamespaced{},
+					ServerlessSpec: &akov2.ServerlessSpec{
+						Name: cluster.GetName(),
+						ProviderSettings: &akov2.ServerlessProviderSettingsSpec{
+							BackingProviderName: cluster.ProviderSettings.BackingProviderName,
+							ProviderName:        akov2provider.ProviderName(cluster.ProviderSettings.GetProviderName()),
+							RegionName:          cluster.ProviderSettings.RegionName,
+						},
+					},
+					ProcessArgs: nil,
+				},
+				Status: akov2status.AtlasDeploymentStatus{
+					Common: akoapi.Common{
+						Conditions: []akoapi.Condition{},
 					},
 				},
-				ProcessArgs: nil,
-			},
-			Status: akov2status.AtlasDeploymentStatus{
-				Common: akoapi.Common{
-					Conditions: []akoapi.Condition{},
-				},
-			},
-		}
+			}
+			if tc.independent {
+				expected.Spec.ProjectRef = nil
+				expected.Spec.ExternalProjectRef = &akov2.ExternalProjectReference{
+					ID: projectID,
+				}
+				expected.Spec.ConnectionSecret = &akoapi.LocalObjectReference{
+					Name: sampleCredentials,
+				}
+			}
 
-		got, err := BuildServerlessDeployments(clusterStore, projectID, projectName, clusterName, targetNamespace, dictionary, resourceVersion)
-		if err != nil {
-			t.Fatalf("%v", err)
-		}
+			got, err := BuildServerlessDeployments(
+				clusterStore,
+				projectID,
+				projectName,
+				clusterName,
+				targetNamespace,
+				sampleCredentials,
+				dictionary,
+				resourceVersion,
+				tc.independent,
+			)
+			if err != nil {
+				t.Fatalf("%v", err)
+			}
 
-		if !reflect.DeepEqual(expected, got) {
-			t.Fatalf("Serverless deployment mismatch.\r\nexpected: %v\r\ngot: %v\r\n", expected, got)
-		}
-	})
+			assert.Equal(t, expected, got, "Flex deployment mismatch")
+		})
+	}
 }
 
 func TestBuildServerlessDeploymentsWithGCP(t *testing.T) {
+	const projectID = "abcdef1234567"
 	const projectName = "testProject-2-1"
 	const clusterName = "testCluster-2-1"
 	const targetNamespace = "test-namespace-2-1"
@@ -516,72 +551,105 @@ func TestBuildServerlessDeploymentsWithGCP(t *testing.T) {
 	clusterStore := mocks.NewMockOperatorClusterStore(ctl)
 	dictionary := resources.AtlasNameToKubernetesName()
 
-	t.Run("Can import Serverless deployment", func(t *testing.T) {
-		cluster := &atlasClustersPinned.ServerlessInstanceDescription{
-			Id:             pointer.Get("TestClusterID"),
-			GroupId:        pointer.Get("TestGroupID"),
-			MongoDBVersion: pointer.Get("5.0"),
-			Name:           pointer.Get(clusterName),
-			CreateDate:     pointer.Get(time.Date(2021, time.January, 1, 0, 0, 0, 0, time.UTC)),
-			ProviderSettings: atlasClustersPinned.ServerlessProviderSettings{
-				BackingProviderName: "GCP",
-				ProviderName:        pointer.Get("GCP"),
-				RegionName:          "US_EAST_1",
-			},
-			StateName:               pointer.Get(""),
-			ServerlessBackupOptions: nil,
-			ConnectionStrings:       nil,
-			Links:                   nil,
-		}
+	sampleCredentials := "fake-credentials-name"
 
-		clusterStore.EXPECT().GetServerlessInstance(projectName, clusterName).Return(cluster, nil)
-
-		expected := &akov2.AtlasDeployment{
-			TypeMeta: metav1.TypeMeta{
-				Kind:       "AtlasDeployment",
-				APIVersion: "atlas.mongodb.com/v1",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      strings.ToLower(fmt.Sprintf("%s-%s", projectName, clusterName)),
-				Namespace: targetNamespace,
-				Labels: map[string]string{
-					features.ResourceVersion: resourceVersion,
+	for _, tc := range []struct {
+		title       string
+		independent bool
+	}{
+		{
+			title:       "Can import Serverless deployment with Kuberntes references",
+			independent: false,
+		},
+		{
+			title:       "Can import Serverless deployment with independent resource with direct IDs",
+			independent: true,
+		},
+	} {
+		t.Run(tc.title, func(t *testing.T) {
+			cluster := &atlasClustersPinned.ServerlessInstanceDescription{
+				Id:             pointer.Get("TestClusterID"),
+				GroupId:        pointer.Get("TestGroupID"),
+				MongoDBVersion: pointer.Get("5.0"),
+				Name:           pointer.Get(clusterName),
+				CreateDate:     pointer.Get(time.Date(2021, time.January, 1, 0, 0, 0, 0, time.UTC)),
+				ProviderSettings: atlasClustersPinned.ServerlessProviderSettings{
+					BackingProviderName: "GCP",
+					ProviderName:        pointer.Get("GCP"),
+					RegionName:          "US_EAST_1",
 				},
-			},
-			Spec: akov2.AtlasDeploymentSpec{
-				ProjectDualReference: akov2.ProjectDualReference{
-					ProjectRef: &akov2common.ResourceRefNamespaced{
-						Name:      strings.ToLower(projectName),
-						Namespace: targetNamespace,
+				StateName:               pointer.Get(""),
+				ServerlessBackupOptions: nil,
+				ConnectionStrings:       nil,
+				Links:                   nil,
+			}
+
+			clusterStore.EXPECT().GetServerlessInstance(projectID, clusterName).Return(cluster, nil)
+
+			expected := &akov2.AtlasDeployment{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "AtlasDeployment",
+					APIVersion: "atlas.mongodb.com/v1",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      strings.ToLower(fmt.Sprintf("%s-%s", projectName, clusterName)),
+					Namespace: targetNamespace,
+					Labels: map[string]string{
+						features.ResourceVersion: resourceVersion,
 					},
 				},
-				BackupScheduleRef: akov2common.ResourceRefNamespaced{},
-				ServerlessSpec: &akov2.ServerlessSpec{
-					Name: cluster.GetName(),
-					ProviderSettings: &akov2.ServerlessProviderSettingsSpec{
-						BackingProviderName: cluster.ProviderSettings.BackingProviderName,
-						ProviderName:        akov2provider.ProviderName(cluster.ProviderSettings.GetProviderName()),
-						RegionName:          cluster.ProviderSettings.RegionName,
+				Spec: akov2.AtlasDeploymentSpec{
+					ProjectDualReference: akov2.ProjectDualReference{
+						ProjectRef: &akov2common.ResourceRefNamespaced{
+							Name:      strings.ToLower(projectName),
+							Namespace: targetNamespace,
+						},
+					},
+					BackupScheduleRef: akov2common.ResourceRefNamespaced{},
+					ServerlessSpec: &akov2.ServerlessSpec{
+						Name: cluster.GetName(),
+						ProviderSettings: &akov2.ServerlessProviderSettingsSpec{
+							BackingProviderName: cluster.ProviderSettings.BackingProviderName,
+							ProviderName:        akov2provider.ProviderName(cluster.ProviderSettings.GetProviderName()),
+							RegionName:          cluster.ProviderSettings.RegionName,
+						},
+					},
+					ProcessArgs: nil,
+				},
+				Status: akov2status.AtlasDeploymentStatus{
+					Common: akoapi.Common{
+						Conditions: []akoapi.Condition{},
 					},
 				},
-				ProcessArgs: nil,
-			},
-			Status: akov2status.AtlasDeploymentStatus{
-				Common: akoapi.Common{
-					Conditions: []akoapi.Condition{},
-				},
-			},
-		}
+			}
+			if tc.independent {
+				expected.Spec.ProjectRef = nil
+				expected.Spec.ExternalProjectRef = &akov2.ExternalProjectReference{
+					ID: projectID,
+				}
+				expected.Spec.ConnectionSecret = &akoapi.LocalObjectReference{
+					Name: sampleCredentials,
+				}
+			}
 
-		got, err := BuildServerlessDeployments(clusterStore, projectName, projectName, clusterName, targetNamespace, dictionary, resourceVersion)
-		if err != nil {
-			t.Fatalf("%v", err)
-		}
+			got, err := BuildServerlessDeployments(
+				clusterStore,
+				projectID,
+				projectName,
+				clusterName,
+				targetNamespace,
+				sampleCredentials,
+				dictionary,
+				resourceVersion,
+				tc.independent,
+			)
+			if err != nil {
+				t.Fatalf("%v", err)
+			}
 
-		if !reflect.DeepEqual(expected, got) {
-			t.Fatalf("Serverless deployment mismatch.\r\nexp: %v\r\ngot: %v\r\n", expected, got)
-		}
-	})
+			assert.Equal(t, expected, got, "Flex deployment mismatch")
+		})
+	}
 }
 
 func TestCleanTenantFields(t *testing.T) {
@@ -696,68 +764,100 @@ func TestBuildFlexDeployment(t *testing.T) {
 	clusterStore := mocks.NewMockOperatorClusterStore(ctl)
 	dictionary := resources.AtlasNameToKubernetesName()
 
-	t.Run("Can import Flex deployment", func(t *testing.T) {
-		cluster := &atlasv2.FlexClusterDescription20241113{
-			Id:             pointer.Get("TestClusterID"),
-			GroupId:        pointer.Get("TestGroupID"),
-			MongoDBVersion: pointer.Get("5.0"),
-			Name:           pointer.Get(clusterName),
-			CreateDate:     pointer.Get(time.Date(2021, time.January, 1, 0, 0, 0, 0, time.UTC)),
-			ProviderSettings: atlasv2.FlexProviderSettings20241113{
-				BackingProviderName: pointer.Get("AWS"),
-				ProviderName:        pointer.Get("FLEX"),
-				RegionName:          pointer.Get("US_EAST_1"),
-			},
-			StateName:         pointer.Get(""),
-			ConnectionStrings: nil,
-			Links:             nil,
-		}
+	sampleCredentials := "fake-credentials-name"
 
-		clusterStore.EXPECT().FlexCluster(projectID, clusterName).Return(cluster, nil)
-
-		expected := &akov2.AtlasDeployment{
-			TypeMeta: metav1.TypeMeta{
-				Kind:       "AtlasDeployment",
-				APIVersion: "atlas.mongodb.com/v1",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      strings.ToLower(fmt.Sprintf("%s-%s", projectName, clusterName)),
-				Namespace: targetNamespace,
-				Labels: map[string]string{
-					features.ResourceVersion: resourceVersion,
+	for _, tc := range []struct {
+		title       string
+		independent bool
+	}{
+		{
+			title:       "Can import Flex deployment with Kuberntes references",
+			independent: false,
+		},
+		{
+			title:       "Can import Flex deployment with independent resource with direct IDs",
+			independent: true,
+		},
+	} {
+		t.Run(tc.title, func(t *testing.T) {
+			cluster := &atlasv2.FlexClusterDescription20241113{
+				Id:             pointer.Get("TestClusterID"),
+				GroupId:        pointer.Get("TestGroupID"),
+				MongoDBVersion: pointer.Get("5.0"),
+				Name:           pointer.Get(clusterName),
+				CreateDate:     pointer.Get(time.Date(2021, time.January, 1, 0, 0, 0, 0, time.UTC)),
+				ProviderSettings: atlasv2.FlexProviderSettings20241113{
+					BackingProviderName: pointer.Get("AWS"),
+					ProviderName:        pointer.Get("FLEX"),
+					RegionName:          pointer.Get("US_EAST_1"),
 				},
-			},
-			Spec: akov2.AtlasDeploymentSpec{
-				ProjectDualReference: akov2.ProjectDualReference{
-					ProjectRef: &akov2common.ResourceRefNamespaced{
-						Name:      strings.ToLower(projectName),
-						Namespace: targetNamespace,
+				StateName:         pointer.Get(""),
+				ConnectionStrings: nil,
+				Links:             nil,
+			}
+
+			clusterStore.EXPECT().FlexCluster(projectID, clusterName).Return(cluster, nil)
+
+			expected := &akov2.AtlasDeployment{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "AtlasDeployment",
+					APIVersion: "atlas.mongodb.com/v1",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      strings.ToLower(fmt.Sprintf("%s-%s", projectName, clusterName)),
+					Namespace: targetNamespace,
+					Labels: map[string]string{
+						features.ResourceVersion: resourceVersion,
 					},
 				},
-				BackupScheduleRef: akov2common.ResourceRefNamespaced{},
-				FlexSpec: &akov2.FlexSpec{
-					Name: cluster.GetName(),
-					ProviderSettings: &akov2.FlexProviderSettings{
-						BackingProviderName: "AWS",
-						RegionName:          "US_EAST_1",
+				Spec: akov2.AtlasDeploymentSpec{
+					ProjectDualReference: akov2.ProjectDualReference{
+						ProjectRef: &akov2common.ResourceRefNamespaced{
+							Name:      strings.ToLower(projectName),
+							Namespace: targetNamespace,
+						},
+					},
+					BackupScheduleRef: akov2common.ResourceRefNamespaced{},
+					FlexSpec: &akov2.FlexSpec{
+						Name: cluster.GetName(),
+						ProviderSettings: &akov2.FlexProviderSettings{
+							BackingProviderName: "AWS",
+							RegionName:          "US_EAST_1",
+						},
+					},
+					ProcessArgs: nil,
+				},
+				Status: akov2status.AtlasDeploymentStatus{
+					Common: akoapi.Common{
+						Conditions: []akoapi.Condition{},
 					},
 				},
-				ProcessArgs: nil,
-			},
-			Status: akov2status.AtlasDeploymentStatus{
-				Common: akoapi.Common{
-					Conditions: []akoapi.Condition{},
-				},
-			},
-		}
+			}
+			if tc.independent {
+				expected.Spec.ProjectRef = nil
+				expected.Spec.ExternalProjectRef = &akov2.ExternalProjectReference{
+					ID: projectID,
+				}
+				expected.Spec.ConnectionSecret = &akoapi.LocalObjectReference{
+					Name: sampleCredentials,
+				}
+			}
 
-		got, err := BuildFlexDeployments(clusterStore, projectID, projectName, clusterName, targetNamespace, dictionary, resourceVersion)
-		if err != nil {
-			t.Fatalf("%v", err)
-		}
+			got, err := BuildFlexDeployments(
+				clusterStore,
+				projectID, projectName,
+				clusterName,
+				targetNamespace,
+				sampleCredentials,
+				dictionary,
+				resourceVersion,
+				tc.independent,
+			)
+			if err != nil {
+				t.Fatalf("%v", err)
+			}
 
-		if !reflect.DeepEqual(expected, got) {
-			t.Fatalf("Flex deployment mismatch.\r\nexpected: %v\r\ngot: %v\r\n", expected, got)
-		}
-	})
+			assert.Equal(t, expected, got, "Flex deployment mismatch")
+		})
+	}
 }
