@@ -1296,7 +1296,7 @@ func TestFederatedAuthTest(t *testing.T) {
 		objects, err = getK8SEntities(resp)
 
 		a := assert.New(t)
-		a.Equal(&akov2.AtlasFederatedAuth{
+		expectedInCloudDev := &akov2.AtlasFederatedAuth{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "AtlasFederatedAuth",
 				APIVersion: "atlas.mongodb.com/v1",
@@ -1322,7 +1322,63 @@ func TestFederatedAuthTest(t *testing.T) {
 					Conditions: []akoapi.Condition{},
 				},
 			},
-		}, federatedAuthentification(objects)[0])
+		}
+		fedAuths := federatedAuthentification(objects)
+		require.Len(t, fedAuths, 1)
+		expectedInCloudQA := &akov2.AtlasFederatedAuth{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "AtlasFederatedAuth",
+				APIVersion: "atlas.mongodb.com/v1",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      resources.NormalizeAtlasName(fmt.Sprintf("%s-%s", s.generator.projectName, federationSettingsID), dictionary),
+				Namespace: targetNamespace,
+			},
+			Spec: akov2.AtlasFederatedAuthSpec{
+				ConnectionSecretRef: akov2common.ResourceRefNamespaced{
+					Name:      resources.NormalizeAtlasName(s.generator.projectName+credSuffixTest, dictionary),
+					Namespace: targetNamespace,
+				},
+				Enabled: true,
+				DomainAllowList: []string{
+					"qa-27092023.com",
+					"cloud-qa.mongodb.com",
+					"mongodb.com",
+				},
+				PostAuthRoleGrants:       []string{"ORG_MEMBER"},
+				DomainRestrictionEnabled: pointer.Get(true),
+				SSODebugEnabled:          pointer.Get(false),
+				RoleMappings: []akov2.RoleMapping{
+					{
+						ExternalGroupName: "test",
+						RoleAssignments: []akov2.RoleAssignment{
+							{
+								ProjectName: "",
+								Role:        "ORG_BILLING_ADMIN",
+							},
+							{
+								ProjectName: "",
+								Role:        "ORG_GROUP_CREATOR",
+							},
+							{
+								ProjectName: "",
+								Role:        "ORG_OWNER",
+							},
+						},
+					},
+				},
+			},
+			Status: akov2status.AtlasFederatedAuthStatus{
+				Common: akoapi.Common{
+					Conditions: []akoapi.Condition{},
+				},
+			},
+		}
+		expected := expectedInCloudDev
+		if isQAEnv(os.Getenv("MCLI_OPS_MANAGER_URL")) {
+			expected = expectedInCloudQA
+		}
+		a.Equal(expected, normalizedFedAuth(fedAuths[0]))
 		require.NoError(t, err, "should not fail on decode")
 		require.NotEmpty(t, objects)
 		secret, found := findSecret(objects)
@@ -1330,6 +1386,19 @@ func TestFederatedAuthTest(t *testing.T) {
 		a.Equal(targetNamespace, secret.Namespace)
 	})
 }
+
+func normalizedFedAuth(fedAuth *akov2.AtlasFederatedAuth) *akov2.AtlasFederatedAuth {
+	for _, rm := range fedAuth.Spec.RoleMappings {
+		slices.SortFunc(rm.RoleAssignments, func(a, b akov2.RoleAssignment) int {
+			return strings.Compare(a.ProjectName+a.Role, b.ProjectName+b.Role)
+		})
+	}
+	slices.SortFunc(fedAuth.Spec.RoleMappings, func(a, b akov2.RoleMapping) int {
+		return strings.Compare(a.ExternalGroupName, b.ExternalGroupName)
+	})
+	return fedAuth
+}
+
 func federatedAuthentification(objects []runtime.Object) []*akov2.AtlasFederatedAuth {
 	var ds []*akov2.AtlasFederatedAuth
 	for i := range objects {
