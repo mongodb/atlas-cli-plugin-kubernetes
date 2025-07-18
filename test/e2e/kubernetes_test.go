@@ -19,6 +19,7 @@ package e2e
 import (
 	"fmt"
 	"os"
+	"strings"
 	"testing"
 )
 
@@ -36,12 +37,16 @@ func TestEnv(t *testing.T) {
 	if isQASelected() {
 		t.Run("Switched to run on cloud-qa", func(_ *testing.T) {})
 	} else {
-		t.Run("Running on cloud-dev (default)" , func(_ *testing.T) {})
+		t.Run("Running on cloud-dev (default)", func(_ *testing.T) {})
 	}
 }
 
 func isQASelected() bool {
 	return os.Getenv("ATLAS_TEST_ENV") == "QA" && areQASettingsPresent()
+}
+
+func isQAEnv(managerURL string) bool {
+	return strings.Contains(managerURL, "cloud-qa.mongodb.com")
 }
 
 func areQASettingsPresent() bool {
@@ -87,5 +92,5 @@ func savedEnvVar(envvar string) string {
 }
 
 func setQAProject() {
-	
+
 }
