@@ -18,6 +18,7 @@ package e2e
 
 import (
 	"crypto/rand"
+	"errors"
 	"fmt"
 	"math/big"
 	"os"
@@ -48,6 +49,9 @@ func KubernetesPlugin(t *testing.T) {
 
 func AtlasCLIBin() (string, error) {
 	path := os.Getenv("E2E_ATLASCLI_BINARY_PATH")
+	if path == "" {
+		return "", errors.New("invalid empty bin path")
+	}
 	cliPath, err := filepath.Abs(path)
 	if err != nil {
 		return "", fmt.Errorf("%w: invalid bin path %q", err, path)

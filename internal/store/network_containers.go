@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	MaxItems = 500
+	MaxAPIPageSize = 500
 )
 
 var (
@@ -56,7 +56,7 @@ func (s *Store) NetworkContainers(projectID string) ([]atlasv2.CloudProviderCont
 func (s *Store) networkContainersFor(projectID string, provider akov2provider.ProviderName) ([]atlasv2.CloudProviderContainer, error) {
 	allPages := []atlasv2.CloudProviderContainer{}
 	pageNum := 1
-	itemsPerPage := MaxItems
+	itemsPerPage := MaxAPIPageSize
 	for {
 		result, _, err := s.clientv2.NetworkPeeringApi.ListPeeringContainerByCloudProvider(s.ctx, projectID).
 			ItemsPerPage(itemsPerPage).

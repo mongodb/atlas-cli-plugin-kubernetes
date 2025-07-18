@@ -70,7 +70,7 @@ func TestBuildAtlasAdvancedDeployment(t *testing.T) {
 			},
 			ClusterType:              pointer.Get("REPLICASET"),
 			ConnectionStrings:        nil,
-			DiskSizeGB:               pointer.Get[float64](20.4),
+			DiskSizeGB:               pointer.Get(20.4),
 			EncryptionAtRestProvider: pointer.Get("TestProvider"),
 			GroupId:                  pointer.Get("TestGroupID"),
 			Id:                       pointer.Get("TestID"),
@@ -148,7 +148,7 @@ func TestBuildAtlasAdvancedDeployment(t *testing.T) {
 			SampleRefreshIntervalBIConnector: pointer.Get(10),
 		}
 		processArgs.OplogSizeMB = pointer.Get(10)
-		processArgs.OplogMinRetentionHours = pointer.Get[float64](10.1)
+		processArgs.OplogMinRetentionHours = pointer.Get(10.1)
 		backupSchedule := &atlasClustersPinned.DiskBackupSnapshotSchedule{
 			ClusterId:             pointer.Get("testClusterID"),
 			ClusterName:           pointer.Get(clusterName),
