@@ -593,6 +593,104 @@ func deleteProject(projectID string) error {
 	return nil
 }
 
+// AtlasProject helpers //
+func createAtlasProject(t *testing.T) (string, string) {
+	projectName, err := RandProjectName()
+	require.NoError(t, err, "failed to get random project name")
+	id, err := createProject(projectName)
+	require.NoErrorf(t, err, "failed to create project")
+
+	t.Cleanup(func() {
+		t.Logf("Deleting test project: %s", id)
+		require.NoError(t, deleteProject(id))
+	})
+
+	return id, projectName
+}
+
+// AtlasProject helpers //
+func findGeneratedAtlasProject(objects []rt.Object, projectName string) *akov2.AtlasProject {
+	for _, obj := range objects {
+		if prj, ok := (obj).(*akov2.AtlasProject); ok && prj.Spec.Name == projectName {
+			return prj
+		}
+	}
+	return nil
+}
+
+// IPAccessList helpers //
+func createIPAccessList(t *testing.T, projectID, resourceType, address string) string {
+	t.Helper()
+
+	cliPath, err := AtlasCLIBin()
+	require.NoError(t, err, "could not find Atlas CLI binary")
+
+	args := []string{accessListEntity, "create", address, "--projectId", projectID, "-o=json", "--type"}
+
+	switch resourceType {
+	case "cidr":
+		args = append(args, "cidrBlock")
+	case "ip":
+		args = append(args, "ipAddress")
+	default:
+		t.Fatalf("unsupported resourceType %q for IP Access List", resourceType)
+	}
+
+	cmd := exec.Command(cliPath, args...)
+	cmd.Env = os.Environ()
+	resp, err := test.RunAndGetStdOut(cmd)
+	require.NoError(t, err, "failed to run atlas CLI: %s", string(resp))
+
+	t.Cleanup(func() {
+		t.Logf("Deleting IP Access List entry with address=%s", address)
+		deleteCmd := exec.Command(cliPath,
+			accessListEntity,
+			"delete",
+			address,
+			"--projectId",
+			projectID,
+			"--force",
+		)
+		deleteCmd.Env = os.Environ()
+		out, err := test.RunAndGetStdOut(deleteCmd)
+		if err != nil {
+			t.Logf("Failed to delete IP Access List %s: %v\nOutput: %s", address, err, string(out))
+		}
+	})
+
+	return address
+}
+
+// IPAccessList helpers //
+func findGeneratedIPAccessList(objects []rt.Object, projectID, address string) *akov2.AtlasIPAccessList {
+	for _, obj := range objects {
+		ip, ok := obj.(*akov2.AtlasIPAccessList)
+		if !ok {
+			continue
+		}
+
+		// Match project ID
+		pid := ""
+		if ip.Spec.ProjectRef != nil {
+			pid = ip.Spec.ProjectRef.Name
+		} else if ip.Spec.ExternalProjectRef != nil {
+			pid = ip.Spec.ExternalProjectRef.ID
+		}
+		if pid != projectID {
+			continue
+		}
+
+		// Search for the address in the entries
+		for _, entry := range ip.Spec.Entries {
+			if entry.IPAddress == address || entry.CIDRBlock == address {
+				return ip
+			}
+		}
+	}
+
+	return nil
+}
+
 func createDBUserWithCert(projectID, username string) error {
 	cliPath, err := AtlasCLIBin()
 	if err != nil {
@@ -857,27 +955,6 @@ func referenceDataFederation(name, namespace, projectName string, labels map[str
 			},
 		},
 	}
-}
-
-func mustGenerateTestProject(t *testing.T) (string, string) {
-	projectName, err := RandProjectName()
-	require.NoError(t, err, "failed to get random project name")
-	id, err := createProject(projectName)
-	require.NoErrorf(t, err, "failed to create project")
-	return id, projectName
-}
-
-func clearTestProject(t *testing.T, projectID string) {
-	require.NoError(t, deleteProject(projectID))
-}
-
-func findGeneratedProject(objects []rt.Object, projectName string) *akov2.AtlasProject {
-	for _, obj := range objects {
-		if prj, ok := (obj).(*akov2.AtlasProject); ok && prj.Spec.Name == projectName {
-			return prj
-		}
-	}
-	return nil
 }
 
 func generateTestDBUser(t *testing.T, projectID string) string {

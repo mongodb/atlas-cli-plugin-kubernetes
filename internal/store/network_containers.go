@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	MaxAPIPageSize = 500
+	MaxAPIPageSize = 2 // To increase once done testing!!
 )
 
 var (

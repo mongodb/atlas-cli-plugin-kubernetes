@@ -561,18 +561,18 @@ func (mr *MockOperatorGenericStoreMockRecorder) ProjectClusters(arg0, arg1 inter
 }
 
 // ProjectIPAccessLists mocks base method.
-func (m *MockOperatorGenericStore) ProjectIPAccessLists(arg0 string, arg1 *store.ListOptions) (*admin0.PaginatedNetworkAccess, error) {
+func (m *MockOperatorGenericStore) ProjectIPAccessLists(arg0 string) ([]admin0.NetworkPermissionEntry, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ProjectIPAccessLists", arg0, arg1)
-	ret0, _ := ret[0].(*admin0.PaginatedNetworkAccess)
+	ret := m.ctrl.Call(m, "ProjectIPAccessLists", arg0)
+	ret0, _ := ret[0].([]admin0.NetworkPermissionEntry)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // ProjectIPAccessLists indicates an expected call of ProjectIPAccessLists.
-func (mr *MockOperatorGenericStoreMockRecorder) ProjectIPAccessLists(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockOperatorGenericStoreMockRecorder) ProjectIPAccessLists(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProjectIPAccessLists", reflect.TypeOf((*MockOperatorGenericStore)(nil).ProjectIPAccessLists), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProjectIPAccessLists", reflect.TypeOf((*MockOperatorGenericStore)(nil).ProjectIPAccessLists), arg0)
 }
 
 // ProjectSettings mocks base method.

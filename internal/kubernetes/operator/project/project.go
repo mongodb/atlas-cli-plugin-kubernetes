@@ -322,29 +322,29 @@ func projectBuildCustomRoles(crProvider store.DatabaseRoleLister, projectID stri
 }
 
 func buildAccessLists(accessListProvider store.ProjectIPAccessListLister, projectID string) ([]akov2project.IPAccessList, error) {
-	// pagination not required, max 200 entries can be configured via API
-	accessLists, err := accessListProvider.ProjectIPAccessLists(projectID, &store.ListOptions{ItemsPerPage: MaxItems})
+	ipAccessLists, err := accessListProvider.ProjectIPAccessLists(projectID)
 	if err != nil {
 		return nil, err
 	}
 
-	result := make([]akov2project.IPAccessList, 0, len(accessLists.GetResults()))
-	for _, list := range accessLists.GetResults() {
-		if strings.HasSuffix(list.GetCidrBlock(), cidrException) && list.GetIpAddress() != "" {
-			list.CidrBlock = pointer.Get("")
+	var result []akov2project.IPAccessList
+	for _, ipAccessList := range ipAccessLists {
+		if strings.HasSuffix(ipAccessList.GetCidrBlock(), cidrException) && ipAccessList.GetIpAddress() != "" {
+			ipAccessList.CidrBlock = pointer.Get("")
 		}
 		deleteAfterDate := ""
-		if !list.GetDeleteAfterDate().IsZero() {
-			deleteAfterDate = list.GetDeleteAfterDate().String()
+		if !ipAccessList.GetDeleteAfterDate().IsZero() {
+			deleteAfterDate = ipAccessList.GetDeleteAfterDate().String()
 		}
 		result = append(result, akov2project.IPAccessList{
-			AwsSecurityGroup: list.GetAwsSecurityGroup(),
-			CIDRBlock:        list.GetCidrBlock(),
-			Comment:          list.GetComment(),
+			AwsSecurityGroup: ipAccessList.GetAwsSecurityGroup(),
+			CIDRBlock:        ipAccessList.GetCidrBlock(),
+			Comment:          ipAccessList.GetComment(),
 			DeleteAfterDate:  deleteAfterDate,
-			IPAddress:        list.GetIpAddress(),
+			IPAddress:        ipAccessList.GetIpAddress(),
 		})
 	}
+
 	return result, nil
 }
 

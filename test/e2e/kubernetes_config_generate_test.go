@@ -300,10 +300,21 @@ func TestExportPrivateEndpoint(t *testing.T) {
 
 func TestExportIPAccessList(t *testing.T) {
 	s := InitialSetup(t)
-
 	expectedSubresource := []akov2project.IPAccessList{
 		{
 			CIDRBlock: "10.1.1.0/24",
+		},
+		{
+			CIDRBlock: "172.16.0.0/16",
+		},
+		{
+			CIDRBlock: "10.0.0.0/8",
+		},
+		{
+			IPAddress: "198.51.100.42",
+		},
+		{
+			IPAddress: "203.0.113.10",
 		},
 		{
 			IPAddress: "192.168.100.233",
@@ -311,33 +322,40 @@ func TestExportIPAccessList(t *testing.T) {
 	}
 	credentialName := resources.NormalizeAtlasName(s.generator.projectName+credSuffixTest, resources.AtlasNameToKubernetesName())
 
-	// #nosec G204
-	cmd := exec.Command(s.atlasCliPath,
-		accessListEntity,
-		"create",
-		expectedSubresource[1].IPAddress,
-		"--projectId",
-		s.generator.projectID,
-		"--type",
-		"ipAddress",
-		"-o=json")
-	cmd.Env = os.Environ()
-	accessListResp, err := test.RunAndGetStdOut(cmd)
-	require.NoError(t, err, string(accessListResp))
+	// Create access list entries for each IP and CIDR
+	for _, entry := range expectedSubresource {
+		var cmd *exec.Cmd
 
-	// #nosec G204
-	cmd = exec.Command(s.atlasCliPath,
-		accessListEntity,
-		"create",
-		expectedSubresource[0].CIDRBlock,
-		"--projectId",
-		s.generator.projectID,
-		"--type",
-		"cidrBlock",
-		"-o=json")
-	cmd.Env = os.Environ()
-	accessListResp, err = test.RunAndGetStdOut(cmd)
-	require.NoError(t, err, string(accessListResp))
+		if entry.IPAddress != "" {
+			// #nosec G204
+			cmd = exec.Command(s.atlasCliPath,
+				accessListEntity,
+				"create",
+				entry.IPAddress,
+				"--projectId",
+				s.generator.projectID,
+				"--type",
+				"ipAddress",
+				"-o=json")
+		} else if entry.CIDRBlock != "" {
+			// #nosec G204
+			cmd = exec.Command(s.atlasCliPath,
+				accessListEntity,
+				"create",
+				entry.CIDRBlock,
+				"--projectId",
+				s.generator.projectID,
+				"--type",
+				"cidrBlock",
+				"-o=json")
+		}
+
+		if cmd != nil {
+			cmd.Env = os.Environ()
+			accessListResp, err := test.RunAndGetStdOut(cmd)
+			require.NoError(t, err, string(accessListResp))
+		}
+	}
 
 	tests := map[string]struct {
 		independentResources bool
@@ -898,6 +916,18 @@ func defaultIPAccessList(generator *atlasE2ETestGenerator, independent bool) *ak
 			Entries: []akov2.IPAccessEntry{
 				{
 					CIDRBlock: "10.1.1.0/24",
+				},
+				{
+					CIDRBlock: "172.16.0.0/16",
+				},
+				{
+					CIDRBlock: "10.0.0.0/8",
+				},
+				{
+					IPAddress: "198.51.100.42",
+				},
+				{
+					IPAddress: "203.0.113.10",
 				},
 				{
 					IPAddress: "192.168.100.233",
@@ -3043,15 +3073,14 @@ func checkDataFederationData(t *testing.T, dataFederations []*akov2.AtlasDataFed
 func TestGenerateMany(t *testing.T) {
 	// always register atlas entities
 	require.NoError(t, akov2.AddToScheme(scheme.Scheme))
+	projectID, projectName := createAtlasProject(t)
 
-	projectID, projectName := mustGenerateTestProject(t)
-	defer clearTestProject(t, projectID)
-	user1 := generateTestDBUser(t, projectID)
-	user2 := generateTestDBUser(t, projectID)
-	flex1 := generateTestFlexCluster(t, projectID)
-	defer clearTestCluster(t, projectID, flex1)
-	flex2 := generateTestFlexCluster(t, projectID)
-	defer clearTestCluster(t, projectID, flex2)
+	// Test ipAccesList with pagination
+	ipAccessList1 := createIPAccessList(t, projectID, "ip", "192.168.1.1")
+	ipAccessList2 := createIPAccessList(t, projectID, "ip", "10.0.0.2")
+	ipAccessList3 := createIPAccessList(t, projectID, "ip", "172.16.0.3")
+	ipAccessList4 := createIPAccessList(t, projectID, "ip", "203.0.113.4")
+	ipAccessList5 := createIPAccessList(t, projectID, "ip", "198.51.100.5")
 
 	cliPath, err := PluginBin()
 	require.NoError(t, err)
@@ -3075,11 +3104,12 @@ func TestGenerateMany(t *testing.T) {
 	require.NoError(t, err, "should not fail on decode")
 	require.NotEmpty(t, objects, "result should not be empty")
 
-	assert.NotNil(t, findGeneratedProject(objects, projectName))
-	for i, user := range []string{user1, user2} {
-		assert.NotNil(t, findGeneratedUser(objects, projectID, user), "not found user %d", i)
-	}
-	for i, flex := range []string{flex1, flex2} {
-		assert.NotNil(t, findGeneratedFlexCluster(objects, projectID, flex), "not found flex cluster %d", i)
+	// Find the AtlasProject
+	assert.NotNil(t, findGeneratedAtlasProject(objects, projectName))
+
+	// Find each IP address in k8s
+	ipAddressList := []string{ipAccessList1, ipAccessList2, ipAccessList3, ipAccessList4, ipAccessList5}
+	for i, ip := range ipAddressList {
+		assert.NotNil(t, findGeneratedIPAccessList(objects, projectID, ip), "IP access list %d with ID %s not found", i+1, ip)
 	}
 }

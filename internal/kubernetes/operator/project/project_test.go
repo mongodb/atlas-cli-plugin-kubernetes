@@ -63,19 +63,15 @@ func TestBuildAtlasProject(t *testing.T) {
 		WithDefaultAlertsSettings: pointer.Get(false),
 	}
 
-	ipAccessLists := &atlasv2.PaginatedNetworkAccess{
-		Links: nil,
-		Results: &[]atlasv2.NetworkPermissionEntry{
-			{
-				AwsSecurityGroup: pointer.Get("TestSecurity group"),
-				CidrBlock:        pointer.Get("0.0.0.0/0"),
-				Comment:          pointer.Get("Allow everyone"),
-				DeleteAfterDate:  pointer.Get(time.Now()),
-				GroupId:          pointer.Get("TestGroupID"),
-				IpAddress:        pointer.Get("0.0.0.0"),
-			},
+	ipAccessLists := []atlasv2.NetworkPermissionEntry{
+		{
+			AwsSecurityGroup: pointer.Get("TestSecurity group"),
+			CidrBlock:        pointer.Get("0.0.0.0/0"),
+			Comment:          pointer.Get("Allow everyone"),
+			DeleteAfterDate:  pointer.Get(time.Now()),
+			GroupId:          pointer.Get("TestGroupID"),
+			IpAddress:        pointer.Get("0.0.0.0"),
 		},
-		TotalCount: pointer.Get(1),
 	}
 
 	auditing := &atlasv2.AuditLog{
@@ -436,11 +432,11 @@ func TestBuildAtlasProject(t *testing.T) {
 					},
 					ProjectIPAccessList: []akov2project.IPAccessList{
 						{
-							AwsSecurityGroup: ipAccessLists.GetResults()[0].GetAwsSecurityGroup(),
-							CIDRBlock:        ipAccessLists.GetResults()[0].GetCidrBlock(),
-							Comment:          ipAccessLists.GetResults()[0].GetComment(),
-							DeleteAfterDate:  ipAccessLists.GetResults()[0].GetDeleteAfterDate().String(),
-							IPAddress:        ipAccessLists.GetResults()[0].GetIpAddress(),
+							AwsSecurityGroup: ipAccessLists[0].GetAwsSecurityGroup(),
+							CIDRBlock:        ipAccessLists[0].GetCidrBlock(),
+							Comment:          ipAccessLists[0].GetComment(),
+							DeleteAfterDate:  ipAccessLists[0].GetDeleteAfterDate().String(),
+							IPAddress:        ipAccessLists[0].GetIpAddress(),
 						},
 					},
 					MaintenanceWindow: akov2project.MaintenanceWindow{
@@ -687,7 +683,7 @@ func TestBuildAtlasProject(t *testing.T) {
 			projectStore.EXPECT().DescribeCompliancePolicy(projectID).Return(bcp, nil)
 			tt.privateEndpointMock(projectStore)
 			if !tt.independentResource {
-				projectStore.EXPECT().ProjectIPAccessLists(projectID, listOption).Return(ipAccessLists, nil)
+				projectStore.EXPECT().ProjectIPAccessLists(projectID).Return(ipAccessLists, nil)
 				projectStore.EXPECT().DatabaseRoles(projectID).Return(customRoles, nil)
 				projectStore.EXPECT().PeeringConnections(projectID).Return(peeringConnections, nil)
 				projectStore.EXPECT().Integrations(projectID).Return(thirdPartyIntegrations, nil)
@@ -814,45 +810,42 @@ func TestBuildProjectConnectionSecret(t *testing.T) {
 
 func Test_buildAccessLists(t *testing.T) {
 	ctl := gomock.NewController(t)
+	defer ctl.Finish()
 
 	alProvider := mocks.NewMockProjectIPAccessListLister(ctl)
 	t.Run("Can convert Access Lists", func(t *testing.T) {
-		data := &atlasv2.PaginatedNetworkAccess{
-			Links: nil,
-			Results: &[]atlasv2.NetworkPermissionEntry{
-				{
-					AwsSecurityGroup: pointer.Get("TestSecGroup"),
-					CidrBlock:        pointer.Get("0.0.0.0/0"),
-					Comment:          pointer.Get("TestComment"),
-					DeleteAfterDate:  pointer.Get(time.Now()),
-					GroupId:          pointer.Get("TestGroupID"),
-					IpAddress:        pointer.Get("0.0.0.0"),
-				},
+		ipAccessLists := []atlasv2.NetworkPermissionEntry{
+			{
+				AwsSecurityGroup: pointer.Get("TestSecGroup"),
+				CidrBlock:        pointer.Get("0.0.0.0/0"),
+				Comment:          pointer.Get("TestComment"),
+				DeleteAfterDate:  pointer.Get(time.Now()),
+				GroupId:          pointer.Get("TestGroupID"),
+				IpAddress:        pointer.Get("0.0.0.0"),
 			},
-			TotalCount: pointer.Get(1),
 		}
 
-		listOptions := &store.ListOptions{ItemsPerPage: MaxItems}
-
-		alProvider.EXPECT().ProjectIPAccessLists(projectID, listOptions).Return(data, nil)
+		alProvider.EXPECT().
+			ProjectIPAccessLists(projectID).
+			Return(ipAccessLists, nil)
 
 		got, err := buildAccessLists(alProvider, projectID)
 		if err != nil {
-			t.Errorf("%v", err)
+			t.Errorf("unexpected error: %v", err)
 		}
 
 		expected := []akov2project.IPAccessList{
 			{
-				AwsSecurityGroup: data.GetResults()[0].GetAwsSecurityGroup(),
-				CIDRBlock:        data.GetResults()[0].GetCidrBlock(),
-				Comment:          data.GetResults()[0].GetComment(),
-				DeleteAfterDate:  data.GetResults()[0].GetDeleteAfterDate().String(),
-				IPAddress:        data.GetResults()[0].GetIpAddress(),
+				AwsSecurityGroup: ipAccessLists[0].GetAwsSecurityGroup(),
+				CIDRBlock:        ipAccessLists[0].GetCidrBlock(),
+				Comment:          ipAccessLists[0].GetComment(),
+				DeleteAfterDate:  ipAccessLists[0].GetDeleteAfterDate().String(),
+				IPAddress:        ipAccessLists[0].GetIpAddress(),
 			},
 		}
 
 		if !reflect.DeepEqual(expected, got) {
-			t.Fatalf("IPAccessList mismatch.\r\nexpected: %v\r\ngot: %v\r\n", expected, got)
+			t.Fatalf("IPAccessList mismatch.\nexpected: %#v\ngot: %#v", expected, got)
 		}
 	})
 }
