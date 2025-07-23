@@ -24,13 +24,15 @@ import (
 )
 
 func TestMain(m *testing.M) {
+	runner := m.Run
 	if isQASelected() {
-		setQACredentialsEnvVars()
-		setQAProject()
+		runner = func() int {
+			setQACredentialsEnvVars()
+			defer restoreEnvVars()
+			return m.Run()
+		}
 	}
-	exitVal := m.Run()
-	restoreEnvVars()
-	os.Exit(exitVal)
+	os.Exit(runner())
 }
 
 func TestEnv(t *testing.T) {
@@ -89,8 +91,4 @@ func restoreEnv(envvar string) {
 
 func savedEnvVar(envvar string) string {
 	return fmt.Sprintf("%s_SAVED", envvar)
-}
-
-func setQAProject() {
-
 }
