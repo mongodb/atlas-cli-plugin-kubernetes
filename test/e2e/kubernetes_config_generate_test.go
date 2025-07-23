@@ -3082,6 +3082,13 @@ func TestGenerateMany(t *testing.T) {
 	ipAccessList4 := createIPAccessList(t, projectID, "ip", "203.0.113.4")
 	ipAccessList5 := createIPAccessList(t, projectID, "ip", "198.51.100.5")
 
+	// Test clusters with pagination
+	flexCluster1 := createAtlasFlexCluster(t, projectID, "flex1")
+	flexCluster2 := createAtlasFlexCluster(t, projectID, "flex2")
+	flexCluster3 := createAtlasFlexCluster(t, projectID, "flex3")
+	flexCluster4 := createAtlasFlexCluster(t, projectID, "flex4")
+	flexCluster5 := createAtlasFlexCluster(t, projectID, "flex5")
+
 	cliPath, err := PluginBin()
 	require.NoError(t, err)
 	cmd := exec.Command(cliPath,
@@ -3107,9 +3114,15 @@ func TestGenerateMany(t *testing.T) {
 	// Find the AtlasProject
 	assert.NotNil(t, findGeneratedAtlasProject(objects, projectName))
 
-	// Find each IP address in k8s
+	// Assert IP access lists
 	ipAddressList := []string{ipAccessList1, ipAccessList2, ipAccessList3, ipAccessList4, ipAccessList5}
 	for i, ip := range ipAddressList {
 		assert.NotNil(t, findGeneratedIPAccessList(objects, projectID, ip), "IP access list %d with ID %s not found", i+1, ip)
+	}
+
+	// Assert Flex clusters
+	clusterList := []string{flexCluster1, flexCluster2, flexCluster3, flexCluster4, flexCluster5}
+	for i, name := range clusterList {
+		assert.NotNil(t, findGeneratedAtlasFlexCluster(objects, projectID, name), "Flex cluster %d with name %s not found", i+1, name)
 	}
 }

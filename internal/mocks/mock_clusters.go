@@ -8,7 +8,6 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	store "github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store"
 	admin "go.mongodb.org/atlas-sdk/v20240530005/admin"
 	admin0 "go.mongodb.org/atlas-sdk/v20241113004/admin"
 )
@@ -52,18 +51,18 @@ func (mr *MockClusterListerMockRecorder) ListFlexClusters(arg0 interface{}) *gom
 }
 
 // ProjectClusters mocks base method.
-func (m *MockClusterLister) ProjectClusters(arg0 string, arg1 *store.ListOptions) (*admin.PaginatedAdvancedClusterDescription, error) {
+func (m *MockClusterLister) ProjectClusters(arg0 string) ([]admin.AdvancedClusterDescription, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ProjectClusters", arg0, arg1)
-	ret0, _ := ret[0].(*admin.PaginatedAdvancedClusterDescription)
+	ret := m.ctrl.Call(m, "ProjectClusters", arg0)
+	ret0, _ := ret[0].([]admin.AdvancedClusterDescription)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // ProjectClusters indicates an expected call of ProjectClusters.
-func (mr *MockClusterListerMockRecorder) ProjectClusters(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockClusterListerMockRecorder) ProjectClusters(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProjectClusters", reflect.TypeOf((*MockClusterLister)(nil).ProjectClusters), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProjectClusters", reflect.TypeOf((*MockClusterLister)(nil).ProjectClusters), arg0)
 }
 
 // MockClusterDescriber is a mock of ClusterDescriber interface.

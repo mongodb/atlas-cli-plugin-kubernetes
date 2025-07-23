@@ -691,6 +691,59 @@ func findGeneratedIPAccessList(objects []rt.Object, projectID, address string) *
 	return nil
 }
 
+// AtlasFlexCluster helper //
+func createAtlasFlexCluster(t *testing.T, projectID string, clusterName string) string {
+	t.Helper()
+
+	cliPath, err := AtlasCLIBin()
+	require.NoError(t, err, "could not find Atlas CLI binary")
+
+	args := []string{
+		clustersEntity,
+		"create",
+		clusterName,
+		"--projectId",
+		projectID,
+		"--provider",
+		"AWS",
+		"--region",
+		"US_EAST_1",
+		"--tier",
+		"FLEX",
+		"-o=json",
+	}
+	cmd := exec.Command(cliPath, args...)
+	cmd.Env = os.Environ()
+
+	resp, err := test.RunAndGetStdOut(cmd)
+	require.NoError(t, err, "failed to create flex cluster %q: %s", clusterName, string(resp))
+
+	var cluster atlasv2.FlexClusterDescription20241113
+	require.NoError(t, json.Unmarshal(resp, &cluster), "invalid cluster response: %s", string(resp))
+
+	t.Cleanup(func() {
+		t.Logf("Deleting test Flex cluster: %s", clusterName)
+		require.NoError(t, deleteClusterForProject(projectID, clusterName))
+	})
+
+	return clusterName
+}
+
+// AtlasCluster helper //
+func findGeneratedAtlasFlexCluster(objects []rt.Object, projectID, flexClusterName string) *akov2.AtlasDeployment {
+	for _, obj := range objects {
+		if flex, ok := (obj).(*akov2.AtlasDeployment); ok &&
+			flex.Spec.ExternalProjectRef != nil &&
+			flex.Spec.ExternalProjectRef.ID == projectID &&
+			flex.Spec.FlexSpec != nil &&
+			flex.Spec.FlexSpec.Name == flexClusterName {
+			return flex
+		}
+	}
+
+	return nil
+}
+
 func createDBUserWithCert(projectID, username string) error {
 	cliPath, err := AtlasCLIBin()
 	if err != nil {
@@ -971,48 +1024,6 @@ func findGeneratedUser(objects []rt.Object, projectID, username string) *akov2.A
 			user.Spec.ExternalProjectRef.ID == projectID &&
 			user.Spec.Username == username {
 			return user
-		}
-	}
-	return nil
-}
-
-func generateTestFlexCluster(t *testing.T, projectID string) string {
-	cliPath, err := AtlasCLIBin()
-	require.NoError(t, err, "%w: invalid bin", err)
-	clusterName, err := RandomName("flex")
-	args := []string{
-		clustersEntity,
-		"create",
-		clusterName,
-		"--projectId", projectID,
-		"--provider", "AWS",
-		"--region", "US_EAST_1",
-		"--tier", "FLEX",
-		"-o=json",
-	}
-	cmd := exec.Command(cliPath, args...)
-	cmd.Env = os.Environ()
-	resp, err := test.RunAndGetStdOut(cmd)
-	require.NoError(t, err, "%s (%w)", string(resp), err)
-
-	var project atlasv2.Group
-	require.NoError(t, json.Unmarshal(resp, &project), "invalid response: %s (%w)", string(resp), err)
-
-	return clusterName
-}
-
-func clearTestCluster(t *testing.T, projectID, flexClusterName string) {
-	require.NoError(t, deleteClusterForProject(projectID, flexClusterName))
-}
-
-func findGeneratedFlexCluster(objects []rt.Object, projectID, flexClusterName string) *akov2.AtlasDeployment {
-	for _, obj := range objects {
-		if flex, ok := (obj).(*akov2.AtlasDeployment); ok &&
-			flex.Spec.ExternalProjectRef != nil &&
-			flex.Spec.ExternalProjectRef.ID == projectID &&
-			flex.Spec.FlexSpec != nil &&
-			flex.Spec.FlexSpec.Name == flexClusterName {
-			return flex
 		}
 	}
 	return nil

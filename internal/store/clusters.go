@@ -15,6 +15,8 @@
 package store
 
 import (
+	"fmt"
+
 	atlasClustersPinned "go.mongodb.org/atlas-sdk/v20240530005/admin"
 	atlasv2 "go.mongodb.org/atlas-sdk/v20241113004/admin"
 )
@@ -22,10 +24,11 @@ import (
 //go:generate mockgen -destination=../mocks/mock_clusters.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store ClusterLister,ClusterDescriber,AtlasClusterConfigurationOptionsDescriber
 
 type ClusterLister interface {
-	ProjectClusters(string, *ListOptions) (*atlasClustersPinned.PaginatedAdvancedClusterDescription, error)
+	ProjectClusters(string) ([]atlasClustersPinned.AdvancedClusterDescription, error)
 	ListFlexClusters(*atlasv2.ListFlexClustersApiParams) (*atlasv2.PaginatedFlexClusters20241113, error)
 }
 
+// !!!!!!!!!!!!!!!!!!!!!!!!!!! This ClusterDescriber is not really used anywhere. Why keep it !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 type ClusterDescriber interface {
 	AtlasCluster(string, string) (*atlasClustersPinned.AdvancedClusterDescription, error)
 	FlexCluster(string, string) (*atlasv2.FlexClusterDescription20241113, error)
@@ -36,13 +39,18 @@ type AtlasClusterConfigurationOptionsDescriber interface {
 }
 
 // ProjectClusters encapsulate the logic to manage different cloud providers.
-func (s *Store) ProjectClusters(projectID string, opts *ListOptions) (*atlasClustersPinned.PaginatedAdvancedClusterDescription, error) {
-	res := s.clientClusters.ClustersApi.ListClusters(s.ctx, projectID)
-	if opts != nil {
-		res = res.PageNum(opts.PageNum).ItemsPerPage(fixPageSize(opts.ItemsPerPage)).IncludeCount(opts.IncludeCount)
-	}
-	result, _, err := res.Execute()
-	return result, err
+func (s *Store) ProjectClusters(projectID string) ([]atlasClustersPinned.AdvancedClusterDescription, error) {
+	return AllPages(func(pageNum, itemsPerPage int) ([]atlasClustersPinned.AdvancedClusterDescription, error) {
+		page, _, err := s.clientClusters.ClustersApi.ListClusters(s.ctx, projectID).
+			PageNum(pageNum).
+			ItemsPerPage(itemsPerPage).
+			Execute()
+		if err != nil {
+			return nil, fmt.Errorf("failed to list project clusters: %w", err)
+		}
+
+		return page.GetResults(), nil
+	})
 }
 
 // AtlasCluster encapsulates the logic to manage different cloud providers.

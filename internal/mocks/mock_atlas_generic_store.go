@@ -546,18 +546,18 @@ func (mr *MockOperatorGenericStoreMockRecorder) ProjectByName(arg0 interface{}) 
 }
 
 // ProjectClusters mocks base method.
-func (m *MockOperatorGenericStore) ProjectClusters(arg0 string, arg1 *store.ListOptions) (*admin.PaginatedAdvancedClusterDescription, error) {
+func (m *MockOperatorGenericStore) ProjectClusters(arg0 string) ([]admin.AdvancedClusterDescription, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ProjectClusters", arg0, arg1)
-	ret0, _ := ret[0].(*admin.PaginatedAdvancedClusterDescription)
+	ret := m.ctrl.Call(m, "ProjectClusters", arg0)
+	ret0, _ := ret[0].([]admin.AdvancedClusterDescription)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // ProjectClusters indicates an expected call of ProjectClusters.
-func (mr *MockOperatorGenericStoreMockRecorder) ProjectClusters(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockOperatorGenericStoreMockRecorder) ProjectClusters(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProjectClusters", reflect.TypeOf((*MockOperatorGenericStore)(nil).ProjectClusters), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProjectClusters", reflect.TypeOf((*MockOperatorGenericStore)(nil).ProjectClusters), arg0)
 }
 
 // ProjectIPAccessLists mocks base method.

@@ -467,7 +467,7 @@ func fetchClusterNames(clustersProvider store.AllClustersLister, projectID strin
 		flexResult[cluster.GetName()] = struct{}{}
 	}
 
-	clusters, err := clustersProvider.ProjectClusters(projectID, &store.ListOptions{ItemsPerPage: maxClusters})
+	clusters, err := clustersProvider.ProjectClusters(projectID)
 	if err != nil {
 		return nil, err
 	}
@@ -476,7 +476,7 @@ func fetchClusterNames(clustersProvider store.AllClustersLister, projectID strin
 		return nil, ErrNoCloudManagerClusters
 	}
 
-	for _, cluster := range clusters.GetResults() {
+	for _, cluster := range clusters {
 		if reflect.ValueOf(cluster).IsZero() {
 			continue
 		}
