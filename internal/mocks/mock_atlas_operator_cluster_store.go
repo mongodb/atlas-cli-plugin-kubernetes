@@ -126,11 +126,26 @@ func (mr *MockOperatorClusterStoreMockRecorder) GlobalCluster(arg0, arg1 interfa
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GlobalCluster", reflect.TypeOf((*MockOperatorClusterStore)(nil).GlobalCluster), arg0, arg1)
 }
 
+// ListAtlasClusters mocks base method.
+func (m *MockOperatorClusterStore) ListAtlasClusters(arg0 string) ([]admin.AdvancedClusterDescription, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListAtlasClusters", arg0)
+	ret0, _ := ret[0].([]admin.AdvancedClusterDescription)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListAtlasClusters indicates an expected call of ListAtlasClusters.
+func (mr *MockOperatorClusterStoreMockRecorder) ListAtlasClusters(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListAtlasClusters", reflect.TypeOf((*MockOperatorClusterStore)(nil).ListAtlasClusters), arg0)
+}
+
 // ListFlexClusters mocks base method.
-func (m *MockOperatorClusterStore) ListFlexClusters(arg0 *admin0.ListFlexClustersApiParams) (*admin0.PaginatedFlexClusters20241113, error) {
+func (m *MockOperatorClusterStore) ListFlexClusters(arg0 string) ([]admin0.FlexClusterDescription20241113, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListFlexClusters", arg0)
-	ret0, _ := ret[0].(*admin0.PaginatedFlexClusters20241113)
+	ret0, _ := ret[0].([]admin0.FlexClusterDescription20241113)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -139,21 +154,6 @@ func (m *MockOperatorClusterStore) ListFlexClusters(arg0 *admin0.ListFlexCluster
 func (mr *MockOperatorClusterStoreMockRecorder) ListFlexClusters(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListFlexClusters", reflect.TypeOf((*MockOperatorClusterStore)(nil).ListFlexClusters), arg0)
-}
-
-// ProjectClusters mocks base method.
-func (m *MockOperatorClusterStore) ProjectClusters(arg0 string) ([]admin.AdvancedClusterDescription, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ProjectClusters", arg0)
-	ret0, _ := ret[0].([]admin.AdvancedClusterDescription)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// ProjectClusters indicates an expected call of ProjectClusters.
-func (mr *MockOperatorClusterStoreMockRecorder) ProjectClusters(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProjectClusters", reflect.TypeOf((*MockOperatorClusterStore)(nil).ProjectClusters), arg0)
 }
 
 // ServerlessInstances mocks base method.

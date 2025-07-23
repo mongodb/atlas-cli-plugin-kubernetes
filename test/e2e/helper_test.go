@@ -36,6 +36,7 @@ import (
 	akov2status "github.com/mongodb/mongodb-atlas-kubernetes/v2/api/v1/status"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	atlasClustersPinned "go.mongodb.org/atlas-sdk/v20240530005/admin"
 	atlasv2 "go.mongodb.org/atlas-sdk/v20241113004/admin"
 	atlasv20250219001 "go.mongodb.org/atlas-sdk/v20250219001/admin"
 	"go.mongodb.org/atlas/mongodbatlas"
@@ -688,6 +689,58 @@ func findGeneratedIPAccessList(objects []rt.Object, projectID, address string) *
 		}
 	}
 
+	return nil
+}
+
+// AtlasCluster helper //
+func createAtlasCluster(t *testing.T, projectID, clusterName string) string {
+	t.Helper()
+
+	cliPath, err := AtlasCLIBin()
+	require.NoError(t, err, "could not find Atlas CLI binary")
+
+	args := []string{
+		clustersEntity,
+		"create",
+		clusterName,
+		"--projectId",
+		projectID,
+		"--provider",
+		"AWS",
+		"--region",
+		"US_EAST_1",
+		"--tier",
+		"M10",
+		"-o=json",
+	}
+	cmd := exec.Command(cliPath, args...)
+	cmd.Env = os.Environ()
+
+	resp, err := test.RunAndGetStdOut(cmd)
+	require.NoError(t, err, "failed to create Atlas cluster %q: %s", clusterName, string(resp))
+
+	var cluster atlasClustersPinned.AdvancedClusterDescription
+	require.NoError(t, json.Unmarshal(resp, &cluster), "invalid cluster response: %s", string(resp))
+
+	t.Cleanup(func() {
+		t.Logf("Deleting test Atlas cluster: %s", clusterName)
+		require.NoError(t, deleteClusterForProject(projectID, clusterName))
+	})
+
+	return clusterName
+}
+
+// AtlasCluster helper //
+func findGeneratedAtlasCluster(objects []rt.Object, projectID, clusterName string) *akov2.AtlasDeployment {
+	for _, obj := range objects {
+		if dep, ok := obj.(*akov2.AtlasDeployment); ok &&
+			dep.Spec.ExternalProjectRef != nil &&
+			dep.Spec.ExternalProjectRef.ID == projectID &&
+			dep.Spec.DeploymentSpec != nil &&
+			dep.Spec.DeploymentSpec.Name == clusterName {
+			return dep
+		}
+	}
 	return nil
 }
 

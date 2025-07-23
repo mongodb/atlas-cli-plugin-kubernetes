@@ -35,11 +35,26 @@ func (m *MockClusterLister) EXPECT() *MockClusterListerMockRecorder {
 	return m.recorder
 }
 
+// ListAtlasClusters mocks base method.
+func (m *MockClusterLister) ListAtlasClusters(arg0 string) ([]admin.AdvancedClusterDescription, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListAtlasClusters", arg0)
+	ret0, _ := ret[0].([]admin.AdvancedClusterDescription)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListAtlasClusters indicates an expected call of ListAtlasClusters.
+func (mr *MockClusterListerMockRecorder) ListAtlasClusters(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListAtlasClusters", reflect.TypeOf((*MockClusterLister)(nil).ListAtlasClusters), arg0)
+}
+
 // ListFlexClusters mocks base method.
-func (m *MockClusterLister) ListFlexClusters(arg0 *admin0.ListFlexClustersApiParams) (*admin0.PaginatedFlexClusters20241113, error) {
+func (m *MockClusterLister) ListFlexClusters(arg0 string) ([]admin0.FlexClusterDescription20241113, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListFlexClusters", arg0)
-	ret0, _ := ret[0].(*admin0.PaginatedFlexClusters20241113)
+	ret0, _ := ret[0].([]admin0.FlexClusterDescription20241113)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -48,21 +63,6 @@ func (m *MockClusterLister) ListFlexClusters(arg0 *admin0.ListFlexClustersApiPar
 func (mr *MockClusterListerMockRecorder) ListFlexClusters(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListFlexClusters", reflect.TypeOf((*MockClusterLister)(nil).ListFlexClusters), arg0)
-}
-
-// ProjectClusters mocks base method.
-func (m *MockClusterLister) ProjectClusters(arg0 string) ([]admin.AdvancedClusterDescription, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ProjectClusters", arg0)
-	ret0, _ := ret[0].([]admin.AdvancedClusterDescription)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// ProjectClusters indicates an expected call of ProjectClusters.
-func (mr *MockClusterListerMockRecorder) ProjectClusters(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProjectClusters", reflect.TypeOf((*MockClusterLister)(nil).ProjectClusters), arg0)
 }
 
 // MockClusterDescriber is a mock of ClusterDescriber interface.

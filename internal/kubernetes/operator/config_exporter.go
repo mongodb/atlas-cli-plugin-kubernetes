@@ -28,7 +28,6 @@ import (
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator/project"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator/resources"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator/streamsprocessing"
-	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/pointer"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store"
 	"go.mongodb.org/atlas-sdk/v20241113004/admin"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -448,17 +447,12 @@ func fetchClusterNames(clustersProvider store.AllClustersLister, projectID strin
 	result := make([]string, 0, DefaultClustersCount)
 
 	flexResult := make(map[string]struct{}, DefaultClustersCount)
-	flexClusters, err := clustersProvider.ListFlexClusters(
-		&admin.ListFlexClustersApiParams{
-			GroupId:      projectID,
-			ItemsPerPage: pointer.Get(maxClusters),
-		},
-	)
+	flexClusters, err := clustersProvider.ListFlexClusters(projectID)
 	if err != nil {
 		return nil, err
 	}
 
-	for _, cluster := range flexClusters.GetResults() {
+	for _, cluster := range flexClusters {
 		if reflect.ValueOf(cluster).IsZero() {
 			continue
 		}
@@ -467,7 +461,7 @@ func fetchClusterNames(clustersProvider store.AllClustersLister, projectID strin
 		flexResult[cluster.GetName()] = struct{}{}
 	}
 
-	clusters, err := clustersProvider.ProjectClusters(projectID)
+	clusters, err := clustersProvider.ListAtlasClusters(projectID)
 	if err != nil {
 		return nil, err
 	}

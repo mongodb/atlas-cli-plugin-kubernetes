@@ -3082,12 +3082,19 @@ func TestGenerateMany(t *testing.T) {
 	ipAccessList4 := createIPAccessList(t, projectID, "ip", "203.0.113.4")
 	ipAccessList5 := createIPAccessList(t, projectID, "ip", "198.51.100.5")
 
-	// Test clusters with pagination
+	// Test flex clusters with pagination
 	flexCluster1 := createAtlasFlexCluster(t, projectID, "flex1")
 	flexCluster2 := createAtlasFlexCluster(t, projectID, "flex2")
 	flexCluster3 := createAtlasFlexCluster(t, projectID, "flex3")
 	flexCluster4 := createAtlasFlexCluster(t, projectID, "flex4")
 	flexCluster5 := createAtlasFlexCluster(t, projectID, "flex5")
+
+	// Test Normal (M10) Atlas clusters
+	cluster1 := createAtlasCluster(t, projectID, "cluster1")
+	cluster2 := createAtlasCluster(t, projectID, "cluster2")
+	cluster3 := createAtlasCluster(t, projectID, "cluster3")
+	cluster4 := createAtlasCluster(t, projectID, "cluster4")
+	cluster5 := createAtlasCluster(t, projectID, "cluster5")
 
 	cliPath, err := PluginBin()
 	require.NoError(t, err)
@@ -3121,8 +3128,14 @@ func TestGenerateMany(t *testing.T) {
 	}
 
 	// Assert Flex clusters
-	clusterList := []string{flexCluster1, flexCluster2, flexCluster3, flexCluster4, flexCluster5}
-	for i, name := range clusterList {
+	flexClusterList := []string{flexCluster1, flexCluster2, flexCluster3, flexCluster4, flexCluster5}
+	for i, name := range flexClusterList {
 		assert.NotNil(t, findGeneratedAtlasFlexCluster(objects, projectID, name), "Flex cluster %d with name %s not found", i+1, name)
+	}
+
+	// Assert Normal M10 clusters
+	clusterList := []string{cluster1, cluster2, cluster3, cluster4, cluster5}
+	for i, name := range clusterList {
+		assert.NotNil(t, findGeneratedAtlasCluster(objects, projectID, name), "Cluster %d with name %s not found", i+1, name)
 	}
 }

@@ -24,11 +24,10 @@ import (
 //go:generate mockgen -destination=../mocks/mock_clusters.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store ClusterLister,ClusterDescriber,AtlasClusterConfigurationOptionsDescriber
 
 type ClusterLister interface {
-	ProjectClusters(string) ([]atlasClustersPinned.AdvancedClusterDescription, error)
-	ListFlexClusters(*atlasv2.ListFlexClustersApiParams) (*atlasv2.PaginatedFlexClusters20241113, error)
+	ListAtlasClusters(string) ([]atlasClustersPinned.AdvancedClusterDescription, error)
+	ListFlexClusters(string) ([]atlasv2.FlexClusterDescription20241113, error)
 }
 
-// !!!!!!!!!!!!!!!!!!!!!!!!!!! This ClusterDescriber is not really used anywhere. Why keep it !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 type ClusterDescriber interface {
 	AtlasCluster(string, string) (*atlasClustersPinned.AdvancedClusterDescription, error)
 	FlexCluster(string, string) (*atlasv2.FlexClusterDescription20241113, error)
@@ -39,7 +38,7 @@ type AtlasClusterConfigurationOptionsDescriber interface {
 }
 
 // ProjectClusters encapsulate the logic to manage different cloud providers.
-func (s *Store) ProjectClusters(projectID string) ([]atlasClustersPinned.AdvancedClusterDescription, error) {
+func (s *Store) ListAtlasClusters(projectID string) ([]atlasClustersPinned.AdvancedClusterDescription, error) {
 	return AllPages(func(pageNum, itemsPerPage int) ([]atlasClustersPinned.AdvancedClusterDescription, error) {
 		page, _, err := s.clientClusters.ClustersApi.ListClusters(s.ctx, projectID).
 			PageNum(pageNum).
