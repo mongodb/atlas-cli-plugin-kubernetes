@@ -576,10 +576,10 @@ func (mr *MockOperatorGenericStoreMockRecorder) ProjectSettings(arg0 interface{}
 }
 
 // ProjectStreams mocks base method.
-func (m *MockOperatorGenericStore) ProjectStreams(arg0 *admin0.ListStreamInstancesApiParams) (*admin0.PaginatedApiStreamsTenant, error) {
+func (m *MockOperatorGenericStore) ProjectStreams(arg0 string) ([]admin0.StreamsTenant, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ProjectStreams", arg0)
-	ret0, _ := ret[0].(*admin0.PaginatedApiStreamsTenant)
+	ret0, _ := ret[0].([]admin0.StreamsTenant)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

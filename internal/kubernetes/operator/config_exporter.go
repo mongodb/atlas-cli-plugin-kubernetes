@@ -546,11 +546,11 @@ func (e *ConfigExporter) exportAtlasStreamProcessing(projectName string) ([]runt
 		return nil, nil
 	}
 
-	instancesList, err := e.dataProvider.ProjectStreams(&admin.ListStreamInstancesApiParams{GroupId: e.projectID})
+	instancesList, err := e.dataProvider.ProjectStreams(e.projectID)
 	if err != nil {
 		return nil, err
 	}
-	instances := instancesList.GetResults()
+	instances := instancesList
 	result := make([]runtime.Object, 0, len(instances))
 
 	for i := range instances {

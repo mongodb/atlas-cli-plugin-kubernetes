@@ -3094,11 +3094,11 @@ func TestGenerateMany(t *testing.T) {
 
 	// Test identity provieders from federated auth with pagiation
 	// Note, idps cannot be tested right since they are outside of project scope (org level)
-	createAtlasIdentityProvider(t, federationSettingsID, "idp1")
-	createAtlasIdentityProvider(t, federationSettingsID, "idp2")
-	createAtlasIdentityProvider(t, federationSettingsID, "idp3")
-	createAtlasIdentityProvider(t, federationSettingsID, "idp4")
-	createAtlasIdentityProvider(t, federationSettingsID, "idp5")
+	createAtlasIdentityProvider(t, federationSettingsID, "idps1")
+	createAtlasIdentityProvider(t, federationSettingsID, "idps2")
+	createAtlasIdentityProvider(t, federationSettingsID, "idps3")
+	createAtlasIdentityProvider(t, federationSettingsID, "idps4")
+	createAtlasIdentityProvider(t, federationSettingsID, "idps5")
 
 	// Test databaseUsers with pagination
 	user1 := createAtlasDatabaseUser(t, projectID, "user1", "pass1")
@@ -3106,6 +3106,10 @@ func TestGenerateMany(t *testing.T) {
 	user3 := createAtlasDatabaseUser(t, projectID, "user3", "pass3")
 	user4 := createAtlasDatabaseUser(t, projectID, "user4", "pass4")
 	user5 := createAtlasDatabaseUser(t, projectID, "user5", "pass5")
+
+	// Test Streams instances with pagination
+	stream1 := createAtlasStreamInstance(t, projectID, "stream1")
+	stream2 := createAtlasStreamInstance(t, projectID, "stream2")
 
 	// Test flex clusters with pagination
 	flexCluster1 := createAtlasFlexCluster(t, projectID, "flex1")
@@ -3156,6 +3160,12 @@ func TestGenerateMany(t *testing.T) {
 	usernames := []string{user1, user2, user3, user4, user5}
 	for i, username := range usernames {
 		assert.NotNil(t, findGeneratedAtlasDatabaseUser(objects, projectID, username), "DB user %d with username %s not found", i+1, username)
+	}
+
+	// Assert Streams instances
+	streamList := []string{stream1, stream2}
+	for i, name := range streamList {
+		assert.NotNil(t, findGeneratedAtlasStreamInstance(objects, projectName, name), "Stream instance %d with name %s not found", i+1, name)
 	}
 
 	// Assert Flex clusters

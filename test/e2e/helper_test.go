@@ -912,6 +912,33 @@ func findGeneratedAtlasIdentityProvider(objects []rt.Object, idpID string) *akov
 	return nil
 }
 
+// AtlasStreams helper //
+func createAtlasStreamInstance(t *testing.T, projectID, instanceName string) string {
+	t.Helper()
+
+	name, err := createStreamsInstance(t, projectID, instanceName)
+	require.NoErrorf(t, err, "failed to create Streams instance")
+
+	t.Cleanup(func() {
+		t.Logf("Deleting test Streams instance: %s", name)
+		require.NoError(t, deleteStreamsInstance(t, projectID, name))
+	})
+
+	return name
+}
+
+// AtlasStreamInstance helper //
+func findGeneratedAtlasStreamInstance(objects []rt.Object, projectName, streamName string) *akov2.AtlasStreamInstance {
+	for _, obj := range objects {
+		if stream, ok := obj.(*akov2.AtlasStreamInstance); ok &&
+			stream.Spec.Project.Name == projectName &&
+			stream.Spec.Name == streamName {
+			return stream
+		}
+	}
+	return nil
+}
+
 // AtlasCluster helper //
 func createAtlasCluster(t *testing.T, projectID, clusterName string) string {
 	t.Helper()
