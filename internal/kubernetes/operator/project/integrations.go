@@ -47,7 +47,7 @@ func BuildThirdPartyIntegrations(
 	provider store.IntegrationLister,
 	request ThirdPartyIntegrationRequest,
 ) ([]runtime.Object, error) {
-	atlasIntegrations, err := provider.AllIntegrations(request.ProjectID)
+	atlasIntegrations, err := provider.Integrations(request.ProjectID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list third party integrations from Atlas: %w", err)
 	}

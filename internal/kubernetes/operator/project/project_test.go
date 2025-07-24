@@ -109,17 +109,13 @@ func TestBuildAtlasProject(t *testing.T) {
 		},
 	}
 
-	thirdPartyIntegrations := &atlasv2.PaginatedIntegration{
-		Links: nil,
-		Results: &[]atlasv2.ThirdPartyIntegration{
-			{
-				Type:             pointer.Get("PROMETHEUS"),
-				Username:         pointer.Get("TestPrometheusUserName"),
-				Password:         pointer.Get("TestPrometheusPassword"),
-				ServiceDiscovery: pointer.Get("TestPrometheusServiceDiscovery"),
-			},
+	thirdPartyIntegrations := []atlasv2.ThirdPartyIntegration{
+		{
+			Type:             pointer.Get("PROMETHEUS"),
+			Username:         pointer.Get("TestPrometheusUserName"),
+			Password:         pointer.Get("TestPrometheusPassword"),
+			ServiceDiscovery: pointer.Get("TestPrometheusServiceDiscovery"),
 		},
-		TotalCount: pointer.Get(1),
 	}
 
 	mw := &atlasv2.GroupMaintenanceWindow{
@@ -489,15 +485,15 @@ func TestBuildAtlasProject(t *testing.T) {
 					X509CertRef:               nil,
 					Integrations: []akov2project.Integration{
 						{
-							Type:     thirdPartyIntegrations.GetResults()[0].GetType(),
-							UserName: thirdPartyIntegrations.GetResults()[0].GetUsername(),
+							Type:     thirdPartyIntegrations[0].GetType(),
+							UserName: thirdPartyIntegrations[0].GetUsername(),
 							PasswordRef: akov2common.ResourceRefNamespaced{
 								Name: fmt.Sprintf("%s-integration-%s",
 									strings.ToLower(projectID),
-									strings.ToLower(thirdPartyIntegrations.GetResults()[0].GetType())),
+									strings.ToLower(thirdPartyIntegrations[0].GetType())),
 								Namespace: targetNamespace,
 							},
-							ServiceDiscovery: thirdPartyIntegrations.GetResults()[0].GetServiceDiscovery(),
+							ServiceDiscovery: thirdPartyIntegrations[0].GetServiceDiscovery(),
 						},
 					},
 					EncryptionAtRest: &akov2.EncryptionAtRest{
@@ -1083,17 +1079,13 @@ func Test_buildIntegrations(t *testing.T) {
 	t.Run("Can convert third-party integrations WITH secrets: Prometheus", func(t *testing.T) {
 		const targetNamespace = "test-namespace-3"
 		const includeSecrets = true
-		ints := &atlasv2.PaginatedIntegration{
-			Links: nil,
-			Results: &[]atlasv2.ThirdPartyIntegration{
-				{
-					Type:             pointer.Get("PROMETHEUS"),
-					Password:         pointer.Get("PrometheusTestPassword"),
-					Username:         pointer.Get("PrometheusTestUserName"),
-					ServiceDiscovery: pointer.Get("TestServiceDiscovery"),
-				},
+		ints := []atlasv2.ThirdPartyIntegration{
+			{
+				Type:             pointer.Get("PROMETHEUS"),
+				Password:         pointer.Get("PrometheusTestPassword"),
+				Username:         pointer.Get("PrometheusTestUserName"),
+				ServiceDiscovery: pointer.Get("TestServiceDiscovery"),
 			},
-			TotalCount: pointer.Get(0),
 		}
 
 		intProvider.EXPECT().Integrations(projectID).Return(ints, nil)
@@ -1105,13 +1097,13 @@ func Test_buildIntegrations(t *testing.T) {
 
 		expected := []akov2project.Integration{
 			{
-				Type:             ints.GetResults()[0].GetType(),
-				ServiceDiscovery: ints.GetResults()[0].GetServiceDiscovery(),
-				UserName:         ints.GetResults()[0].GetUsername(),
+				Type:             ints[0].GetType(),
+				ServiceDiscovery: ints[0].GetServiceDiscovery(),
+				UserName:         ints[0].GetUsername(),
 				PasswordRef: akov2common.ResourceRefNamespaced{
 					Name: fmt.Sprintf("%s-integration-%s",
 						strings.ToLower(projectID),
-						strings.ToLower(ints.GetResults()[0].GetType())),
+						strings.ToLower(ints[0].GetType())),
 					Namespace: targetNamespace,
 				},
 			},
@@ -1126,14 +1118,14 @@ func Test_buildIntegrations(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name: fmt.Sprintf("%s-integration-%s",
 						strings.ToLower(projectID),
-						strings.ToLower(ints.GetResults()[0].GetType())),
+						strings.ToLower(ints[0].GetType())),
 					Namespace: targetNamespace,
 					Labels: map[string]string{
 						secrets.TypeLabelKey: secrets.CredLabelVal,
 					},
 				},
 				Data: map[string][]byte{
-					secrets.PasswordField: []byte(ints.GetResults()[0].GetPassword()),
+					secrets.PasswordField: []byte(ints[0].GetPassword()),
 				},
 			},
 		}
@@ -1149,19 +1141,16 @@ func Test_buildIntegrations(t *testing.T) {
 	t.Run("Can convert third-party integrations WITHOUT secrets: Prometheus", func(t *testing.T) {
 		const targetNamespace = "test-namespace-4"
 		const includeSecrets = false
-		ints := &atlasv2.PaginatedIntegration{
-			Links: nil,
-			Results: &[]atlasv2.ThirdPartyIntegration{
-				{
+		ints := []atlasv2.ThirdPartyIntegration{
+			{
 
-					Type:             pointer.Get("PROMETHEUS"),
-					Password:         pointer.Get("PrometheusTestPassword"),
-					Username:         pointer.Get("PrometheusTestUserName"),
-					ServiceDiscovery: pointer.Get("TestServiceDiscovery"),
-				},
+				Type:             pointer.Get("PROMETHEUS"),
+				Password:         pointer.Get("PrometheusTestPassword"),
+				Username:         pointer.Get("PrometheusTestUserName"),
+				ServiceDiscovery: pointer.Get("TestServiceDiscovery"),
 			},
-			TotalCount: pointer.Get(0),
 		}
+
 		intProvider.EXPECT().Integrations(projectID).Return(ints, nil)
 		got, intSecrets, err := buildIntegrations(intProvider, projectID, targetNamespace, includeSecrets, dictionary)
 		if err != nil {
@@ -1170,13 +1159,13 @@ func Test_buildIntegrations(t *testing.T) {
 
 		expected := []akov2project.Integration{
 			{
-				Type:             ints.GetResults()[0].GetType(),
-				ServiceDiscovery: ints.GetResults()[0].GetServiceDiscovery(),
-				UserName:         ints.GetResults()[0].GetUsername(),
+				Type:             ints[0].GetType(),
+				ServiceDiscovery: ints[0].GetServiceDiscovery(),
+				UserName:         ints[0].GetUsername(),
 				PasswordRef: akov2common.ResourceRefNamespaced{
 					Name: fmt.Sprintf("%s-integration-%s",
 						strings.ToLower(projectID),
-						strings.ToLower(ints.GetResults()[0].GetType())),
+						strings.ToLower(ints[0].GetType())),
 					Namespace: targetNamespace,
 				},
 			},
@@ -1191,7 +1180,7 @@ func Test_buildIntegrations(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name: fmt.Sprintf("%s-integration-%s",
 						strings.ToLower(projectID),
-						strings.ToLower(ints.GetResults()[0].GetType())),
+						strings.ToLower(ints[0].GetType())),
 					Namespace: targetNamespace,
 					Labels: map[string]string{
 						secrets.TypeLabelKey: secrets.CredLabelVal,

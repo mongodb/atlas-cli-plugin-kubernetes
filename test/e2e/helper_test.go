@@ -85,7 +85,11 @@ const (
 
 // Integration constants.
 const (
-	datadogEntity = "DATADOG"
+	datadogEntity   = "DATADOG"
+	opsgenieEntity  = "OPS_GENIE"
+	pagerdutyEntity = "PAGER_DUTY"
+	victoropsEntity = "VICTOR_OPS"
+	webhookEntity   = "WEBHOOK"
 )
 
 // Cluster settings.
@@ -665,30 +669,82 @@ func createIPAccessList(t *testing.T, projectID, resourceType, address string) s
 // IPAccessList helpers //
 func findGeneratedIPAccessList(objects []rt.Object, projectID, address string) *akov2.AtlasIPAccessList {
 	for _, obj := range objects {
-		ip, ok := obj.(*akov2.AtlasIPAccessList)
-		if !ok {
-			continue
-		}
-
-		// Match project ID
-		pid := ""
-		if ip.Spec.ProjectRef != nil {
-			pid = ip.Spec.ProjectRef.Name
-		} else if ip.Spec.ExternalProjectRef != nil {
-			pid = ip.Spec.ExternalProjectRef.ID
-		}
-		if pid != projectID {
-			continue
-		}
-
-		// Search for the address in the entries
-		for _, entry := range ip.Spec.Entries {
-			if entry.IPAddress == address || entry.CIDRBlock == address {
-				return ip
+		if ip, ok := obj.(*akov2.AtlasIPAccessList); ok &&
+			ip.Spec.ExternalProjectRef != nil &&
+			ip.Spec.ExternalProjectRef.ID == projectID {
+			for _, entry := range ip.Spec.Entries {
+				if entry.IPAddress == address || entry.CIDRBlock == address {
+					return ip
+				}
 			}
 		}
 	}
+	return nil
+}
 
+// AtlasIntegration helpers //
+func createAtlasIntegration(t *testing.T, projectID string, integrationType string) {
+	t.Helper()
+
+	cliPath, err := AtlasCLIBin()
+	require.NoError(t, err, "could not find Atlas CLI binary")
+
+	args := []string{
+		integrationsEntity,
+		"create",
+		integrationType,
+	}
+
+	// dummy credemtials that fit in the requirements
+	switch integrationType {
+	case datadogEntity:
+		args = append(args,
+			"--apiKey", "00000000000000000000000000000012",
+		)
+	case opsgenieEntity:
+		args = append(args,
+			"--apiKey", "adbf6e09-ff01-48f3-a03f-cbd61873d125",
+		)
+	case pagerdutyEntity:
+		args = append(args,
+			"--serviceKey", "d4f5a1c6e7b8d9f0a1234567890abcde",
+		)
+	case victoropsEntity:
+		args = append(args,
+			"--apiKey", "558e7ebc-1234-5678-90ab-cdef12345678",
+			"--routingKey", "operations",
+		)
+	case webhookEntity:
+		args = append(args,
+			"--url", "http://9b4ac7aa.abc.io/payload",
+			"--secret", "mySecret",
+		)
+	default:
+		t.Fatalf("unsupported integration type: %s", integrationType)
+	}
+
+	args = append(args,
+		"--projectId", projectID,
+		"-o=json",
+	)
+
+	cmd := exec.Command(cliPath, args...)
+	cmd.Env = os.Environ()
+
+	resp, err := test.RunAndGetStdOut(cmd)
+	require.NoError(t, err, fmt.Sprintf("failed to create integration %q: %s", integrationType, string(resp)))
+}
+
+// AtlasIntegrations helpers //
+func findGeneratedAtlasIntegration(objects []rt.Object, projectID, integrationType string) *akov2.AtlasThirdPartyIntegration {
+	for _, obj := range objects {
+		if integration, ok := obj.(*akov2.AtlasThirdPartyIntegration); ok &&
+			integration.Spec.ExternalProjectRef != nil &&
+			integration.Spec.ExternalProjectRef.ID == projectID &&
+			integration.Spec.Type == integrationType {
+			return integration
+		}
+	}
 	return nil
 }
 

@@ -51,21 +51,6 @@ func (mr *MockOperatorGenericStoreMockRecorder) AlertConfigurations(arg0 interfa
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AlertConfigurations", reflect.TypeOf((*MockOperatorGenericStore)(nil).AlertConfigurations), arg0)
 }
 
-// AllIntegrations mocks base method.
-func (m *MockOperatorGenericStore) AllIntegrations(arg0 string) ([]admin0.ThirdPartyIntegration, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AllIntegrations", arg0)
-	ret0, _ := ret[0].([]admin0.ThirdPartyIntegration)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// AllIntegrations indicates an expected call of AllIntegrations.
-func (mr *MockOperatorGenericStoreMockRecorder) AllIntegrations(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AllIntegrations", reflect.TypeOf((*MockOperatorGenericStore)(nil).AllIntegrations), arg0)
-}
-
 // AssignProjectAPIKey mocks base method.
 func (m *MockOperatorGenericStore) AssignProjectAPIKey(arg0, arg1 string, arg2 *admin0.UpdateAtlasProjectApiKey) error {
 	m.ctrl.T.Helper()
@@ -411,10 +396,10 @@ func (mr *MockOperatorGenericStoreMockRecorder) IdentityProviders(arg0 interface
 }
 
 // Integrations mocks base method.
-func (m *MockOperatorGenericStore) Integrations(arg0 string) (*admin0.PaginatedIntegration, error) {
+func (m *MockOperatorGenericStore) Integrations(arg0 string) ([]admin0.ThirdPartyIntegration, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Integrations", arg0)
-	ret0, _ := ret[0].(*admin0.PaginatedIntegration)
+	ret0, _ := ret[0].([]admin0.ThirdPartyIntegration)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

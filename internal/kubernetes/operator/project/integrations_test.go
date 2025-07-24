@@ -657,7 +657,7 @@ func TestBuildIntegrations(t *testing.T) {
 			intStore := mocks.NewMockIntegrationLister(ctl)
 			dictionary := resources.AtlasNameToKubernetesName()
 
-			intStore.EXPECT().AllIntegrations(projectID).Return(tc.atlasIntegration, nil)
+			intStore.EXPECT().Integrations(projectID).Return(tc.atlasIntegration, nil)
 
 			peerings, err := BuildThirdPartyIntegrations(
 				intStore,

@@ -3082,6 +3082,13 @@ func TestGenerateMany(t *testing.T) {
 	ipAccessList4 := createIPAccessList(t, projectID, "ip", "192.168.1.4")
 	ipAccessList5 := createIPAccessList(t, projectID, "ip", "192.168.1.5")
 
+	// Test Integrations with pagination
+	createAtlasIntegration(t, projectID, datadogEntity)
+	createAtlasIntegration(t, projectID, opsgenieEntity)
+	createAtlasIntegration(t, projectID, victoropsEntity)
+	createAtlasIntegration(t, projectID, pagerdutyEntity)
+	createAtlasIntegration(t, projectID, webhookEntity)
+
 	// Test federated auth
 	federationSettingsID := getFederationSettingsID(t)
 
@@ -3137,6 +3144,12 @@ func TestGenerateMany(t *testing.T) {
 	ipAddressList := []string{ipAccessList1, ipAccessList2, ipAccessList3, ipAccessList4, ipAccessList5}
 	for i, ip := range ipAddressList {
 		assert.NotNil(t, findGeneratedIPAccessList(objects, projectID, ip), "IP access list %d with ID %s not found", i+1, ip)
+	}
+
+	// Assert Integrations
+	integrations := []string{datadogEntity, opsgenieEntity, victoropsEntity, pagerdutyEntity, webhookEntity}
+	for i, typ := range integrations {
+		assert.NotNil(t, findGeneratedAtlasIntegration(objects, projectID, typ), "Integration %d of type %s not found", i+1, typ)
 	}
 
 	// Assert DB users

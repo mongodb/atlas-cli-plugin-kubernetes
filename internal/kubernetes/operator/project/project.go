@@ -368,10 +368,10 @@ func buildIntegrations(intProvider store.IntegrationLister, projectID, targetNam
 	if err != nil {
 		return nil, nil, err
 	}
-	result := make([]akov2project.Integration, 0, len(integrations.GetResults()))
-	intSecrets := make([]*corev1.Secret, 0, len(integrations.GetResults()))
+	result := make([]akov2project.Integration, 0, len(integrations))
+	intSecrets := make([]*corev1.Secret, 0, len(integrations))
 
-	for _, list := range integrations.GetResults() {
+	for _, list := range integrations {
 		iType := list.GetType()
 		secret := secrets.NewAtlasSecretBuilder(
 			fmt.Sprintf("%s-integration-%s", projectID, strings.ToLower(iType)),
