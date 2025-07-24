@@ -15,13 +15,15 @@
 package store
 
 import (
+	"fmt"
+
 	atlasv2 "go.mongodb.org/atlas-sdk/v20241113004/admin"
 )
 
 //go:generate mockgen -destination=../mocks/mock_identity_providers_store.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store IdentityProviderLister,IdentityProviderDescriber
 
 type IdentityProviderLister interface {
-	IdentityProviders(opts *atlasv2.ListIdentityProvidersApiParams) (*atlasv2.PaginatedFederationIdentityProvider, error)
+	IdentityProviders(opts *atlasv2.ListIdentityProvidersApiParams) ([]atlasv2.FederationIdentityProvider, error)
 }
 
 type IdentityProviderDescriber interface {
@@ -29,9 +31,18 @@ type IdentityProviderDescriber interface {
 }
 
 // IdentityProviders encapsulate the logic to manage different cloud providers.
-func (s *Store) IdentityProviders(opts *atlasv2.ListIdentityProvidersApiParams) (*atlasv2.PaginatedFederationIdentityProvider, error) {
-	result, _, err := s.clientv2.FederatedAuthenticationApi.ListIdentityProvidersWithParams(s.ctx, opts).Execute()
-	return result, err
+func (s *Store) IdentityProviders(opts *atlasv2.ListIdentityProvidersApiParams) ([]atlasv2.FederationIdentityProvider, error) {
+	return AllPages(func(pageNum, itemsPerPage int) ([]atlasv2.FederationIdentityProvider, error) {
+		opts.PageNum = &pageNum
+		opts.ItemsPerPage = &itemsPerPage
+
+		page, _, err := s.clientv2.FederatedAuthenticationApi.ListIdentityProvidersWithParams(s.ctx, opts).Execute()
+		if err != nil {
+			return nil, fmt.Errorf("failed to list identity providers: %w", err)
+		}
+
+		return page.GetResults(), nil
+	})
 }
 
 // IdentityProvider encapsulate the logic to manage different cloud providers.

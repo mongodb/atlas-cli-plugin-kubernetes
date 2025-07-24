@@ -463,19 +463,17 @@ func Test_ExportFederatedAuth(t *testing.T) {
 				store.EXPECT().GetConnectedOrgConfig(&admin.GetConnectedOrgConfigApiParams{FederationSettingsId: *federationSettings.Id, OrgId: orgID}).
 					Return(orgConfig, nil)
 
-				identityProvider := &admin.FederationIdentityProvider{
+				identityProvider := admin.FederationIdentityProvider{
 					SsoDebugEnabled: pointer.Get(true),
 					OktaIdpId:       *federationSettings.IdentityProviderId,
 					Id:              "TestIdentityProviderID",
 				}
-				paginatedResult := &admin.PaginatedFederationIdentityProvider{
-					Results: &[]admin.FederationIdentityProvider{
-						*identityProvider,
-					},
-					TotalCount: pointer.Get(1),
-				}
-				store.EXPECT().IdentityProviders(&admin.ListIdentityProvidersApiParams{FederationSettingsId: *federationSettings.Id}).
-					Return(paginatedResult, nil)
+
+				store.EXPECT().
+					IdentityProviders(&admin.ListIdentityProvidersApiParams{
+						FederationSettingsId: *federationSettings.Id,
+					}).
+					Return([]admin.FederationIdentityProvider{identityProvider}, nil)
 
 				firstProject := &admin.Group{Id: pointer.Get("test-project-1"), Name: "test-project-name-1", OrgId: orgID}
 				secondProject := &admin.Group{Id: pointer.Get("test-project-1"), Name: "test-project-name-2", OrgId: orgID}

@@ -754,6 +754,108 @@ func findGeneratedAtlasDatabaseUser(objects []rt.Object, projectID, username str
 	return nil
 }
 
+// FederatedAuth fetch settigsId //
+func getFederationSettingsID(t *testing.T) string {
+	t.Helper()
+
+	cliPath, err := AtlasCLIBin()
+	require.NoError(t, err, "could not find Atlas CLI binary")
+
+	cmd := exec.Command(cliPath,
+		federatedAuthenticationEntity,
+		federationSettingsEntity,
+		"describe",
+		"-o=json",
+	)
+	cmd.Env = os.Environ()
+
+	resp, err := test.RunAndGetStdOut(cmd)
+	require.NoError(t, err, string(resp))
+
+	var settings atlasv2.OrgFederationSettings
+	require.NoError(t, json.Unmarshal(resp, &settings))
+
+	require.NotEmpty(t, settings)
+	id := settings.GetId()
+	require.NotEmpty(t, id, "no federation settings were present")
+
+	return id
+}
+
+// AtlasIdentityProviders helpers /
+func createAtlasIdentityProvider(t *testing.T, federationSettingsID string, displayName string) string {
+	t.Helper()
+
+	cliPath, err := AtlasCLIBin()
+	require.NoError(t, err, "could not find Atlas CLI binary")
+
+	idpName := displayName
+	args := []string{
+		federatedAuthenticationEntity,
+		federationSettingsEntity,
+		identityProviderEntity,
+		"create",
+		"oidc",
+		idpName,
+		"--audience", fmt.Sprintf("https://accounts-%s.google.com", idpName),
+		"--authorizationType", "GROUP",
+		"--desc", fmt.Sprintf("OIDC provider for %s", idpName),
+		"--federationSettingsId", federationSettingsID,
+		"--groupsClaim", "group",
+		"--userClaim", "email",
+		"--idpType", "WORKLOAD",
+		"--issuerUri", "https://accounts.google.com",
+		"--associatedDomain", "gmail.com",
+		"-o=json",
+	}
+
+	cmd := exec.Command(cliPath, args...)
+	cmd.Env = os.Environ()
+
+	resp, err := test.RunAndGetStdOut(cmd)
+	require.NoError(t, err, "failed to create identity provider %q: %s", idpName, string(resp))
+
+	var result struct {
+		Id string `json:"id"`
+	}
+	require.NoError(t, json.Unmarshal(resp, &result), "failed to unmarshal IDP creation response")
+
+	t.Cleanup(func() {
+		t.Logf("Deleting test identity provider: %s", result.Id)
+		deleteCmd := exec.Command(cliPath,
+			federatedAuthenticationEntity,
+			federationSettingsEntity,
+			identityProviderEntity,
+			"delete",
+			result.Id,
+			"--federationSettingsId",
+			federationSettingsID,
+			"--force",
+		)
+		deleteCmd.Env = os.Environ()
+		out, err := test.RunAndGetStdOut(deleteCmd)
+		if err != nil {
+			t.Logf("Failed to delete identity provider %s: %v\nOutput: %s", result.Id, err, string(out))
+		}
+	})
+
+	return result.Id
+}
+
+// AtlasIdentityProviders helpers /
+func findGeneratedAtlasIdentityProvider(objects []rt.Object, idpID string) *akov2.AtlasFederatedAuth {
+	for _, obj := range objects {
+		if fed, ok := obj.(*akov2.AtlasFederatedAuth); ok && fed.Spec.DataAccessIdentityProviders != nil {
+			for _, listed := range *fed.Spec.DataAccessIdentityProviders {
+				if listed == idpID {
+					return fed
+				}
+			}
+		}
+	}
+	return nil
+}
+
 // AtlasCluster helper //
 func createAtlasCluster(t *testing.T, projectID, clusterName string) string {
 	t.Helper()

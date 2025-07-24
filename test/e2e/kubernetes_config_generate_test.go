@@ -3082,6 +3082,17 @@ func TestGenerateMany(t *testing.T) {
 	ipAccessList4 := createIPAccessList(t, projectID, "ip", "192.168.1.4")
 	ipAccessList5 := createIPAccessList(t, projectID, "ip", "192.168.1.5")
 
+	// Test federated auth
+	federationSettingsID := getFederationSettingsID(t)
+
+	// Test identity provieders from federated auth with pagiation
+	// Note, idps cannot be tested right since they are outside of project scope (org level)
+	createAtlasIdentityProvider(t, federationSettingsID, "idp1")
+	createAtlasIdentityProvider(t, federationSettingsID, "idp2")
+	createAtlasIdentityProvider(t, federationSettingsID, "idp3")
+	createAtlasIdentityProvider(t, federationSettingsID, "idp4")
+	createAtlasIdentityProvider(t, federationSettingsID, "idp5")
+
 	// Test databaseUsers with pagination
 	user1 := createAtlasDatabaseUser(t, projectID, "user1", "pass1")
 	user2 := createAtlasDatabaseUser(t, projectID, "user2", "pass2")
@@ -3089,11 +3100,11 @@ func TestGenerateMany(t *testing.T) {
 	user4 := createAtlasDatabaseUser(t, projectID, "user4", "pass4")
 	user5 := createAtlasDatabaseUser(t, projectID, "user5", "pass5")
 
-	// // Test flex clusters with pagination
+	// Test flex clusters with pagination
 	flexCluster1 := createAtlasFlexCluster(t, projectID, "flex1")
 	flexCluster2 := createAtlasFlexCluster(t, projectID, "flex2")
 
-	// // Test Normal (M10) Atlas clusters
+	// Test Normal (M10) Atlas clusters
 	cluster1 := createAtlasCluster(t, projectID, "cluster1")
 	cluster2 := createAtlasCluster(t, projectID, "cluster2")
 

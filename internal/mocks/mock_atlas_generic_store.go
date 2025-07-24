@@ -396,10 +396,10 @@ func (mr *MockOperatorGenericStoreMockRecorder) IdentityProvider(arg0 interface{
 }
 
 // IdentityProviders mocks base method.
-func (m *MockOperatorGenericStore) IdentityProviders(arg0 *admin0.ListIdentityProvidersApiParams) (*admin0.PaginatedFederationIdentityProvider, error) {
+func (m *MockOperatorGenericStore) IdentityProviders(arg0 *admin0.ListIdentityProvidersApiParams) ([]admin0.FederationIdentityProvider, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "IdentityProviders", arg0)
-	ret0, _ := ret[0].(*admin0.PaginatedFederationIdentityProvider)
+	ret0, _ := ret[0].([]admin0.FederationIdentityProvider)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
