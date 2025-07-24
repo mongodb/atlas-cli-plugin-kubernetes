@@ -621,18 +621,18 @@ func (mr *MockOperatorGenericStoreMockRecorder) Projects(arg0 interface{}) *gomo
 }
 
 // ServerlessInstances mocks base method.
-func (m *MockOperatorGenericStore) ServerlessInstances(arg0 string, arg1 *store.ListOptions) (*admin.PaginatedServerlessInstanceDescription, error) {
+func (m *MockOperatorGenericStore) ServerlessInstances(arg0 string) ([]admin.ServerlessInstanceDescription, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ServerlessInstances", arg0, arg1)
-	ret0, _ := ret[0].(*admin.PaginatedServerlessInstanceDescription)
+	ret := m.ctrl.Call(m, "ServerlessInstances", arg0)
+	ret0, _ := ret[0].([]admin.ServerlessInstanceDescription)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // ServerlessInstances indicates an expected call of ServerlessInstances.
-func (mr *MockOperatorGenericStoreMockRecorder) ServerlessInstances(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockOperatorGenericStoreMockRecorder) ServerlessInstances(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ServerlessInstances", reflect.TypeOf((*MockOperatorGenericStore)(nil).ServerlessInstances), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ServerlessInstances", reflect.TypeOf((*MockOperatorGenericStore)(nil).ServerlessInstances), arg0)
 }
 
 // ServerlessPrivateEndpoints mocks base method.

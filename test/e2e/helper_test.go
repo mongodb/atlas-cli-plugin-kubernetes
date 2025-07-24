@@ -1005,12 +1005,12 @@ func createAtlasFlexCluster(t *testing.T, projectID string, clusterName string) 
 // AtlasCluster helper //
 func findGeneratedAtlasFlexCluster(objects []rt.Object, projectID, flexClusterName string) *akov2.AtlasDeployment {
 	for _, obj := range objects {
-		if flex, ok := (obj).(*akov2.AtlasDeployment); ok &&
-			flex.Spec.ExternalProjectRef != nil &&
-			flex.Spec.ExternalProjectRef.ID == projectID &&
-			flex.Spec.FlexSpec != nil &&
-			flex.Spec.FlexSpec.Name == flexClusterName {
-			return flex
+		if dep, ok := (obj).(*akov2.AtlasDeployment); ok &&
+			dep.Spec.ExternalProjectRef != nil &&
+			dep.Spec.ExternalProjectRef.ID == projectID &&
+			dep.Spec.FlexSpec != nil &&
+			dep.Spec.FlexSpec.Name == flexClusterName {
+			return dep
 		}
 	}
 

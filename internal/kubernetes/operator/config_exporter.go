@@ -483,7 +483,7 @@ func fetchClusterNames(clustersProvider store.AllClustersLister, projectID strin
 		result = append(result, cluster.GetName())
 	}
 
-	serverlessInstances, err := clustersProvider.ServerlessInstances(projectID, &store.ListOptions{ItemsPerPage: maxClusters})
+	serverlessInstances, err := clustersProvider.ServerlessInstances(projectID)
 	if err != nil {
 		return nil, err
 	}
@@ -492,7 +492,7 @@ func fetchClusterNames(clustersProvider store.AllClustersLister, projectID strin
 		return result, nil
 	}
 
-	for _, cluster := range serverlessInstances.GetResults() {
+	for _, cluster := range serverlessInstances {
 		// Deduplicate non-migrated instances
 		if _, ok := flexResult[cluster.GetName()]; ok {
 			continue
