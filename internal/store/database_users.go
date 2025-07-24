@@ -15,20 +15,27 @@
 package store
 
 import (
+	"fmt"
+
 	atlasv2 "go.mongodb.org/atlas-sdk/v20241113004/admin"
 )
 
 //go:generate mockgen -destination=../mocks/mock_database_users.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store DatabaseUserLister
 
 type DatabaseUserLister interface {
-	DatabaseUsers(groupID string, opts *ListOptions) (*atlasv2.PaginatedApiAtlasDatabaseUser, error)
+	DatabaseUsers(groupID string) ([]atlasv2.CloudDatabaseUser, error)
 }
 
-func (s *Store) DatabaseUsers(projectID string, opts *ListOptions) (*atlasv2.PaginatedApiAtlasDatabaseUser, error) {
-	res := s.clientv2.DatabaseUsersApi.ListDatabaseUsers(s.ctx, projectID)
-	if opts != nil {
-		res = res.PageNum(opts.PageNum).ItemsPerPage(fixPageSize(opts.ItemsPerPage)).IncludeCount(opts.IncludeCount)
-	}
-	result, _, err := res.Execute()
-	return result, err
+func (s *Store) DatabaseUsers(projectID string) ([]atlasv2.CloudDatabaseUser, error) {
+	return AllPages(func(pageNum, itemsPerPage int) ([]atlasv2.CloudDatabaseUser, error) {
+		page, _, err := s.clientv2.DatabaseUsersApi.ListDatabaseUsers(s.ctx, projectID).
+			PageNum(pageNum).
+			ItemsPerPage(itemsPerPage).
+			Execute()
+		if err != nil {
+			return nil, fmt.Errorf("failed to list project IP access lists: %w", err)
+		}
+
+		return page.GetResults(), nil
+	})
 }

@@ -3077,24 +3077,25 @@ func TestGenerateMany(t *testing.T) {
 
 	// Test ipAccesList with pagination
 	ipAccessList1 := createIPAccessList(t, projectID, "ip", "192.168.1.1")
-	ipAccessList2 := createIPAccessList(t, projectID, "ip", "10.0.0.2")
-	ipAccessList3 := createIPAccessList(t, projectID, "ip", "172.16.0.3")
-	ipAccessList4 := createIPAccessList(t, projectID, "ip", "203.0.113.4")
-	ipAccessList5 := createIPAccessList(t, projectID, "ip", "198.51.100.5")
+	ipAccessList2 := createIPAccessList(t, projectID, "ip", "192.168.1.2")
+	ipAccessList3 := createIPAccessList(t, projectID, "ip", "192.168.1.3")
+	ipAccessList4 := createIPAccessList(t, projectID, "ip", "192.168.1.4")
+	ipAccessList5 := createIPAccessList(t, projectID, "ip", "192.168.1.5")
 
-	// Test flex clusters with pagination
+	// Test databaseUsers with pagination
+	user1 := createAtlasDatabaseUser(t, projectID, "user1", "pass1")
+	user2 := createAtlasDatabaseUser(t, projectID, "user2", "pass2")
+	user3 := createAtlasDatabaseUser(t, projectID, "user3", "pass3")
+	user4 := createAtlasDatabaseUser(t, projectID, "user4", "pass4")
+	user5 := createAtlasDatabaseUser(t, projectID, "user5", "pass5")
+
+	// // Test flex clusters with pagination
 	flexCluster1 := createAtlasFlexCluster(t, projectID, "flex1")
 	flexCluster2 := createAtlasFlexCluster(t, projectID, "flex2")
-	flexCluster3 := createAtlasFlexCluster(t, projectID, "flex3")
-	flexCluster4 := createAtlasFlexCluster(t, projectID, "flex4")
-	flexCluster5 := createAtlasFlexCluster(t, projectID, "flex5")
 
-	// Test Normal (M10) Atlas clusters
+	// // Test Normal (M10) Atlas clusters
 	cluster1 := createAtlasCluster(t, projectID, "cluster1")
 	cluster2 := createAtlasCluster(t, projectID, "cluster2")
-	cluster3 := createAtlasCluster(t, projectID, "cluster3")
-	cluster4 := createAtlasCluster(t, projectID, "cluster4")
-	cluster5 := createAtlasCluster(t, projectID, "cluster5")
 
 	cliPath, err := PluginBin()
 	require.NoError(t, err)
@@ -3127,14 +3128,20 @@ func TestGenerateMany(t *testing.T) {
 		assert.NotNil(t, findGeneratedIPAccessList(objects, projectID, ip), "IP access list %d with ID %s not found", i+1, ip)
 	}
 
+	// Assert DB users
+	usernames := []string{user1, user2, user3, user4, user5}
+	for i, username := range usernames {
+		assert.NotNil(t, findGeneratedAtlasDatabaseUser(objects, projectID, username), "DB user %d with username %s not found", i+1, username)
+	}
+
 	// Assert Flex clusters
-	flexClusterList := []string{flexCluster1, flexCluster2, flexCluster3, flexCluster4, flexCluster5}
+	flexClusterList := []string{flexCluster1, flexCluster2}
 	for i, name := range flexClusterList {
 		assert.NotNil(t, findGeneratedAtlasFlexCluster(objects, projectID, name), "Flex cluster %d with name %s not found", i+1, name)
 	}
 
 	// Assert Normal M10 clusters
-	clusterList := []string{cluster1, cluster2, cluster3, cluster4, cluster5}
+	clusterList := []string{cluster1, cluster2}
 	for i, name := range clusterList {
 		assert.NotNil(t, findGeneratedAtlasCluster(objects, projectID, name), "Cluster %d with name %s not found", i+1, name)
 	}

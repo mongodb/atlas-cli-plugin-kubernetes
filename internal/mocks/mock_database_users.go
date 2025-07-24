@@ -8,7 +8,6 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	store "github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store"
 	admin "go.mongodb.org/atlas-sdk/v20241113004/admin"
 )
 
@@ -36,16 +35,16 @@ func (m *MockDatabaseUserLister) EXPECT() *MockDatabaseUserListerMockRecorder {
 }
 
 // DatabaseUsers mocks base method.
-func (m *MockDatabaseUserLister) DatabaseUsers(arg0 string, arg1 *store.ListOptions) (*admin.PaginatedApiAtlasDatabaseUser, error) {
+func (m *MockDatabaseUserLister) DatabaseUsers(arg0 string) ([]admin.CloudDatabaseUser, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DatabaseUsers", arg0, arg1)
-	ret0, _ := ret[0].(*admin.PaginatedApiAtlasDatabaseUser)
+	ret := m.ctrl.Call(m, "DatabaseUsers", arg0)
+	ret0, _ := ret[0].([]admin.CloudDatabaseUser)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // DatabaseUsers indicates an expected call of DatabaseUsers.
-func (mr *MockDatabaseUserListerMockRecorder) DatabaseUsers(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockDatabaseUserListerMockRecorder) DatabaseUsers(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DatabaseUsers", reflect.TypeOf((*MockDatabaseUserLister)(nil).DatabaseUsers), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DatabaseUsers", reflect.TypeOf((*MockDatabaseUserLister)(nil).DatabaseUsers), arg0)
 }

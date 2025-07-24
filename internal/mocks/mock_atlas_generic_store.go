@@ -231,18 +231,18 @@ func (mr *MockOperatorGenericStoreMockRecorder) DatabaseRoles(arg0 interface{}) 
 }
 
 // DatabaseUsers mocks base method.
-func (m *MockOperatorGenericStore) DatabaseUsers(arg0 string, arg1 *store.ListOptions) (*admin0.PaginatedApiAtlasDatabaseUser, error) {
+func (m *MockOperatorGenericStore) DatabaseUsers(arg0 string) ([]admin0.CloudDatabaseUser, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DatabaseUsers", arg0, arg1)
-	ret0, _ := ret[0].(*admin0.PaginatedApiAtlasDatabaseUser)
+	ret := m.ctrl.Call(m, "DatabaseUsers", arg0)
+	ret0, _ := ret[0].([]admin0.CloudDatabaseUser)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // DatabaseUsers indicates an expected call of DatabaseUsers.
-func (mr *MockOperatorGenericStoreMockRecorder) DatabaseUsers(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockOperatorGenericStoreMockRecorder) DatabaseUsers(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DatabaseUsers", reflect.TypeOf((*MockOperatorGenericStore)(nil).DatabaseUsers), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DatabaseUsers", reflect.TypeOf((*MockOperatorGenericStore)(nil).DatabaseUsers), arg0)
 }
 
 // DescribeCompliancePolicy mocks base method.

@@ -692,6 +692,68 @@ func findGeneratedIPAccessList(objects []rt.Object, projectID, address string) *
 	return nil
 }
 
+// AtlasDabaseUser helpers //
+func createAtlasDatabaseUser(t *testing.T, projectID string, username string, password string) string {
+	t.Helper()
+
+	cliPath, err := AtlasCLIBin()
+	require.NoError(t, err, "could not find Atlas CLI binary")
+
+	cmd := exec.Command(cliPath,
+		dbusersEntity,
+		"create",
+		"--username",
+		username,
+		"--password",
+		password,
+		"--role",
+		"readWriteAnyDatabase@admin",
+		"--projectId",
+		projectID,
+		"-o=json",
+	)
+	cmd.Env = os.Environ()
+
+	resp, err := test.RunAndGetStdOut(cmd)
+	require.NoError(t, err, "failed to create DB user %s", resp)
+
+	t.Cleanup(func() {
+		t.Logf("Deleting test DB user: %s", username)
+		cliPath, err := AtlasCLIBin()
+		if err != nil {
+			t.Logf("Error finding Atlas CLI binary during cleanup: %v", err)
+			return
+		}
+		cmd := exec.Command(cliPath,
+			dbusersEntity,
+			"delete",
+			username,
+			"--projectId",
+			projectID,
+			"--force")
+		cmd.Env = os.Environ()
+		resp, err := test.RunAndGetStdOut(cmd)
+		if err != nil {
+			t.Logf("Failed to delete DB user %s: %v\nOutput: %s", username, err, string(resp))
+		}
+	})
+
+	return username
+}
+
+// AtlasDabaseUser helpers //
+func findGeneratedAtlasDatabaseUser(objects []rt.Object, projectID, username string) *akov2.AtlasDatabaseUser {
+	for _, obj := range objects {
+		if user, ok := (obj).(*akov2.AtlasDatabaseUser); ok &&
+			user.Spec.ExternalProjectRef != nil &&
+			user.Spec.ExternalProjectRef.ID == projectID &&
+			user.Spec.Username == username {
+			return user
+		}
+	}
+	return nil
+}
+
 // AtlasCluster helper //
 func createAtlasCluster(t *testing.T, projectID, clusterName string) string {
 	t.Helper()
@@ -1061,23 +1123,4 @@ func referenceDataFederation(name, namespace, projectName string, labels map[str
 			},
 		},
 	}
-}
-
-func generateTestDBUser(t *testing.T, projectID string) string {
-	username, err := RandomName("user")
-	require.NoError(t, err, "failed to get random user name")
-	require.NoError(t, createDBUserWithCert(projectID, username))
-	return username
-}
-
-func findGeneratedUser(objects []rt.Object, projectID, username string) *akov2.AtlasDatabaseUser {
-	for _, obj := range objects {
-		if user, ok := (obj).(*akov2.AtlasDatabaseUser); ok &&
-			user.Spec.ExternalProjectRef != nil &&
-			user.Spec.ExternalProjectRef.ID == projectID &&
-			user.Spec.Username == username {
-			return user
-		}
-	}
-	return nil
 }
