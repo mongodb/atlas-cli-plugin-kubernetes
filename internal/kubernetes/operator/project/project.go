@@ -849,7 +849,7 @@ func generateName(base string) string {
 }
 
 func buildTeams(teamsProvider store.OperatorTeamsStore, orgID, projectID, projectName, targetNamespace, version string, dictionary map[string]string) ([]akov2.Team, []*akov2.AtlasTeam, error) {
-	projectTeams, err := teamsProvider.ProjectTeams(projectID, nil)
+	projectTeams, err := teamsProvider.ProjectTeams(projectID)
 	if err != nil {
 		return nil, nil, err
 	}

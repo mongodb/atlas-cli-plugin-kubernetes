@@ -8,7 +8,6 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	store "github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store"
 	admin "go.mongodb.org/atlas-sdk/v20240530005/admin"
 	admin0 "go.mongodb.org/atlas-sdk/v20241113004/admin"
 )
@@ -321,18 +320,18 @@ func (mr *MockOperatorGenericStoreMockRecorder) GetConnectedOrgConfig(arg0 inter
 }
 
 // GetOrgProjects mocks base method.
-func (m *MockOperatorGenericStore) GetOrgProjects(arg0 string, arg1 *store.ListOptions) (*admin0.PaginatedAtlasGroup, error) {
+func (m *MockOperatorGenericStore) GetOrgProjects(arg0 string) (*admin0.PaginatedAtlasGroup, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetOrgProjects", arg0, arg1)
+	ret := m.ctrl.Call(m, "GetOrgProjects", arg0)
 	ret0, _ := ret[0].(*admin0.PaginatedAtlasGroup)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetOrgProjects indicates an expected call of GetOrgProjects.
-func (mr *MockOperatorGenericStoreMockRecorder) GetOrgProjects(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockOperatorGenericStoreMockRecorder) GetOrgProjects(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrgProjects", reflect.TypeOf((*MockOperatorGenericStore)(nil).GetOrgProjects), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrgProjects", reflect.TypeOf((*MockOperatorGenericStore)(nil).GetOrgProjects), arg0)
 }
 
 // GetServerlessInstance mocks base method.
@@ -591,33 +590,33 @@ func (mr *MockOperatorGenericStoreMockRecorder) ProjectStreams(arg0 interface{})
 }
 
 // ProjectTeams mocks base method.
-func (m *MockOperatorGenericStore) ProjectTeams(arg0 string, arg1 *store.ListOptions) (*admin0.PaginatedTeamRole, error) {
+func (m *MockOperatorGenericStore) ProjectTeams(arg0 string) (*admin0.PaginatedTeamRole, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ProjectTeams", arg0, arg1)
+	ret := m.ctrl.Call(m, "ProjectTeams", arg0)
 	ret0, _ := ret[0].(*admin0.PaginatedTeamRole)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // ProjectTeams indicates an expected call of ProjectTeams.
-func (mr *MockOperatorGenericStoreMockRecorder) ProjectTeams(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockOperatorGenericStoreMockRecorder) ProjectTeams(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProjectTeams", reflect.TypeOf((*MockOperatorGenericStore)(nil).ProjectTeams), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProjectTeams", reflect.TypeOf((*MockOperatorGenericStore)(nil).ProjectTeams), arg0)
 }
 
 // Projects mocks base method.
-func (m *MockOperatorGenericStore) Projects(arg0 *store.ListOptions) (*admin0.PaginatedAtlasGroup, error) {
+func (m *MockOperatorGenericStore) Projects() (*admin0.PaginatedAtlasGroup, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Projects", arg0)
+	ret := m.ctrl.Call(m, "Projects")
 	ret0, _ := ret[0].(*admin0.PaginatedAtlasGroup)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Projects indicates an expected call of Projects.
-func (mr *MockOperatorGenericStoreMockRecorder) Projects(arg0 interface{}) *gomock.Call {
+func (mr *MockOperatorGenericStoreMockRecorder) Projects() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Projects", reflect.TypeOf((*MockOperatorGenericStore)(nil).Projects), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Projects", reflect.TypeOf((*MockOperatorGenericStore)(nil).Projects))
 }
 
 // ServerlessInstances mocks base method.

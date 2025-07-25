@@ -21,12 +21,12 @@ import (
 //go:generate mockgen -destination=../mocks/mock_projects.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store ProjectLister,ProjectCreator,ProjectDescriber,ProjectTeamLister,OrgProjectLister
 
 type ProjectLister interface {
-	Projects(*ListOptions) (*atlasv2.PaginatedAtlasGroup, error)
+	Projects() (*atlasv2.PaginatedAtlasGroup, error)
 }
 
 type OrgProjectLister interface {
 	ProjectLister
-	GetOrgProjects(string, *ListOptions) (*atlasv2.PaginatedAtlasGroup, error)
+	GetOrgProjects(string) (*atlasv2.PaginatedAtlasGroup, error)
 }
 
 type ProjectCreator interface {
@@ -39,25 +39,19 @@ type ProjectDescriber interface {
 }
 
 type ProjectTeamLister interface {
-	ProjectTeams(string, *ListOptions) (*atlasv2.PaginatedTeamRole, error)
+	ProjectTeams(string) (*atlasv2.PaginatedTeamRole, error)
 }
 
 // Projects encapsulates the logic to manage different cloud providers.
-func (s *Store) Projects(opts *ListOptions) (*atlasv2.PaginatedAtlasGroup, error) {
-	res := s.clientv2.ProjectsApi.ListProjects(s.ctx)
-	if opts != nil {
-		res = res.PageNum(opts.PageNum).ItemsPerPage(fixPageSize(opts.ItemsPerPage))
-	}
+func (s *Store) Projects() (*atlasv2.PaginatedAtlasGroup, error) {
+	res := s.clientv2.ProjectsApi.ListProjects(s.ctx).ItemsPerPage(1)
 	result, _, err := res.Execute()
 	return result, err
 }
 
 // GetOrgProjects encapsulates the logic to manage different cloud providers.
-func (s *Store) GetOrgProjects(orgID string, opts *ListOptions) (*atlasv2.PaginatedAtlasGroup, error) {
-	res := s.clientv2.OrganizationsApi.ListOrganizationProjects(s.ctx, orgID)
-	if opts != nil {
-		res = res.PageNum(opts.PageNum).ItemsPerPage(fixPageSize(opts.ItemsPerPage))
-	}
+func (s *Store) GetOrgProjects(orgID string) (*atlasv2.PaginatedAtlasGroup, error) {
+	res := s.clientv2.OrganizationsApi.ListOrganizationProjects(s.ctx, orgID).ItemsPerPage(1)
 	result, _, err := res.Execute()
 	return result, err
 }
@@ -80,24 +74,8 @@ func (s *Store) CreateProject(params *atlasv2.CreateProjectApiParams) (*atlasv2.
 }
 
 // ProjectTeams encapsulates the logic to manage different cloud providers.
-func (s *Store) ProjectTeams(projectID string, opts *ListOptions) (*atlasv2.PaginatedTeamRole, error) {
-	res := s.clientv2.TeamsApi.
-		ListProjectTeams(s.ctx, projectID)
-
-	if opts != nil {
-		res.
-			IncludeCount(opts.IncludeCount).
-			PageNum(opts.PageNum).
-			ItemsPerPage(fixPageSize(opts.ItemsPerPage))
-	}
-
+func (s *Store) ProjectTeams(projectID string) (*atlasv2.PaginatedTeamRole, error) {
+	res := s.clientv2.TeamsApi.ListProjectTeams(s.ctx, projectID).ItemsPerPage(1)
 	result, _, err := res.Execute()
 	return result, err
-}
-
-func fixPageSize(itemsPerPage int) int {
-	if itemsPerPage < 1 {
-		return MaxAPIPageSize
-	}
-	return itemsPerPage
 }
