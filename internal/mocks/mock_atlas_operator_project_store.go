@@ -36,10 +36,10 @@ func (m *MockOperatorProjectStore) EXPECT() *MockOperatorProjectStoreMockRecorde
 }
 
 // AlertConfigurations mocks base method.
-func (m *MockOperatorProjectStore) AlertConfigurations(arg0 *admin.ListAlertConfigurationsApiParams) (*admin.PaginatedAlertConfig, error) {
+func (m *MockOperatorProjectStore) AlertConfigurations(arg0 string) ([]admin.GroupAlertsConfig, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AlertConfigurations", arg0)
-	ret0, _ := ret[0].(*admin.PaginatedAlertConfig)
+	ret0, _ := ret[0].([]admin.GroupAlertsConfig)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

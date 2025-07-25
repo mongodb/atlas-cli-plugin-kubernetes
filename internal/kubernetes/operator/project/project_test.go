@@ -32,7 +32,6 @@ import (
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator/secrets"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/mocks"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/pointer"
-	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store"
 	akoapi "github.com/mongodb/mongodb-atlas-kubernetes/v2/api"
 	akov2 "github.com/mongodb/mongodb-atlas-kubernetes/v2/api/v1"
 	akov2common "github.com/mongodb/mongodb-atlas-kubernetes/v2/api/v1/common"
@@ -151,58 +150,54 @@ func TestBuildAtlasProject(t *testing.T) {
 	}
 	privateEndpoints := []atlasv2.EndpointService{privateAWSEndpoint}
 
-	alertConfigResult := &atlasv2.PaginatedAlertConfig{
-		Results: &[]atlasv2.GroupAlertsConfig{
-			{
-				Enabled:       pointer.Get(true),
-				EventTypeName: pointer.Get("TestEventTypeName"),
-				Matchers: &[]atlasv2.StreamsMatcher{
-					{
-						FieldName: "TestFieldName",
-						Operator:  "TestOperator",
-						Value:     "TestValue",
-					},
+	alertConfigs := []atlasv2.GroupAlertsConfig{
+		{
+			Enabled:       pointer.Get(true),
+			EventTypeName: pointer.Get("TestEventTypeName"),
+			Matchers: &[]atlasv2.StreamsMatcher{
+				{
+					FieldName: "TestFieldName",
+					Operator:  "TestOperator",
+					Value:     "TestValue",
 				},
-				MetricThreshold: &atlasv2.ServerlessMetricThreshold{
-					MetricName: "TestMetricName",
-					Operator:   pointer.Get("TestOperator"),
-					Threshold:  pointer.Get(10.0),
-					Units:      pointer.Get("TestUnits"),
-					Mode:       pointer.Get("TestMode"),
-				},
-				Threshold: &atlasv2.GreaterThanRawThreshold{
-					Operator:  pointer.Get("TestOperator"),
-					Units:     pointer.Get("TestUnits"),
-					Threshold: pointer.Get(10),
-				},
-				Notifications: &[]atlasv2.AlertsNotificationRootForGroup{
-					{
-						ChannelName:         pointer.Get("TestChannelName"),
-						DatadogApiKey:       pointer.Get("TestDatadogAPIKey"),
-						DatadogRegion:       pointer.Get("TestDatadogRegion"),
-						DelayMin:            pointer.Get(5),
-						EmailAddress:        pointer.Get("TestEmail@mongodb.com"),
-						EmailEnabled:        pointer.Get(true),
-						IntervalMin:         pointer.Get(0),
-						MobileNumber:        pointer.Get("+12345678900"),
-						OpsGenieApiKey:      pointer.Get("TestGenieAPIKey"),
-						OpsGenieRegion:      pointer.Get("TestGenieRegion"),
-						ServiceKey:          pointer.Get("TestServiceKey"),
-						SmsEnabled:          pointer.Get(true),
-						TeamId:              pointer.Get("TestTeamID"),
-						TeamName:            pointer.Get("TestTeamName"),
-						TypeName:            pointer.Get("TestTypeName"),
-						Username:            pointer.Get("TestUserName"),
-						VictorOpsApiKey:     pointer.Get("TestVictorOpsAPIKey"),
-						VictorOpsRoutingKey: pointer.Get("TestVictorOpsRoutingKey"),
-						Roles:               &[]string{"Role1", "Role2"},
-					},
+			},
+			MetricThreshold: &atlasv2.ServerlessMetricThreshold{
+				MetricName: "TestMetricName",
+				Operator:   pointer.Get("TestOperator"),
+				Threshold:  pointer.Get(10.0),
+				Units:      pointer.Get("TestUnits"),
+				Mode:       pointer.Get("TestMode"),
+			},
+			Threshold: &atlasv2.GreaterThanRawThreshold{
+				Operator:  pointer.Get("TestOperator"),
+				Units:     pointer.Get("TestUnits"),
+				Threshold: pointer.Get(10),
+			},
+			Notifications: &[]atlasv2.AlertsNotificationRootForGroup{
+				{
+					ChannelName:         pointer.Get("TestChannelName"),
+					DatadogApiKey:       pointer.Get("TestDatadogAPIKey"),
+					DatadogRegion:       pointer.Get("TestDatadogRegion"),
+					DelayMin:            pointer.Get(5),
+					EmailAddress:        pointer.Get("TestEmail@mongodb.com"),
+					EmailEnabled:        pointer.Get(true),
+					IntervalMin:         pointer.Get(0),
+					MobileNumber:        pointer.Get("+12345678900"),
+					OpsGenieApiKey:      pointer.Get("TestGenieAPIKey"),
+					OpsGenieRegion:      pointer.Get("TestGenieRegion"),
+					ServiceKey:          pointer.Get("TestServiceKey"),
+					SmsEnabled:          pointer.Get(true),
+					TeamId:              pointer.Get("TestTeamID"),
+					TeamName:            pointer.Get("TestTeamName"),
+					TypeName:            pointer.Get("TestTypeName"),
+					Username:            pointer.Get("TestUserName"),
+					VictorOpsApiKey:     pointer.Get("TestVictorOpsAPIKey"),
+					VictorOpsRoutingKey: pointer.Get("TestVictorOpsRoutingKey"),
+					Roles:               &[]string{"Role1", "Role2"},
 				},
 			},
 		},
-		TotalCount: pointer.GetNonZeroValue(1),
 	}
-	alertConfigs := alertConfigResult.GetResults()
 
 	projectSettings := &atlasv2.GroupSettings{
 		IsCollectDatabaseSpecificsStatisticsEnabled: pointer.Get(true),
@@ -284,12 +279,6 @@ func TestBuildAtlasProject(t *testing.T) {
 				RetentionValue:    1,
 			},
 		},
-	}
-
-	listOption := &store.ListOptions{ItemsPerPage: MaxItems}
-	listAlterOpt := &atlasv2.ListAlertConfigurationsApiParams{
-		GroupId:      projectID,
-		ItemsPerPage: &listOption.ItemsPerPage,
 	}
 
 	dictionary := resources.AtlasNameToKubernetesName()
@@ -672,8 +661,8 @@ func TestBuildAtlasProject(t *testing.T) {
 			projectStore.EXPECT().CloudProviderAccessRoles(projectID).Return(cpas, nil)
 			projectStore.EXPECT().ProjectSettings(projectID).Return(projectSettings, nil)
 			projectStore.EXPECT().Auditing(projectID).Return(auditing, nil)
-			projectStore.EXPECT().AlertConfigurations(listAlterOpt).Return(alertConfigResult, nil)
-			projectStore.EXPECT().ProjectTeams(projectID, nil).Return(projectTeams, nil)
+			projectStore.EXPECT().AlertConfigurations(projectID).Return(alertConfigs, nil)
+			projectStore.EXPECT().ProjectTeams(projectID).Return(projectTeams, nil)
 			projectStore.EXPECT().TeamByID(orgID, teamID).Return(teams, nil)
 			projectStore.EXPECT().TeamUsers(orgID, teamID).Return(teamUsers, nil)
 			projectStore.EXPECT().DescribeCompliancePolicy(projectID).Return(bcp, nil)

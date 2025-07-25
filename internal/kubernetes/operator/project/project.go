@@ -663,10 +663,7 @@ func buildAuditing(auditingProvider store.AuditingDescriber, projectID string) (
 }
 
 func buildAlertConfigurations(acProvider store.AlertConfigurationLister, projectID, projectName, targetNamespace string, dictionary map[string]string) ([]akov2.AlertConfiguration, []*corev1.Secret, error) {
-	data, err := acProvider.AlertConfigurations(&atlasv2.ListAlertConfigurationsApiParams{
-		GroupId:      projectID,
-		ItemsPerPage: pointer.Get(MaxItems),
-	})
+	data, err := acProvider.AlertConfigurations(projectID)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -771,8 +768,8 @@ func buildAlertConfigurations(acProvider store.AlertConfigurationLister, project
 	}
 
 	var secretResults []*corev1.Secret
-	results := make([]akov2.AlertConfiguration, 0, len(data.GetResults()))
-	for _, alertConfig := range data.GetResults() {
+	results := make([]akov2.AlertConfiguration, 0, len(data))
+	for _, alertConfig := range data {
 		notifications, notificationSecrets := convertNotifications(alertConfig.GetNotifications())
 		secretResults = append(secretResults, notificationSecrets...)
 
