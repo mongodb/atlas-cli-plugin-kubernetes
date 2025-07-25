@@ -38,23 +38,3 @@ func (s *Store) Integrations(projectID string) ([]atlasv2.ThirdPartyIntegration,
 		return page.GetResults(), nil
 	})
 }
-
-type getPageFn[T any] func(int, int) ([]T, error)
-
-func AllPages[T any](getPageFn getPageFn[T]) ([]T, error) {
-	allPages := []T{}
-	pageNum := 1
-	itemsPerPage := MaxAPIPageSize
-	for {
-		page, err := getPageFn(pageNum, itemsPerPage)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get all pages: %w", err)
-		}
-		allPages = append(allPages, page...)
-		if len(page) < itemsPerPage {
-			break
-		}
-		pageNum += 1
-	}
-	return allPages, nil
-}
