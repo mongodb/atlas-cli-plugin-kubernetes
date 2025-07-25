@@ -24,7 +24,7 @@ import (
 //go:generate mockgen -destination=../mocks/mock_serverless_instances.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store ServerlessInstanceLister,ServerlessInstanceDescriber
 
 type ServerlessInstanceLister interface {
-	ServerlessInstances(string, *ListOptions) (*atlasClustersPinned.PaginatedServerlessInstanceDescription, error)
+	ServerlessInstances(string) ([]atlasClustersPinned.ServerlessInstanceDescription, error)
 }
 
 type ServerlessInstanceDescriber interface {
@@ -32,17 +32,23 @@ type ServerlessInstanceDescriber interface {
 }
 
 // ServerlessInstances encapsulates the logic to manage different cloud providers.
-func (s *Store) ServerlessInstances(projectID string, listOps *ListOptions) (*atlasClustersPinned.PaginatedServerlessInstanceDescription, error) {
+func (s *Store) ServerlessInstances(projectID string) ([]atlasClustersPinned.ServerlessInstanceDescription, error) {
 	if s.service == config.CloudGovService {
 		return nil, fmt.Errorf("%w: %s", errUnsupportedService, s.service)
 	}
-	result, _, err := s.clientClusters.ServerlessInstancesApi.ListServerlessInstances(s.ctx, projectID).
-		ItemsPerPage(fixPageSize(listOps.ItemsPerPage)).
-		PageNum(listOps.PageNum).
-		IncludeCount(listOps.IncludeCount).
-		Execute()
 
-	return result, err
+	return AllPages(func(pageNum, itemsPerPage int) ([]atlasClustersPinned.ServerlessInstanceDescription, error) {
+		page, _, err := s.clientClusters.ServerlessInstancesApi.ListServerlessInstances(s.ctx, projectID).
+			ItemsPerPage(itemsPerPage).
+			PageNum(pageNum).
+			IncludeCount(true).
+			Execute()
+		if err != nil {
+			return nil, fmt.Errorf("failed to list serverless instances: %w", err)
+		}
+
+		return page.GetResults(), nil
+	})
 }
 
 // GetServerlessInstance encapsulates the logic to manage different cloud providers.

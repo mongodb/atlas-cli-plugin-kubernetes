@@ -22,13 +22,21 @@ import (
 )
 
 // ListFlexClusters encapsulate the logic to manage different cloud providers.
-func (s *Store) ListFlexClusters(opts *atlasv2.ListFlexClustersApiParams) (*atlasv2.PaginatedFlexClusters20241113, error) {
-	if s.service == config.CloudGovService {
-		return nil, fmt.Errorf("%w: %s", errUnsupportedService, s.service)
-	}
+func (s *Store) ListFlexClusters(projectID string) ([]atlasv2.FlexClusterDescription20241113, error) {
+	return AllPages(func(pageNum, itemsPerPage int) ([]atlasv2.FlexClusterDescription20241113, error) {
+		params := &atlasv2.ListFlexClustersApiParams{
+			GroupId:      projectID,
+			PageNum:      &pageNum,
+			ItemsPerPage: &itemsPerPage,
+		}
 
-	result, _, err := s.clientv2.FlexClustersApi.ListFlexClustersWithParams(s.ctx, opts).Execute()
-	return result, err
+		page, _, err := s.clientv2.FlexClustersApi.ListFlexClustersWithParams(s.ctx, params).Execute()
+		if err != nil {
+			return nil, fmt.Errorf("failed to list flex clusters: %w", err)
+		}
+
+		return page.GetResults(), nil
+	})
 }
 
 // FlexCluster encapsulate the logic to manage different cloud providers.

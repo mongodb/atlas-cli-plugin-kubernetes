@@ -15,22 +15,32 @@
 package store
 
 import (
+	"fmt"
+
 	atlasv2 "go.mongodb.org/atlas-sdk/v20241113004/admin"
 )
 
 //go:generate mockgen -destination=../mocks/mock_streams.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store StreamsLister,StreamsConnectionLister
 
 type StreamsLister interface {
-	ProjectStreams(*atlasv2.ListStreamInstancesApiParams) (*atlasv2.PaginatedApiStreamsTenant, error)
+	ProjectStreams(string) ([]atlasv2.StreamsTenant, error)
 }
 
 type StreamsConnectionLister interface {
 	StreamsConnections(string, string) (*atlasv2.PaginatedApiStreamsConnection, error)
 }
 
-func (s *Store) ProjectStreams(opts *atlasv2.ListStreamInstancesApiParams) (*atlasv2.PaginatedApiStreamsTenant, error) {
-	result, _, err := s.clientv2.StreamsApi.ListStreamInstancesWithParams(s.ctx, opts).Execute()
-	return result, err
+func (s *Store) ProjectStreams(projectID string) ([]atlasv2.StreamsTenant, error) {
+	return AllPages(func(pageNum, itemsPerPage int) ([]atlasv2.StreamsTenant, error) {
+		page, _, err := s.clientv2.StreamsApi.ListStreamInstances(s.ctx, projectID).
+			PageNum(pageNum).
+			ItemsPerPage(itemsPerPage).
+			Execute()
+		if err != nil {
+			return nil, fmt.Errorf("failed to list stream instances: %w", err)
+		}
+		return page.GetResults(), nil
+	})
 }
 
 // StreamsConnections encapsulates the logic to manage different cloud providers.

@@ -84,7 +84,11 @@ const (
 
 // Integration constants.
 const (
-	datadogEntity = "DATADOG"
+	datadogEntity   = "DATADOG"
+	opsgenieEntity  = "OPS_GENIE"
+	pagerdutyEntity = "PAGER_DUTY"
+	victoropsEntity = "VICTOR_OPS"
+	webhookEntity   = "WEBHOOK"
 )
 
 // Cluster settings.
@@ -712,7 +716,7 @@ func deleteStreamsInstance(t *testing.T, projectID, name string) error {
 	cmd := exec.Command(
 		cliPath,
 		streamsEntity,
-		"instance",
+		"instances",
 		"delete",
 		name,
 		"--projectId", projectID,
@@ -723,7 +727,6 @@ func deleteStreamsInstance(t *testing.T, projectID, name string) error {
 	if err != nil {
 		return fmt.Errorf("%s (%w)", string(resp), err)
 	}
-
 	return nil
 }
 
@@ -859,19 +862,48 @@ func referenceDataFederation(name, namespace, projectName string, labels map[str
 	}
 }
 
-func mustGenerateTestProject(t *testing.T) (string, string) {
+func getFederationSettingsID(t *testing.T) string {
+	t.Helper()
+
+	cliPath, err := AtlasCLIBin()
+	require.NoError(t, err, "could not find Atlas CLI binary")
+
+	cmd := exec.Command(cliPath,
+		federatedAuthenticationEntity,
+		federationSettingsEntity,
+		"describe",
+		"-o=json",
+	)
+	cmd.Env = os.Environ()
+
+	resp, err := test.RunAndGetStdOut(cmd)
+	require.NoError(t, err, string(resp))
+
+	var settings atlasv2.OrgFederationSettings
+	require.NoError(t, json.Unmarshal(resp, &settings))
+
+	require.NotEmpty(t, settings)
+	id := settings.GetId()
+	require.NotEmpty(t, id, "no federation settings were present")
+
+	return id
+}
+
+func generateTestAtlasProject(t *testing.T) (string, string) {
 	projectName, err := RandProjectName()
 	require.NoError(t, err, "failed to get random project name")
 	id, err := createProject(projectName)
 	require.NoErrorf(t, err, "failed to create project")
+
+	t.Cleanup(func() {
+		t.Logf("Deleting test project: %s", id)
+		require.NoError(t, deleteProject(id))
+	})
+
 	return id, projectName
 }
 
-func clearTestProject(t *testing.T, projectID string) {
-	require.NoError(t, deleteProject(projectID))
-}
-
-func findGeneratedProject(objects []rt.Object, projectName string) *akov2.AtlasProject {
+func findTestAtlasProject(objects []rt.Object, projectName string) *akov2.AtlasProject {
 	for _, obj := range objects {
 		if prj, ok := (obj).(*akov2.AtlasProject); ok && prj.Spec.Name == projectName {
 			return prj
@@ -880,16 +912,194 @@ func findGeneratedProject(objects []rt.Object, projectName string) *akov2.AtlasP
 	return nil
 }
 
-func generateTestDBUser(t *testing.T, projectID string) string {
-	username, err := RandomName("user")
-	require.NoError(t, err, "failed to get random user name")
-	require.NoError(t, createDBUserWithCert(projectID, username))
+func generateTestAtlasIPAccessList(t *testing.T, projectID string, resourceType, address string) string {
+	t.Helper()
+	cliPath, err := AtlasCLIBin()
+	require.NoError(t, err)
+
+	args := []string{accessListEntity, "create", address, "--projectId", projectID, "-o=json", "--type"}
+	switch resourceType {
+	case "cidr":
+		args = append(args, "cidrBlock")
+	case "ip":
+		args = append(args, "ipAddress")
+	default:
+		t.Fatalf("unsupported resourceType %q", resourceType)
+	}
+
+	cmd := exec.Command(cliPath, args...)
+	cmd.Env = os.Environ()
+	resp, err := test.RunAndGetStdOut(cmd)
+	require.NoError(t, err, string(resp))
+
+	t.Cleanup(func() {
+		t.Logf("Deleting IP access list: %s", address)
+		deleteCmd := exec.Command(cliPath,
+			accessListEntity, "delete", address,
+			"--projectId", projectID, "--force")
+		deleteCmd.Env = os.Environ()
+		_, _ = test.RunAndGetStdOut(deleteCmd)
+	})
+
+	return address
+}
+
+func findTestAtlasIPAccessList(objects []rt.Object, projectID string, address string) *akov2.AtlasIPAccessList {
+	for _, obj := range objects {
+		if ip, ok := obj.(*akov2.AtlasIPAccessList); ok &&
+			ip.Spec.ExternalProjectRef != nil &&
+			ip.Spec.ExternalProjectRef.ID == projectID {
+			for _, entry := range ip.Spec.Entries {
+				if entry.IPAddress == address || entry.CIDRBlock == address {
+					return ip
+				}
+			}
+		}
+	}
+	return nil
+}
+
+func generateTestAtlasAlertConfiguration(t *testing.T, projectID, marker string) string {
+	t.Helper()
+	cliPath, err := AtlasCLIBin()
+	require.NoError(t, err)
+
+	cmd := exec.Command(cliPath,
+		alertsEntity, configEntity, "create",
+		"--projectId", projectID,
+		"--event", "OUTSIDE_METRIC_THRESHOLD",
+		"--enabled",
+		"--metricName", "ASSERT_REGULAR",
+		"--metricOperator", "GREATER_THAN",
+		"--metricThreshold", "0",
+		"--metricUnits", "RAW",
+		"--metricMode", "AVERAGE",
+		"--notificationIntervalMin", "42",
+		"--notificationEmailAddress", "abc@example.com",
+		"--notificationType", "EMAIL",
+		"--notificationRegion", "US",
+		"--matcherFieldName", "HOSTNAME",
+		"--matcherOperator", "EQUALS",
+		"--matcherValue", marker,
+		"-o=json")
+	cmd.Env = os.Environ()
+
+	resp, err := test.RunAndGetStdOut(cmd)
+	require.NoError(t, err)
+
+	var result struct {
+		ID string `json:"id"`
+	}
+	require.NoError(t, json.Unmarshal(resp, &result))
+
+	t.Cleanup(func() {
+		t.Logf("Deleting test alert configuration: %s", result.ID)
+		deleteCmd := exec.Command(cliPath,
+			alertsEntity, configEntity, "delete",
+			result.ID, "--projectId", projectID, "--force")
+		deleteCmd.Env = os.Environ()
+		_, _ = test.RunAndGetStdOut(deleteCmd)
+	})
+
+	return marker
+}
+
+func findTestAtlasAlertConfiguration(objects []rt.Object, projectName string, marker string) *akov2.AtlasProject {
+	for _, obj := range objects {
+		project, ok := obj.(*akov2.AtlasProject)
+		if !ok {
+			continue
+		}
+
+		if project.Spec.Name != projectName {
+			continue
+		}
+
+		for _, alert := range project.Spec.AlertConfigurations {
+			for _, matcher := range alert.Matchers {
+				if strings.EqualFold(matcher.FieldName, "HOSTNAME") &&
+					strings.EqualFold(matcher.Value, marker) {
+					return project
+				}
+			}
+		}
+	}
+	return nil
+}
+
+func generateTestAtlasIntegration(t *testing.T, projectID string, integrationType string) {
+	t.Helper()
+	cliPath, err := AtlasCLIBin()
+	require.NoError(t, err)
+
+	args := []string{integrationsEntity, "create", integrationType}
+	switch integrationType {
+	case datadogEntity:
+		args = append(args, "--apiKey", "00000000000000000000000000000012")
+	case opsgenieEntity:
+		args = append(args, "--apiKey", "adbf6e09-ff01-48f3-a03f-cbd61873d125")
+	case pagerdutyEntity:
+		args = append(args, "--serviceKey", "d4f5a1c6e7b8d9f0a1234567890abcde")
+	case victoropsEntity:
+		args = append(args, "--apiKey", "558e7ebc-1234-5678-90ab-cdef12345678", "--routingKey", "operations")
+	case webhookEntity:
+		args = append(args, "--url", "http://example.com", "--secret", "mySecret")
+	default:
+		t.Fatalf("unsupported integration type: %s", integrationType)
+	}
+
+	args = append(args, "--projectId", projectID, "-o=json")
+	cmd := exec.Command(cliPath, args...)
+	cmd.Env = os.Environ()
+	_, err = test.RunAndGetStdOut(cmd)
+	require.NoError(t, err)
+}
+
+func findTestAtlasIntegration(objects []rt.Object, projectID string, integrationType string) *akov2.AtlasThirdPartyIntegration {
+	for _, obj := range objects {
+		if integration, ok := obj.(*akov2.AtlasThirdPartyIntegration); ok &&
+			integration.Spec.ExternalProjectRef != nil &&
+			integration.Spec.ExternalProjectRef.ID == projectID &&
+			integration.Spec.Type == integrationType {
+			return integration
+		}
+	}
+	return nil
+}
+
+func generateTestAtlasDatabaseUser(t *testing.T, projectID string, username string, password string) string {
+	t.Helper()
+	cliPath, err := AtlasCLIBin()
+	require.NoError(t, err)
+
+	cmd := exec.Command(cliPath,
+		dbusersEntity, "create",
+		"--username", username,
+		"--password", password,
+		"--role", "readWriteAnyDatabase@admin",
+		"--projectId", projectID,
+		"-o=json")
+	cmd.Env = os.Environ()
+	_, err = test.RunAndGetStdOut(cmd)
+	require.NoError(t, err)
+
+	t.Cleanup(func() {
+		t.Logf("Deleting test DB user: %s", username)
+		cmd := exec.Command(cliPath,
+			dbusersEntity, "delete",
+			username,
+			"--projectId", projectID,
+			"--force")
+		cmd.Env = os.Environ()
+		_, _ = test.RunAndGetStdOut(cmd)
+	})
+
 	return username
 }
 
-func findGeneratedUser(objects []rt.Object, projectID, username string) *akov2.AtlasDatabaseUser {
+func findTestAtlasDatabaseUser(objects []rt.Object, projectID string, username string) *akov2.AtlasDatabaseUser {
 	for _, obj := range objects {
-		if user, ok := (obj).(*akov2.AtlasDatabaseUser); ok &&
+		if user, ok := obj.(*akov2.AtlasDatabaseUser); ok &&
 			user.Spec.ExternalProjectRef != nil &&
 			user.Spec.ExternalProjectRef.ID == projectID &&
 			user.Spec.Username == username {
@@ -899,14 +1109,90 @@ func findGeneratedUser(objects []rt.Object, projectID, username string) *akov2.A
 	return nil
 }
 
-func generateTestFlexCluster(t *testing.T, projectID string) string {
+func generateTestAtlasStreamInstance(t *testing.T, projectID string, instanceName string) string {
 	cliPath, err := AtlasCLIBin()
-	require.NoError(t, err, "%w: invalid bin", err)
-	clusterName, err := RandomName("flex")
-	args := []string{
-		clustersEntity,
+	require.NoError(t, err)
+
+	cmd := exec.Command(
+		cliPath,
+		streamsEntity,
+		"instances",
 		"create",
-		clusterName,
+		instanceName,
+		"--projectId", projectID,
+		"--provider", "AWS",
+		"--region", "VIRGINIA_USA",
+		"--tier", "SP10",
+	)
+	cmd.Env = os.Environ()
+	_, err = test.RunAndGetStdOut(cmd)
+	require.NoError(t, err)
+
+	t.Cleanup(func() {
+		t.Logf("Deleting test Stream Instance: %s", instanceName)
+		deleteStreamsInstance(t, projectID, instanceName)
+	})
+
+	return instanceName
+}
+
+func findTestAtlasStreamInstance(objects []rt.Object, projectName string, streamName string) *akov2.AtlasStreamInstance {
+	for _, obj := range objects {
+		if stream, ok := obj.(*akov2.AtlasStreamInstance); ok &&
+			stream.Spec.Project.Name == projectName &&
+			stream.Spec.Name == streamName {
+			return stream
+		}
+	}
+	return nil
+}
+
+func generateTestAtlasAdvancedDeployment(t *testing.T, projectID string, clusterName string) string {
+	t.Helper()
+	cliPath, err := AtlasCLIBin()
+	require.NoError(t, err)
+
+	args := []string{
+		clustersEntity, "create", clusterName,
+		"--projectId", projectID,
+		"--provider", "AWS",
+		"--region", "US_EAST_1",
+		"--tier", "M10",
+		"-o=json",
+	}
+	cmd := exec.Command(cliPath, args...)
+	cmd.Env = os.Environ()
+	_, err = test.RunAndGetStdOut(cmd)
+	require.NoError(t, err)
+
+	t.Cleanup(func() {
+		t.Logf("Deleting test Advanced Deployment: %s", clusterName)
+		deleteClusterForProject(projectID, clusterName)
+	})
+
+	return clusterName
+}
+
+func findTestAtlasAdvancedDeployment(objects []rt.Object, projectID string, clusterName string) *akov2.AtlasDeployment {
+	for _, obj := range objects {
+		if dep, ok := obj.(*akov2.AtlasDeployment); ok &&
+			dep.Spec.ExternalProjectRef != nil &&
+			dep.Spec.ExternalProjectRef.ID == projectID &&
+			dep.Spec.DeploymentSpec != nil &&
+			dep.Spec.DeploymentSpec.Name == clusterName {
+			return dep
+		}
+	}
+	return nil
+}
+
+func generateTestAtlasFlexCluster(t *testing.T, projectID string, clusterName string) string {
+	t.Helper()
+	cliPath, err := AtlasCLIBin()
+	require.NoError(t, err)
+
+	args := []string{
+		clustersEntity, "create", clusterName,
 		"--projectId", projectID,
 		"--provider", "AWS",
 		"--region", "US_EAST_1",
@@ -915,27 +1201,25 @@ func generateTestFlexCluster(t *testing.T, projectID string) string {
 	}
 	cmd := exec.Command(cliPath, args...)
 	cmd.Env = os.Environ()
-	resp, err := test.RunAndGetStdOut(cmd)
-	require.NoError(t, err, "%s (%w)", string(resp), err)
+	_, err = test.RunAndGetStdOut(cmd)
+	require.NoError(t, err)
 
-	var project atlasv2.Group
-	require.NoError(t, json.Unmarshal(resp, &project), "invalid response: %s (%w)", string(resp), err)
+	t.Cleanup(func() {
+		t.Logf("Deleting test Advanced Deployment: %s", clusterName)
+		deleteClusterForProject(projectID, clusterName)
+	})
 
 	return clusterName
 }
 
-func clearTestCluster(t *testing.T, projectID, flexClusterName string) {
-	require.NoError(t, deleteClusterForProject(projectID, flexClusterName))
-}
-
-func findGeneratedFlexCluster(objects []rt.Object, projectID, flexClusterName string) *akov2.AtlasDeployment {
+func findTestAtlasFlexCluster(objects []rt.Object, projectID string, flexClusterName string) *akov2.AtlasDeployment {
 	for _, obj := range objects {
-		if flex, ok := (obj).(*akov2.AtlasDeployment); ok &&
-			flex.Spec.ExternalProjectRef != nil &&
-			flex.Spec.ExternalProjectRef.ID == projectID &&
-			flex.Spec.FlexSpec != nil &&
-			flex.Spec.FlexSpec.Name == flexClusterName {
-			return flex
+		if dep, ok := obj.(*akov2.AtlasDeployment); ok &&
+			dep.Spec.ExternalProjectRef != nil &&
+			dep.Spec.ExternalProjectRef.ID == projectID &&
+			dep.Spec.FlexSpec != nil &&
+			dep.Spec.FlexSpec.Name == flexClusterName {
+			return dep
 		}
 	}
 	return nil

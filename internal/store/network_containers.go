@@ -21,10 +21,6 @@ import (
 	atlasv2 "go.mongodb.org/atlas-sdk/v20241113004/admin"
 )
 
-const (
-	MaxAPIPageSize = 500
-)
-
 var (
 	supportedCloudProviders = []akov2provider.ProviderName{
 		akov2provider.ProviderAWS,
@@ -54,22 +50,16 @@ func (s *Store) NetworkContainers(projectID string) ([]atlasv2.CloudProviderCont
 }
 
 func (s *Store) networkContainersFor(projectID string, provider akov2provider.ProviderName) ([]atlasv2.CloudProviderContainer, error) {
-	allPages := []atlasv2.CloudProviderContainer{}
-	pageNum := 1
-	itemsPerPage := MaxAPIPageSize
-	for {
-		result, _, err := s.clientv2.NetworkPeeringApi.ListPeeringContainerByCloudProvider(s.ctx, projectID).
+	return AllPages(func(pageNum, itemsPerPage int) ([]atlasv2.CloudProviderContainer, error) {
+		page, _, err := s.clientv2.NetworkPeeringApi.ListPeeringContainerByCloudProvider(s.ctx, projectID).
 			ItemsPerPage(itemsPerPage).
 			PageNum(pageNum).
-			ProviderName(string(provider)).Execute()
+			ProviderName(string(provider)).
+			Execute()
 		if err != nil {
-			return nil, fmt.Errorf("failed to list network containers: %w", err)
+			return nil, fmt.Errorf("failed to list network containers for provider %s: %w", provider, err)
 		}
-		allPages = append(allPages, result.GetResults()...)
-		if len(result.GetResults()) < itemsPerPage {
-			break
-		}
-		pageNum += 1
-	}
-	return allPages, nil
+
+		return page.GetResults(), nil
+	})
 }

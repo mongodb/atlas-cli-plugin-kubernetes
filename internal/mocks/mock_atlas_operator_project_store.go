@@ -8,7 +8,6 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	store "github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store"
 	admin "go.mongodb.org/atlas-sdk/v20241113004/admin"
 )
 
@@ -36,10 +35,10 @@ func (m *MockOperatorProjectStore) EXPECT() *MockOperatorProjectStoreMockRecorde
 }
 
 // AlertConfigurations mocks base method.
-func (m *MockOperatorProjectStore) AlertConfigurations(arg0 *admin.ListAlertConfigurationsApiParams) (*admin.PaginatedAlertConfig, error) {
+func (m *MockOperatorProjectStore) AlertConfigurations(arg0 string) ([]admin.GroupAlertsConfig, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AlertConfigurations", arg0)
-	ret0, _ := ret[0].(*admin.PaginatedAlertConfig)
+	ret0, _ := ret[0].([]admin.GroupAlertsConfig)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -48,21 +47,6 @@ func (m *MockOperatorProjectStore) AlertConfigurations(arg0 *admin.ListAlertConf
 func (mr *MockOperatorProjectStoreMockRecorder) AlertConfigurations(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AlertConfigurations", reflect.TypeOf((*MockOperatorProjectStore)(nil).AlertConfigurations), arg0)
-}
-
-// AllIntegrations mocks base method.
-func (m *MockOperatorProjectStore) AllIntegrations(arg0 string) ([]admin.ThirdPartyIntegration, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AllIntegrations", arg0)
-	ret0, _ := ret[0].([]admin.ThirdPartyIntegration)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// AllIntegrations indicates an expected call of AllIntegrations.
-func (mr *MockOperatorProjectStoreMockRecorder) AllIntegrations(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AllIntegrations", reflect.TypeOf((*MockOperatorProjectStore)(nil).AllIntegrations), arg0)
 }
 
 // Auditing mocks base method.
@@ -171,25 +155,25 @@ func (mr *MockOperatorProjectStoreMockRecorder) EncryptionAtRest(arg0 interface{
 }
 
 // GetOrgProjects mocks base method.
-func (m *MockOperatorProjectStore) GetOrgProjects(arg0 string, arg1 *store.ListOptions) (*admin.PaginatedAtlasGroup, error) {
+func (m *MockOperatorProjectStore) GetOrgProjects(arg0 string) (*admin.PaginatedAtlasGroup, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetOrgProjects", arg0, arg1)
+	ret := m.ctrl.Call(m, "GetOrgProjects", arg0)
 	ret0, _ := ret[0].(*admin.PaginatedAtlasGroup)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetOrgProjects indicates an expected call of GetOrgProjects.
-func (mr *MockOperatorProjectStoreMockRecorder) GetOrgProjects(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockOperatorProjectStoreMockRecorder) GetOrgProjects(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrgProjects", reflect.TypeOf((*MockOperatorProjectStore)(nil).GetOrgProjects), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrgProjects", reflect.TypeOf((*MockOperatorProjectStore)(nil).GetOrgProjects), arg0)
 }
 
 // Integrations mocks base method.
-func (m *MockOperatorProjectStore) Integrations(arg0 string) (*admin.PaginatedIntegration, error) {
+func (m *MockOperatorProjectStore) Integrations(arg0 string) ([]admin.ThirdPartyIntegration, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Integrations", arg0)
-	ret0, _ := ret[0].(*admin.PaginatedIntegration)
+	ret0, _ := ret[0].([]admin.ThirdPartyIntegration)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -306,18 +290,18 @@ func (mr *MockOperatorProjectStoreMockRecorder) ProjectByName(arg0 interface{}) 
 }
 
 // ProjectIPAccessLists mocks base method.
-func (m *MockOperatorProjectStore) ProjectIPAccessLists(arg0 string, arg1 *store.ListOptions) (*admin.PaginatedNetworkAccess, error) {
+func (m *MockOperatorProjectStore) ProjectIPAccessLists(arg0 string) ([]admin.NetworkPermissionEntry, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ProjectIPAccessLists", arg0, arg1)
-	ret0, _ := ret[0].(*admin.PaginatedNetworkAccess)
+	ret := m.ctrl.Call(m, "ProjectIPAccessLists", arg0)
+	ret0, _ := ret[0].([]admin.NetworkPermissionEntry)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // ProjectIPAccessLists indicates an expected call of ProjectIPAccessLists.
-func (mr *MockOperatorProjectStoreMockRecorder) ProjectIPAccessLists(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockOperatorProjectStoreMockRecorder) ProjectIPAccessLists(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProjectIPAccessLists", reflect.TypeOf((*MockOperatorProjectStore)(nil).ProjectIPAccessLists), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProjectIPAccessLists", reflect.TypeOf((*MockOperatorProjectStore)(nil).ProjectIPAccessLists), arg0)
 }
 
 // ProjectSettings mocks base method.
@@ -336,33 +320,33 @@ func (mr *MockOperatorProjectStoreMockRecorder) ProjectSettings(arg0 interface{}
 }
 
 // ProjectTeams mocks base method.
-func (m *MockOperatorProjectStore) ProjectTeams(arg0 string, arg1 *store.ListOptions) (*admin.PaginatedTeamRole, error) {
+func (m *MockOperatorProjectStore) ProjectTeams(arg0 string) (*admin.PaginatedTeamRole, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ProjectTeams", arg0, arg1)
+	ret := m.ctrl.Call(m, "ProjectTeams", arg0)
 	ret0, _ := ret[0].(*admin.PaginatedTeamRole)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // ProjectTeams indicates an expected call of ProjectTeams.
-func (mr *MockOperatorProjectStoreMockRecorder) ProjectTeams(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockOperatorProjectStoreMockRecorder) ProjectTeams(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProjectTeams", reflect.TypeOf((*MockOperatorProjectStore)(nil).ProjectTeams), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProjectTeams", reflect.TypeOf((*MockOperatorProjectStore)(nil).ProjectTeams), arg0)
 }
 
 // Projects mocks base method.
-func (m *MockOperatorProjectStore) Projects(arg0 *store.ListOptions) (*admin.PaginatedAtlasGroup, error) {
+func (m *MockOperatorProjectStore) Projects() (*admin.PaginatedAtlasGroup, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Projects", arg0)
+	ret := m.ctrl.Call(m, "Projects")
 	ret0, _ := ret[0].(*admin.PaginatedAtlasGroup)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Projects indicates an expected call of Projects.
-func (mr *MockOperatorProjectStoreMockRecorder) Projects(arg0 interface{}) *gomock.Call {
+func (mr *MockOperatorProjectStoreMockRecorder) Projects() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Projects", reflect.TypeOf((*MockOperatorProjectStore)(nil).Projects), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Projects", reflect.TypeOf((*MockOperatorProjectStore)(nil).Projects))
 }
 
 // TeamByID mocks base method.

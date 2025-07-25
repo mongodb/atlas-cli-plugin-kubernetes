@@ -15,17 +15,28 @@
 package store
 
 import (
+	"fmt"
+
 	"go.mongodb.org/atlas-sdk/v20241113004/admin"
 )
 
 //go:generate mockgen -destination=../mocks/mock_alert_configuration.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store AlertConfigurationLister
 
 type AlertConfigurationLister interface {
-	AlertConfigurations(*admin.ListAlertConfigurationsApiParams) (*admin.PaginatedAlertConfig, error)
+	AlertConfigurations(projectID string) ([]admin.GroupAlertsConfig, error)
 }
 
 // AlertConfigurations encapsulate the logic to manage different cloud providers.
-func (s *Store) AlertConfigurations(params *admin.ListAlertConfigurationsApiParams) (*admin.PaginatedAlertConfig, error) {
-	result, _, err := s.clientv2.AlertConfigurationsApi.ListAlertConfigurationsWithParams(s.ctx, params).Execute()
-	return result, err
+func (s *Store) AlertConfigurations(projectID string) ([]admin.GroupAlertsConfig, error) {
+	return AllPages(func(pageNum, itemsPerPage int) ([]admin.GroupAlertsConfig, error) {
+		page, _, err := s.clientv2.AlertConfigurationsApi.ListAlertConfigurations(s.ctx, projectID).
+			PageNum(pageNum).
+			ItemsPerPage(itemsPerPage).
+			Execute()
+		if err != nil {
+			return nil, fmt.Errorf("failed to list project alert configurations: %w", err)
+		}
+
+		return page.GetResults(), nil
+	})
 }

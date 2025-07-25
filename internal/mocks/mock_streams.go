@@ -35,10 +35,10 @@ func (m *MockStreamsLister) EXPECT() *MockStreamsListerMockRecorder {
 }
 
 // ProjectStreams mocks base method.
-func (m *MockStreamsLister) ProjectStreams(arg0 *admin.ListStreamInstancesApiParams) (*admin.PaginatedApiStreamsTenant, error) {
+func (m *MockStreamsLister) ProjectStreams(arg0 string) ([]admin.StreamsTenant, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ProjectStreams", arg0)
-	ret0, _ := ret[0].(*admin.PaginatedApiStreamsTenant)
+	ret0, _ := ret[0].([]admin.StreamsTenant)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

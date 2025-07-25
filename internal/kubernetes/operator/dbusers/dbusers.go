@@ -35,19 +35,19 @@ import (
 const timeFormatISO8601 = "2006-01-02T15:04:05.999Z"
 
 func BuildDBUsers(provider store.OperatorDBUsersStore, projectID, projectName, targetNamespace, credentials string, dictionary map[string]string, version string, independentResource bool) ([]*akov2.AtlasDatabaseUser, []*corev1.Secret, error) {
-	users, err := provider.DatabaseUsers(projectID, &store.ListOptions{})
+	users, err := provider.DatabaseUsers(projectID)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	if len(users.GetResults()) == 0 {
+	if len(users) == 0 {
 		return nil, nil, nil
 	}
 
 	mappedUsers := map[string]*akov2.AtlasDatabaseUser{}
-	relatedSecrets := make([]*corev1.Secret, 0, len(users.GetResults()))
+	relatedSecrets := make([]*corev1.Secret, 0, len(users))
 
-	for _, u := range users.GetResults() {
+	for _, u := range users {
 		user := pointer.Get(u)
 		resourceName := suggestResourceName(projectName, user.Username, mappedUsers, dictionary)
 		labels := convertUserLabels(user)
@@ -98,7 +98,7 @@ func BuildDBUsers(provider store.OperatorDBUsersStore, projectID, projectName, t
 		}
 	}
 
-	result := make([]*akov2.AtlasDatabaseUser, 0, len(users.GetResults()))
+	result := make([]*akov2.AtlasDatabaseUser, 0, len(users))
 	for _, mappedUser := range mappedUsers {
 		result = append(result, mappedUser)
 	}

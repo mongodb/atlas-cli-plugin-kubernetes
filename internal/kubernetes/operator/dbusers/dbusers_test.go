@@ -31,7 +31,6 @@ import (
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator/secrets"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/mocks"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/pointer"
-	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store"
 	akoapi "github.com/mongodb/mongodb-atlas-kubernetes/v2/api"
 	akov2 "github.com/mongodb/mongodb-atlas-kubernetes/v2/api/v1"
 	akov2common "github.com/mongodb/mongodb-atlas-kubernetes/v2/api/v1/common"
@@ -172,12 +171,7 @@ func TestBuildDBUsers(t *testing.T) {
 			Username: "TestUsername",
 		}
 
-		listOptions := &store.ListOptions{}
-		mockUserStore.EXPECT().DatabaseUsers(projectID, listOptions).Return(&atlasv2.PaginatedApiAtlasDatabaseUser{
-			Results: &[]atlasv2.CloudDatabaseUser{
-				user,
-			},
-		}, nil)
+		mockUserStore.EXPECT().DatabaseUsers(projectID).Return([]atlasv2.CloudDatabaseUser{user}, nil)
 
 		creds := projectName + credentialSuffix
 		users, relatedSecrets, err := BuildDBUsers(mockUserStore, projectID, projectName, targetNamespace, creds, dictionary, resourceVersion, false)
@@ -264,71 +258,68 @@ func TestBuildDBUsers(t *testing.T) {
 	})
 
 	t.Run("Can build AtlasDatabaseUser when k8s resource name conflicts", func(t *testing.T) {
-		atlasUsers := atlasv2.PaginatedApiAtlasDatabaseUser{
-			Results: &[]atlasv2.CloudDatabaseUser{
-				{
-					DatabaseName:    "TestDB",
-					DeleteAfterDate: pointer.Get(time.Now()),
-					Labels: &[]atlasv2.ComponentLabel{
-						{
-							Key:   pointer.Get("TestLabelKey"),
-							Value: pointer.Get("TestLabelValue"),
-						},
+		atlasUsers := []atlasv2.CloudDatabaseUser{
+			{
+				DatabaseName:    "TestDB",
+				DeleteAfterDate: pointer.Get(time.Now()),
+				Labels: &[]atlasv2.ComponentLabel{
+					{
+						Key:   pointer.Get("TestLabelKey"),
+						Value: pointer.Get("TestLabelValue"),
 					},
-					LdapAuthType: pointer.Get("TestType"),
-					X509Type:     pointer.Get("TestX509"),
-					AwsIAMType:   pointer.Get("TestAWSIAMType"),
-					GroupId:      "0",
-					Roles: &[]atlasv2.DatabaseUserRole{
-						{
-							RoleName:       "TestRoleName",
-							DatabaseName:   "TestRoleDatabaseName",
-							CollectionName: pointer.Get("TestCollectionName"),
-						},
-					},
-					Scopes: &[]atlasv2.UserScope{
-						{
-							Name: "TestScopeName",
-							Type: "CLUSTER",
-						},
-					},
-					Password: pointer.Get("TestPassword"),
-					Username: "TestUsername",
 				},
-				{
-					DatabaseName:    "TestDB",
-					DeleteAfterDate: pointer.Get(time.Now()),
-					Labels: &[]atlasv2.ComponentLabel{
-						{
-							Key:   pointer.Get("TestLabelKey"),
-							Value: pointer.Get("TestLabelValue"),
-						},
+				LdapAuthType: pointer.Get("TestType"),
+				X509Type:     pointer.Get("TestX509"),
+				AwsIAMType:   pointer.Get("TestAWSIAMType"),
+				GroupId:      "0",
+				Roles: &[]atlasv2.DatabaseUserRole{
+					{
+						RoleName:       "TestRoleName",
+						DatabaseName:   "TestRoleDatabaseName",
+						CollectionName: pointer.Get("TestCollectionName"),
 					},
-					LdapAuthType: pointer.Get("TestType"),
-					X509Type:     pointer.Get("TestX509"),
-					AwsIAMType:   pointer.Get("TestAWSIAMType"),
-					GroupId:      "0",
-					Roles: &[]atlasv2.DatabaseUserRole{
-						{
-							RoleName:       "TestRoleName",
-							DatabaseName:   "TestRoleDatabaseName",
-							CollectionName: pointer.Get("TestCollectionName"),
-						},
-					},
-					Scopes: &[]atlasv2.UserScope{
-						{
-							Name: "TestScopeName",
-							Type: "CLUSTER",
-						},
-					},
-					Password: pointer.Get("TestPassword"),
-					Username: "testUsername",
 				},
+				Scopes: &[]atlasv2.UserScope{
+					{
+						Name: "TestScopeName",
+						Type: "CLUSTER",
+					},
+				},
+				Password: pointer.Get("TestPassword"),
+				Username: "TestUsername",
+			},
+			{
+				DatabaseName:    "TestDB",
+				DeleteAfterDate: pointer.Get(time.Now()),
+				Labels: &[]atlasv2.ComponentLabel{
+					{
+						Key:   pointer.Get("TestLabelKey"),
+						Value: pointer.Get("TestLabelValue"),
+					},
+				},
+				LdapAuthType: pointer.Get("TestType"),
+				X509Type:     pointer.Get("TestX509"),
+				AwsIAMType:   pointer.Get("TestAWSIAMType"),
+				GroupId:      "0",
+				Roles: &[]atlasv2.DatabaseUserRole{
+					{
+						RoleName:       "TestRoleName",
+						DatabaseName:   "TestRoleDatabaseName",
+						CollectionName: pointer.Get("TestCollectionName"),
+					},
+				},
+				Scopes: &[]atlasv2.UserScope{
+					{
+						Name: "TestScopeName",
+						Type: "CLUSTER",
+					},
+				},
+				Password: pointer.Get("TestPassword"),
+				Username: "testUsername",
 			},
 		}
 
-		listOptions := &store.ListOptions{}
-		mockUserStore.EXPECT().DatabaseUsers(projectID, listOptions).Return(&atlasUsers, nil)
+		mockUserStore.EXPECT().DatabaseUsers(projectID).Return(atlasUsers, nil)
 
 		creds := projectName + credentialSuffix
 		users, relatedSecrets, err := BuildDBUsers(mockUserStore, projectID, projectName, targetNamespace, creds, dictionary, resourceVersion, false)

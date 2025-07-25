@@ -21,17 +21,6 @@ package store
 //go:generate mockgen -destination=../mocks/mock_atlas_operator_org_store.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store OperatorOrgStore
 //go:generate mockgen -destination=../mocks/mock_atlas_generic_store.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store OperatorGenericStore
 
-type ListOptions struct {
-	PageNum      int
-	ItemsPerPage int
-	IncludeCount bool
-}
-
-type ContainersListOptions struct {
-	ListOptions
-	ProviderName string
-}
-
 type OperatorProjectStore interface {
 	OperatorTeamsStore
 	ProjectDescriber

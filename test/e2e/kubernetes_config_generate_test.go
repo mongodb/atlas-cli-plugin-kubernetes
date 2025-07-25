@@ -300,10 +300,21 @@ func TestExportPrivateEndpoint(t *testing.T) {
 
 func TestExportIPAccessList(t *testing.T) {
 	s := InitialSetup(t)
-
 	expectedSubresource := []akov2project.IPAccessList{
 		{
 			CIDRBlock: "10.1.1.0/24",
+		},
+		{
+			CIDRBlock: "172.16.0.0/16",
+		},
+		{
+			CIDRBlock: "10.0.0.0/8",
+		},
+		{
+			IPAddress: "198.51.100.42",
+		},
+		{
+			IPAddress: "203.0.113.10",
 		},
 		{
 			IPAddress: "192.168.100.233",
@@ -311,33 +322,40 @@ func TestExportIPAccessList(t *testing.T) {
 	}
 	credentialName := resources.NormalizeAtlasName(s.generator.projectName+credSuffixTest, resources.AtlasNameToKubernetesName())
 
-	// #nosec G204
-	cmd := exec.Command(s.atlasCliPath,
-		accessListEntity,
-		"create",
-		expectedSubresource[1].IPAddress,
-		"--projectId",
-		s.generator.projectID,
-		"--type",
-		"ipAddress",
-		"-o=json")
-	cmd.Env = os.Environ()
-	accessListResp, err := test.RunAndGetStdOut(cmd)
-	require.NoError(t, err, string(accessListResp))
+	// Create access list entries for each IP and CIDR
+	for _, entry := range expectedSubresource {
+		var cmd *exec.Cmd
 
-	// #nosec G204
-	cmd = exec.Command(s.atlasCliPath,
-		accessListEntity,
-		"create",
-		expectedSubresource[0].CIDRBlock,
-		"--projectId",
-		s.generator.projectID,
-		"--type",
-		"cidrBlock",
-		"-o=json")
-	cmd.Env = os.Environ()
-	accessListResp, err = test.RunAndGetStdOut(cmd)
-	require.NoError(t, err, string(accessListResp))
+		if entry.IPAddress != "" {
+			// #nosec G204
+			cmd = exec.Command(s.atlasCliPath,
+				accessListEntity,
+				"create",
+				entry.IPAddress,
+				"--projectId",
+				s.generator.projectID,
+				"--type",
+				"ipAddress",
+				"-o=json")
+		} else if entry.CIDRBlock != "" {
+			// #nosec G204
+			cmd = exec.Command(s.atlasCliPath,
+				accessListEntity,
+				"create",
+				entry.CIDRBlock,
+				"--projectId",
+				s.generator.projectID,
+				"--type",
+				"cidrBlock",
+				"-o=json")
+		}
+
+		if cmd != nil {
+			cmd.Env = os.Environ()
+			accessListResp, err := test.RunAndGetStdOut(cmd)
+			require.NoError(t, err, string(accessListResp))
+		}
+	}
 
 	tests := map[string]struct {
 		independentResources bool
@@ -898,6 +916,18 @@ func defaultIPAccessList(generator *atlasE2ETestGenerator, independent bool) *ak
 			Entries: []akov2.IPAccessEntry{
 				{
 					CIDRBlock: "10.1.1.0/24",
+				},
+				{
+					CIDRBlock: "172.16.0.0/16",
+				},
+				{
+					CIDRBlock: "10.0.0.0/8",
+				},
+				{
+					IPAddress: "198.51.100.42",
+				},
+				{
+					IPAddress: "203.0.113.10",
 				},
 				{
 					IPAddress: "192.168.100.233",
@@ -3043,15 +3073,56 @@ func checkDataFederationData(t *testing.T, dataFederations []*akov2.AtlasDataFed
 func TestGenerateMany(t *testing.T) {
 	// always register atlas entities
 	require.NoError(t, akov2.AddToScheme(scheme.Scheme))
+	projectID, projectName := generateTestAtlasProject(t)
 
-	projectID, projectName := mustGenerateTestProject(t)
-	defer clearTestProject(t, projectID)
-	user1 := generateTestDBUser(t, projectID)
-	user2 := generateTestDBUser(t, projectID)
-	flex1 := generateTestFlexCluster(t, projectID)
-	defer clearTestCluster(t, projectID, flex1)
-	flex2 := generateTestFlexCluster(t, projectID)
-	defer clearTestCluster(t, projectID, flex2)
+	// Test ipAccessList with pagination (25 entries)
+	ipAccessList := make([]string, 25)
+	for i := range ipAccessList {
+		ip := fmt.Sprintf("192.0.0.%d", i)
+		ipAccessList[i] = generateTestAtlasIPAccessList(t, projectID, "ip", ip)
+	}
+
+	// Test alertConfigurations with pagination (25 entries)
+	alertMarkers := make([]string, 25)
+	for i := range alertMarkers {
+		marker := fmt.Sprintf("alert-marker-%02d-%s", i+1, randSuffix(t))
+		alertMarkers[i] = generateTestAtlasAlertConfiguration(t, projectID, marker)
+	}
+
+	// Test databaseUsers with pagination (25 entries)
+	dbUsers := make([]string, 25)
+	for i := range dbUsers {
+		user := fmt.Sprintf("dbuser-%02d-%s", i+1, randSuffix(t))
+		dbUsers[i] = generateTestAtlasDatabaseUser(t, projectID, user, "pass")
+	}
+
+	// Test all integrations with pagination
+	generateTestAtlasIntegration(t, projectID, datadogEntity)
+	generateTestAtlasIntegration(t, projectID, opsgenieEntity)
+	generateTestAtlasIntegration(t, projectID, victoropsEntity)
+	generateTestAtlasIntegration(t, projectID, pagerdutyEntity)
+	generateTestAtlasIntegration(t, projectID, webhookEntity)
+
+	// Test Streams instances with pagination
+	streams := make([]string, 2)
+	for i := range streams {
+		streams[i] = fmt.Sprintf("stream-%02d-%s", i+1, randSuffix(t))
+		generateTestAtlasStreamInstance(t, projectID, streams[i])
+	}
+
+	// Test flex clusters with pagination
+	flexClusters := make([]string, 2)
+	for i := range flexClusters {
+		flexClusters[i] = fmt.Sprintf("flex-%02d-%s", i+1, randSuffix(t))
+		generateTestAtlasFlexCluster(t, projectID, flexClusters[i])
+	}
+
+	// Test Normal (M10) Atlas clusters
+	advancedDeployments := make([]string, 2)
+	for i := range advancedDeployments {
+		advancedDeployments[i] = fmt.Sprintf("adv-deployment-%02d-%s", i+1, randSuffix(t))
+		generateTestAtlasAdvancedDeployment(t, projectID, advancedDeployments[i])
+	}
 
 	cliPath, err := PluginBin()
 	require.NoError(t, err)
@@ -3059,27 +3130,61 @@ func TestGenerateMany(t *testing.T) {
 		"kubernetes",
 		"config",
 		"generate",
-		"--projectId",
-		projectID,
-		"--targetNamespace",
-		targetNamespace,
-		"--independentResources") // independent resources generating the project ID is required for this test
+		"--projectId", projectID,
+		"--targetNamespace", targetNamespace,
+		"--independentResources")
 	cmd.Env = os.Environ()
 
 	resp, err := test.RunAndGetStdOut(cmd)
 	t.Log(string(resp))
 	require.NoError(t, err, string(resp))
 
-	var objects []runtime.Object
-	objects, err = getK8SEntities(resp)
-	require.NoError(t, err, "should not fail on decode")
-	require.NotEmpty(t, objects, "result should not be empty")
+	objects, err := getK8SEntities(resp)
+	require.NoError(t, err)
+	require.NotEmpty(t, objects)
 
-	assert.NotNil(t, findGeneratedProject(objects, projectName))
-	for i, user := range []string{user1, user2} {
-		assert.NotNil(t, findGeneratedUser(objects, projectID, user), "not found user %d", i)
+	assert.NotNil(t, findTestAtlasProject(objects, projectName))
+
+	for i, ip := range ipAccessList {
+		assert.NotNil(t, findTestAtlasIPAccessList(objects, projectID, ip), "IP access list %d with ID %s not found", i+1, ip)
 	}
-	for i, flex := range []string{flex1, flex2} {
-		assert.NotNil(t, findGeneratedFlexCluster(objects, projectID, flex), "not found flex cluster %d", i)
+
+	for i, marker := range alertMarkers {
+		assert.NotNil(t, findTestAtlasAlertConfiguration(objects, projectName, marker), "Alert configuration %d with marker %s not found", i+1, marker)
 	}
+
+	for i, name := range dbUsers {
+		assert.NotNil(t, findTestAtlasDatabaseUser(objects, projectID, name), "DB user %d with username %s not found", i+1, name)
+	}
+
+	for i, typ := range []string{datadogEntity, opsgenieEntity, victoropsEntity, pagerdutyEntity, webhookEntity} {
+		assert.NotNil(t, findTestAtlasIntegration(objects, projectID, typ), "Integration %d of type %s not found", i+1, typ)
+	}
+
+	for i, name := range streams {
+		assert.NotNil(t, findTestAtlasStreamInstance(objects, projectName, name), "Stream instance %d with name %s not found", i+1, name)
+	}
+
+	for i, name := range flexClusters {
+		assert.NotNil(t, findTestAtlasFlexCluster(objects, projectID, name), "Flex cluster %d with name %s not found", i+1, name)
+	}
+
+	for i, name := range advancedDeployments {
+		assert.NotNil(t, findTestAtlasAdvancedDeployment(objects, projectID, name), "Cluster %d with name %s not found", i+1, name)
+	}
+}
+
+func randSuffix(t *testing.T) string {
+	alpha := func() string {
+		b := make([]byte, 2)
+		for i := range b {
+			val, err := RandInt(26)
+			require.NoError(t, err)
+			b[i] = byte('a' + val.Int64())
+		}
+		return string(b)
+	}
+	num, err := RandInt(1000)
+	require.NoError(t, err)
+	return fmt.Sprintf("%s%03d", alpha(), num.Int64())
 }
