@@ -3073,51 +3073,49 @@ func checkDataFederationData(t *testing.T, dataFederations []*akov2.AtlasDataFed
 func TestGenerateMany(t *testing.T) {
 	// always register atlas entities
 	require.NoError(t, akov2.AddToScheme(scheme.Scheme))
-	projectID, projectName := createAtlasProject(t)
+	projectID, projectName := generateTestAtlasProject(t)
 
-	// Test ipAccesList with pagination
-	ipAccessList1 := createIPAccessList(t, projectID, "ip", "192.168.1.1")
-	ipAccessList2 := createIPAccessList(t, projectID, "ip", "192.168.1.2")
-	ipAccessList3 := createIPAccessList(t, projectID, "ip", "192.168.1.3")
-	ipAccessList4 := createIPAccessList(t, projectID, "ip", "192.168.1.4")
-	ipAccessList5 := createIPAccessList(t, projectID, "ip", "192.168.1.5")
+	// Test ipAccessList with pagination (25 entries)
+	ipAccessList := make([]string, 25)
+	for i := range ipAccessList {
+		ip := fmt.Sprintf("192.0.0.%d", i)
+		ipAccessList[i] = generateTestAtlasIPAccessList(t, projectID, "ip", ip)
+	}
 
-	// Test Integrations with pagination
-	createAtlasIntegration(t, projectID, datadogEntity)
-	createAtlasIntegration(t, projectID, opsgenieEntity)
-	createAtlasIntegration(t, projectID, victoropsEntity)
-	createAtlasIntegration(t, projectID, pagerdutyEntity)
-	createAtlasIntegration(t, projectID, webhookEntity)
+	// Test databaseUsers with pagination (25 entries)
+	dbUsers := make([]string, 25)
+	for i := range dbUsers {
+		user := fmt.Sprintf("dbuser-%02d-%s", i+1, randSuffix(t))
+		dbUsers[i] = generateTestAtlasDatabaseUser(t, projectID, user, "pass")
+	}
 
-	// Test federated auth
-	federationSettingsID := getFederationSettingsID(t)
-
-	// Test identity provieders from federated auth with pagiation
-	// Note, idps cannot be tested right since they are outside of project scope (org level)
-	createAtlasIdentityProvider(t, federationSettingsID, "idps1")
-	createAtlasIdentityProvider(t, federationSettingsID, "idps2")
-	createAtlasIdentityProvider(t, federationSettingsID, "idps3")
-	createAtlasIdentityProvider(t, federationSettingsID, "idps4")
-	createAtlasIdentityProvider(t, federationSettingsID, "idps5")
-
-	// Test databaseUsers with pagination
-	user1 := createAtlasDatabaseUser(t, projectID, "user1", "pass1")
-	user2 := createAtlasDatabaseUser(t, projectID, "user2", "pass2")
-	user3 := createAtlasDatabaseUser(t, projectID, "user3", "pass3")
-	user4 := createAtlasDatabaseUser(t, projectID, "user4", "pass4")
-	user5 := createAtlasDatabaseUser(t, projectID, "user5", "pass5")
+	// Test all integrations with pagination
+	generateTestAtlasIntegration(t, projectID, datadogEntity)
+	generateTestAtlasIntegration(t, projectID, opsgenieEntity)
+	generateTestAtlasIntegration(t, projectID, victoropsEntity)
+	generateTestAtlasIntegration(t, projectID, pagerdutyEntity)
+	generateTestAtlasIntegration(t, projectID, webhookEntity)
 
 	// Test Streams instances with pagination
-	stream1 := createAtlasStreamInstance(t, projectID, "stream1")
-	stream2 := createAtlasStreamInstance(t, projectID, "stream2")
+	streams := make([]string, 2)
+	for i := range streams {
+		streams[i] = fmt.Sprintf("stream-%02d-%s", i+1, randSuffix(t))
+		generateTestAtlasStreamInstance(t, projectID, streams[i])
+	}
 
 	// Test flex clusters with pagination
-	flexCluster1 := createAtlasFlexCluster(t, projectID, "flex1")
-	flexCluster2 := createAtlasFlexCluster(t, projectID, "flex2")
+	flexClusters := make([]string, 2)
+	for i := range flexClusters {
+		flexClusters[i] = fmt.Sprintf("flex-%02d-%s", i+1, randSuffix(t))
+		generateTestAtlasFlexCluster(t, projectID, flexClusters[i])
+	}
 
 	// Test Normal (M10) Atlas clusters
-	cluster1 := createAtlasCluster(t, projectID, "cluster1")
-	cluster2 := createAtlasCluster(t, projectID, "cluster2")
+	advancedDeployments := make([]string, 2)
+	for i := range advancedDeployments {
+		advancedDeployments[i] = fmt.Sprintf("adv-deployment-%02d-%s", i+1, randSuffix(t))
+		generateTestAtlasAdvancedDeployment(t, projectID, advancedDeployments[i])
+	}
 
 	cliPath, err := PluginBin()
 	require.NoError(t, err)
@@ -3125,58 +3123,57 @@ func TestGenerateMany(t *testing.T) {
 		"kubernetes",
 		"config",
 		"generate",
-		"--projectId",
-		projectID,
-		"--targetNamespace",
-		targetNamespace,
-		"--independentResources") // independent resources generating the project ID is required for this test
+		"--projectId", projectID,
+		"--targetNamespace", targetNamespace,
+		"--independentResources")
 	cmd.Env = os.Environ()
 
 	resp, err := test.RunAndGetStdOut(cmd)
 	t.Log(string(resp))
 	require.NoError(t, err, string(resp))
 
-	var objects []runtime.Object
-	objects, err = getK8SEntities(resp)
-	require.NoError(t, err, "should not fail on decode")
-	require.NotEmpty(t, objects, "result should not be empty")
+	objects, err := getK8SEntities(resp)
+	require.NoError(t, err)
+	require.NotEmpty(t, objects)
 
-	// Find the AtlasProject
-	assert.NotNil(t, findGeneratedAtlasProject(objects, projectName))
+	assert.NotNil(t, findTestAtlasProject(objects, projectName))
 
-	// Assert IP access lists
-	ipAddressList := []string{ipAccessList1, ipAccessList2, ipAccessList3, ipAccessList4, ipAccessList5}
-	for i, ip := range ipAddressList {
-		assert.NotNil(t, findGeneratedIPAccessList(objects, projectID, ip), "IP access list %d with ID %s not found", i+1, ip)
+	for i, ip := range ipAccessList {
+		assert.NotNil(t, findTestAtlasIPAccessList(objects, projectID, ip), "IP access list %d with ID %s not found", i+1, ip)
 	}
 
-	// Assert Integrations
-	integrations := []string{datadogEntity, opsgenieEntity, victoropsEntity, pagerdutyEntity, webhookEntity}
-	for i, typ := range integrations {
-		assert.NotNil(t, findGeneratedAtlasIntegration(objects, projectID, typ), "Integration %d of type %s not found", i+1, typ)
+	for i, typ := range []string{datadogEntity, opsgenieEntity, victoropsEntity, pagerdutyEntity, webhookEntity} {
+		assert.NotNil(t, findTestAtlasIntegration(objects, projectID, typ), "Integration %d of type %s not found", i+1, typ)
 	}
 
-	// Assert DB users
-	usernames := []string{user1, user2, user3, user4, user5}
-	for i, username := range usernames {
-		assert.NotNil(t, findGeneratedAtlasDatabaseUser(objects, projectID, username), "DB user %d with username %s not found", i+1, username)
+	for i, name := range dbUsers {
+		assert.NotNil(t, findTestAtlasDatabaseUser(objects, projectID, name), "DB user %d with username %s not found", i+1, name)
 	}
 
-	// Assert Streams instances
-	streamList := []string{stream1, stream2}
-	for i, name := range streamList {
-		assert.NotNil(t, findGeneratedAtlasStreamInstance(objects, projectName, name), "Stream instance %d with name %s not found", i+1, name)
+	for i, name := range streams {
+		assert.NotNil(t, findTestAtlasStreamInstance(objects, projectName, name), "Stream instance %d with name %s not found", i+1, name)
 	}
 
-	// Assert Flex clusters
-	flexClusterList := []string{flexCluster1, flexCluster2}
-	for i, name := range flexClusterList {
-		assert.NotNil(t, findGeneratedAtlasFlexCluster(objects, projectID, name), "Flex cluster %d with name %s not found", i+1, name)
+	for i, name := range flexClusters {
+		assert.NotNil(t, findTestAtlasFlexCluster(objects, projectID, name), "Flex cluster %d with name %s not found", i+1, name)
 	}
 
-	// Assert Normal M10 clusters
-	clusterList := []string{cluster1, cluster2}
-	for i, name := range clusterList {
-		assert.NotNil(t, findGeneratedAtlasCluster(objects, projectID, name), "Cluster %d with name %s not found", i+1, name)
+	for i, name := range advancedDeployments {
+		assert.NotNil(t, findTestAtlasAdvancedDeployment(objects, projectID, name), "Cluster %d with name %s not found", i+1, name)
 	}
+}
+
+func randSuffix(t *testing.T) string {
+	alpha := func() string {
+		b := make([]byte, 2)
+		for i := range b {
+			val, err := RandInt(26)
+			require.NoError(t, err)
+			b[i] = byte('a' + val.Int64())
+		}
+		return string(b)
+	}
+	num, err := RandInt(1000)
+	require.NoError(t, err)
+	return fmt.Sprintf("%s%03d", alpha(), num.Int64())
 }
