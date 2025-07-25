@@ -21,10 +21,6 @@ import (
 	atlasv2 "go.mongodb.org/atlas-sdk/v20241113004/admin"
 )
 
-const (
-	MaxAPIPageSize = 1 // To increase once done testing!!
-)
-
 var (
 	supportedCloudProviders = []akov2provider.ProviderName{
 		akov2provider.ProviderAWS,

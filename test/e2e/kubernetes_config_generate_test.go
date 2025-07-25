@@ -3082,6 +3082,13 @@ func TestGenerateMany(t *testing.T) {
 		ipAccessList[i] = generateTestAtlasIPAccessList(t, projectID, "ip", ip)
 	}
 
+	// Test alertConfigurations with pagination (25 entries)
+	alertMarkers := make([]string, 25)
+	for i := range alertMarkers {
+		marker := fmt.Sprintf("alert-marker-%02d-%s", i+1, randSuffix(t))
+		alertMarkers[i] = generateTestAtlasAlertConfiguration(t, projectID, marker)
+	}
+
 	// Test databaseUsers with pagination (25 entries)
 	dbUsers := make([]string, 25)
 	for i := range dbUsers {
@@ -3142,12 +3149,16 @@ func TestGenerateMany(t *testing.T) {
 		assert.NotNil(t, findTestAtlasIPAccessList(objects, projectID, ip), "IP access list %d with ID %s not found", i+1, ip)
 	}
 
-	for i, typ := range []string{datadogEntity, opsgenieEntity, victoropsEntity, pagerdutyEntity, webhookEntity} {
-		assert.NotNil(t, findTestAtlasIntegration(objects, projectID, typ), "Integration %d of type %s not found", i+1, typ)
+	for i, marker := range alertMarkers {
+		assert.NotNil(t, findTestAtlasAlertConfiguration(objects, projectName, marker), "Alert configuration %d with marker %s not found", i+1, marker)
 	}
 
 	for i, name := range dbUsers {
 		assert.NotNil(t, findTestAtlasDatabaseUser(objects, projectID, name), "DB user %d with username %s not found", i+1, name)
+	}
+
+	for i, typ := range []string{datadogEntity, opsgenieEntity, victoropsEntity, pagerdutyEntity, webhookEntity} {
+		assert.NotNil(t, findTestAtlasIntegration(objects, projectID, typ), "Integration %d of type %s not found", i+1, typ)
 	}
 
 	for i, name := range streams {

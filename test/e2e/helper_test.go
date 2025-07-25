@@ -716,7 +716,7 @@ func deleteStreamsInstance(t *testing.T, projectID, name string) error {
 	cmd := exec.Command(
 		cliPath,
 		streamsEntity,
-		"instance",
+		"instances",
 		"delete",
 		name,
 		"--projectId", projectID,
@@ -727,7 +727,6 @@ func deleteStreamsInstance(t *testing.T, projectID, name string) error {
 	if err != nil {
 		return fmt.Errorf("%s (%w)", string(resp), err)
 	}
-
 	return nil
 }
 
@@ -934,6 +933,7 @@ func generateTestAtlasIPAccessList(t *testing.T, projectID string, resourceType,
 	require.NoError(t, err, string(resp))
 
 	t.Cleanup(func() {
+		t.Logf("Deleting IP access list: %s", address)
 		deleteCmd := exec.Command(cliPath,
 			accessListEntity, "delete", address,
 			"--projectId", projectID, "--force")
@@ -952,6 +952,74 @@ func findTestAtlasIPAccessList(objects []rt.Object, projectID string, address st
 			for _, entry := range ip.Spec.Entries {
 				if entry.IPAddress == address || entry.CIDRBlock == address {
 					return ip
+				}
+			}
+		}
+	}
+	return nil
+}
+
+func generateTestAtlasAlertConfiguration(t *testing.T, projectID, marker string) string {
+	t.Helper()
+	cliPath, err := AtlasCLIBin()
+	require.NoError(t, err)
+
+	cmd := exec.Command(cliPath,
+		alertsEntity, configEntity, "create",
+		"--projectId", projectID,
+		"--event", "OUTSIDE_METRIC_THRESHOLD",
+		"--enabled",
+		"--metricName", "ASSERT_REGULAR",
+		"--metricOperator", "GREATER_THAN",
+		"--metricThreshold", "0",
+		"--metricUnits", "RAW",
+		"--metricMode", "AVERAGE",
+		"--notificationIntervalMin", "42",
+		"--notificationEmailAddress", "abc@example.com",
+		"--notificationType", "EMAIL",
+		"--notificationRegion", "US",
+		"--matcherFieldName", "HOSTNAME",
+		"--matcherOperator", "EQUALS",
+		"--matcherValue", marker,
+		"-o=json")
+	cmd.Env = os.Environ()
+
+	resp, err := test.RunAndGetStdOut(cmd)
+	require.NoError(t, err)
+
+	var result struct {
+		ID string `json:"id"`
+	}
+	require.NoError(t, json.Unmarshal(resp, &result))
+
+	t.Cleanup(func() {
+		t.Logf("Deleting test alert configuration: %s", result.ID)
+		deleteCmd := exec.Command(cliPath,
+			alertsEntity, configEntity, "delete",
+			result.ID, "--projectId", projectID, "--force")
+		deleteCmd.Env = os.Environ()
+		_, _ = test.RunAndGetStdOut(deleteCmd)
+	})
+
+	return marker
+}
+
+func findTestAtlasAlertConfiguration(objects []rt.Object, projectName string, marker string) *akov2.AtlasProject {
+	for _, obj := range objects {
+		project, ok := obj.(*akov2.AtlasProject)
+		if !ok {
+			continue
+		}
+
+		if project.Spec.Name != projectName {
+			continue
+		}
+
+		for _, alert := range project.Spec.AlertConfigurations {
+			for _, matcher := range alert.Matchers {
+				if strings.EqualFold(matcher.FieldName, "HOSTNAME") &&
+					strings.EqualFold(matcher.Value, marker) {
+					return project
 				}
 			}
 		}
@@ -1016,6 +1084,7 @@ func generateTestAtlasDatabaseUser(t *testing.T, projectID string, username stri
 	require.NoError(t, err)
 
 	t.Cleanup(func() {
+		t.Logf("Deleting test DB user: %s", username)
 		cmd := exec.Command(cliPath,
 			dbusersEntity, "delete",
 			username,
@@ -1040,57 +1109,6 @@ func findTestAtlasDatabaseUser(objects []rt.Object, projectID string, username s
 	return nil
 }
 
-func generateTestAtlasIdentityProvider(t *testing.T, federationSettingsID string, displayName string) string {
-	t.Helper()
-	cliPath, err := AtlasCLIBin()
-	require.NoError(t, err)
-
-	args := []string{
-		federatedAuthenticationEntity, federationSettingsEntity, identityProviderEntity, "create", "oidc", displayName,
-		"--audience", fmt.Sprintf("https://accounts-%s.google.com", displayName),
-		"--authorizationType", "GROUP",
-		"--desc", fmt.Sprintf("OIDC provider for %s", displayName),
-		"--federationSettingsId", federationSettingsID,
-		"--groupsClaim", fmt.Sprintf("group-%s", displayName),
-		"--userClaim", fmt.Sprintf("email-%s", displayName),
-		"--idpType", "WORKLOAD",
-		"--issuerUri", "https://accounts.google.com",
-		"-o=json",
-	}
-	cmd := exec.Command(cliPath, args...)
-	cmd.Env = os.Environ()
-	resp, err := test.RunAndGetStdOut(cmd)
-	require.NoError(t, err)
-
-	var result struct {
-		Id string `json:"id"`
-	}
-	require.NoError(t, json.Unmarshal(resp, &result))
-
-	t.Cleanup(func() {
-		deleteCmd := exec.Command(cliPath,
-			federatedAuthenticationEntity, federationSettingsEntity, identityProviderEntity, "delete",
-			result.Id, "--federationSettingsId", federationSettingsID, "--force")
-		deleteCmd.Env = os.Environ()
-		_, _ = test.RunAndGetStdOut(deleteCmd)
-	})
-
-	return result.Id
-}
-
-func findTestAtlasIdentityProvider(objects []rt.Object, idpID string) *akov2.AtlasFederatedAuth {
-	for _, obj := range objects {
-		if fed, ok := obj.(*akov2.AtlasFederatedAuth); ok && fed.Spec.DataAccessIdentityProviders != nil {
-			for _, listed := range *fed.Spec.DataAccessIdentityProviders {
-				if listed == idpID {
-					return fed
-				}
-			}
-		}
-	}
-	return nil
-}
-
 func generateTestAtlasStreamInstance(t *testing.T, projectID string, instanceName string) string {
 	cliPath, err := AtlasCLIBin()
 	require.NoError(t, err)
@@ -1098,7 +1116,7 @@ func generateTestAtlasStreamInstance(t *testing.T, projectID string, instanceNam
 	cmd := exec.Command(
 		cliPath,
 		streamsEntity,
-		"instance",
+		"instances",
 		"create",
 		instanceName,
 		"--projectId", projectID,
@@ -1111,6 +1129,7 @@ func generateTestAtlasStreamInstance(t *testing.T, projectID string, instanceNam
 	require.NoError(t, err)
 
 	t.Cleanup(func() {
+		t.Logf("Deleting test Stream Instance: %s", instanceName)
 		deleteStreamsInstance(t, projectID, instanceName)
 	})
 
@@ -1147,7 +1166,8 @@ func generateTestAtlasAdvancedDeployment(t *testing.T, projectID string, cluster
 	require.NoError(t, err)
 
 	t.Cleanup(func() {
-		_ = deleteClusterForProject(projectID, clusterName)
+		t.Logf("Deleting test Advanced Deployment: %s", clusterName)
+		deleteClusterForProject(projectID, clusterName)
 	})
 
 	return clusterName
@@ -1185,7 +1205,8 @@ func generateTestAtlasFlexCluster(t *testing.T, projectID string, clusterName st
 	require.NoError(t, err)
 
 	t.Cleanup(func() {
-		_ = deleteClusterForProject(projectID, clusterName)
+		t.Logf("Deleting test Advanced Deployment: %s", clusterName)
+		deleteClusterForProject(projectID, clusterName)
 	})
 
 	return clusterName
