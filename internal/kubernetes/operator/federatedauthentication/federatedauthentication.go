@@ -165,7 +165,7 @@ func GetIdentityProviderForFederatedSettings(st store.IdentityProviderLister, fe
 		return nil, fmt.Errorf("failed to retrieve the federation setting's identity providers: %w", err)
 	}
 
-	for _, identityProvider := range identityProviders.GetResults() {
+	for _, identityProvider := range identityProviders {
 		if identityProvider.GetOktaIdpId() == identityProviderID {
 			return &identityProvider, nil
 		}

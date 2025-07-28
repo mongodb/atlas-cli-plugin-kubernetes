@@ -322,29 +322,29 @@ func projectBuildCustomRoles(crProvider store.DatabaseRoleLister, projectID stri
 }
 
 func buildAccessLists(accessListProvider store.ProjectIPAccessListLister, projectID string) ([]akov2project.IPAccessList, error) {
-	// pagination not required, max 200 entries can be configured via API
-	accessLists, err := accessListProvider.ProjectIPAccessLists(projectID, &store.ListOptions{ItemsPerPage: MaxItems})
+	ipAccessLists, err := accessListProvider.ProjectIPAccessLists(projectID)
 	if err != nil {
 		return nil, err
 	}
 
-	result := make([]akov2project.IPAccessList, 0, len(accessLists.GetResults()))
-	for _, list := range accessLists.GetResults() {
-		if strings.HasSuffix(list.GetCidrBlock(), cidrException) && list.GetIpAddress() != "" {
-			list.CidrBlock = pointer.Get("")
+	var result []akov2project.IPAccessList
+	for _, ipAccessList := range ipAccessLists {
+		if strings.HasSuffix(ipAccessList.GetCidrBlock(), cidrException) && ipAccessList.GetIpAddress() != "" {
+			ipAccessList.CidrBlock = pointer.Get("")
 		}
 		deleteAfterDate := ""
-		if !list.GetDeleteAfterDate().IsZero() {
-			deleteAfterDate = list.GetDeleteAfterDate().String()
+		if !ipAccessList.GetDeleteAfterDate().IsZero() {
+			deleteAfterDate = ipAccessList.GetDeleteAfterDate().String()
 		}
 		result = append(result, akov2project.IPAccessList{
-			AwsSecurityGroup: list.GetAwsSecurityGroup(),
-			CIDRBlock:        list.GetCidrBlock(),
-			Comment:          list.GetComment(),
+			AwsSecurityGroup: ipAccessList.GetAwsSecurityGroup(),
+			CIDRBlock:        ipAccessList.GetCidrBlock(),
+			Comment:          ipAccessList.GetComment(),
 			DeleteAfterDate:  deleteAfterDate,
-			IPAddress:        list.GetIpAddress(),
+			IPAddress:        ipAccessList.GetIpAddress(),
 		})
 	}
+
 	return result, nil
 }
 
@@ -368,10 +368,10 @@ func buildIntegrations(intProvider store.IntegrationLister, projectID, targetNam
 	if err != nil {
 		return nil, nil, err
 	}
-	result := make([]akov2project.Integration, 0, len(integrations.GetResults()))
-	intSecrets := make([]*corev1.Secret, 0, len(integrations.GetResults()))
+	result := make([]akov2project.Integration, 0, len(integrations))
+	intSecrets := make([]*corev1.Secret, 0, len(integrations))
 
-	for _, list := range integrations.GetResults() {
+	for _, list := range integrations {
 		iType := list.GetType()
 		secret := secrets.NewAtlasSecretBuilder(
 			fmt.Sprintf("%s-integration-%s", projectID, strings.ToLower(iType)),
@@ -663,10 +663,7 @@ func buildAuditing(auditingProvider store.AuditingDescriber, projectID string) (
 }
 
 func buildAlertConfigurations(acProvider store.AlertConfigurationLister, projectID, projectName, targetNamespace string, dictionary map[string]string) ([]akov2.AlertConfiguration, []*corev1.Secret, error) {
-	data, err := acProvider.AlertConfigurations(&atlasv2.ListAlertConfigurationsApiParams{
-		GroupId:      projectID,
-		ItemsPerPage: pointer.Get(MaxItems),
-	})
+	data, err := acProvider.AlertConfigurations(projectID)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -771,8 +768,8 @@ func buildAlertConfigurations(acProvider store.AlertConfigurationLister, project
 	}
 
 	var secretResults []*corev1.Secret
-	results := make([]akov2.AlertConfiguration, 0, len(data.GetResults()))
-	for _, alertConfig := range data.GetResults() {
+	results := make([]akov2.AlertConfiguration, 0, len(data))
+	for _, alertConfig := range data {
 		notifications, notificationSecrets := convertNotifications(alertConfig.GetNotifications())
 		secretResults = append(secretResults, notificationSecrets...)
 
@@ -852,7 +849,7 @@ func generateName(base string) string {
 }
 
 func buildTeams(teamsProvider store.OperatorTeamsStore, orgID, projectID, projectName, targetNamespace, version string, dictionary map[string]string) ([]akov2.Team, []*akov2.AtlasTeam, error) {
-	projectTeams, err := teamsProvider.ProjectTeams(projectID, nil)
+	projectTeams, err := teamsProvider.ProjectTeams(projectID)
 	if err != nil {
 		return nil, nil, err
 	}

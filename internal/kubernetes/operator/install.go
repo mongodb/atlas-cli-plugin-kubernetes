@@ -215,7 +215,7 @@ func (i *Install) importAtlasResources(orgID, apiKeyID string) error {
 
 		projectsIDs = append(projectsIDs, project.GetId())
 	} else {
-		projectsData, err := i.atlasStore.GetOrgProjects(orgID, &store.ListOptions{})
+		projectsData, err := i.atlasStore.GetOrgProjects(orgID)
 		if err != nil {
 			return fmt.Errorf("unable to retrieve list of projects: %w", err)
 		}

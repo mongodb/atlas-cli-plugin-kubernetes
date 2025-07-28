@@ -8,7 +8,6 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	store "github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store"
 	admin "go.mongodb.org/atlas-sdk/v20241113004/admin"
 )
 
@@ -36,16 +35,16 @@ func (m *MockProjectIPAccessListLister) EXPECT() *MockProjectIPAccessListListerM
 }
 
 // ProjectIPAccessLists mocks base method.
-func (m *MockProjectIPAccessListLister) ProjectIPAccessLists(arg0 string, arg1 *store.ListOptions) (*admin.PaginatedNetworkAccess, error) {
+func (m *MockProjectIPAccessListLister) ProjectIPAccessLists(arg0 string) ([]admin.NetworkPermissionEntry, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ProjectIPAccessLists", arg0, arg1)
-	ret0, _ := ret[0].(*admin.PaginatedNetworkAccess)
+	ret := m.ctrl.Call(m, "ProjectIPAccessLists", arg0)
+	ret0, _ := ret[0].([]admin.NetworkPermissionEntry)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // ProjectIPAccessLists indicates an expected call of ProjectIPAccessLists.
-func (mr *MockProjectIPAccessListListerMockRecorder) ProjectIPAccessLists(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockProjectIPAccessListListerMockRecorder) ProjectIPAccessLists(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProjectIPAccessLists", reflect.TypeOf((*MockProjectIPAccessListLister)(nil).ProjectIPAccessLists), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProjectIPAccessLists", reflect.TypeOf((*MockProjectIPAccessListLister)(nil).ProjectIPAccessLists), arg0)
 }

@@ -87,19 +87,15 @@ func Test_BuildAtlasFederatedAuth(t *testing.T) {
 					GetConnectedOrgConfig(&admin.GetConnectedOrgConfigApiParams{FederationSettingsId: *pointer.Get(testFederationSettingID), OrgId: testOrganizationID}).
 					Return(orgConfig, nil)
 
-				identityProvider := &admin.FederationIdentityProvider{
+				identityProvider := admin.FederationIdentityProvider{
 					SsoDebugEnabled: pointer.Get(true),
 					OktaIdpId:       *pointer.Get(legacyTestIdentityProviderID),
 					Id:              testIdentityProviderID,
 				}
-				paginatedResult := &admin.PaginatedFederationIdentityProvider{
-					Results:    &[]admin.FederationIdentityProvider{*identityProvider},
-					TotalCount: pointer.Get(1),
-				}
 
 				store.EXPECT().
 					IdentityProviders(&admin.ListIdentityProvidersApiParams{FederationSettingsId: *pointer.Get(testFederationSettingID)}).
-					Return(paginatedResult, nil)
+					Return([]admin.FederationIdentityProvider{identityProvider}, nil)
 
 				// Mocking projects
 				firstProject := &admin.Group{Id: pointer.Get("test-project-1"), Name: "test-project-name-1", OrgId: testOrganizationID}
@@ -201,19 +197,15 @@ func Test_BuildAtlasFederatedAuth(t *testing.T) {
 					GetConnectedOrgConfig(&admin.GetConnectedOrgConfigApiParams{FederationSettingsId: *pointer.Get(testFederationSettingID), OrgId: testOrganizationID}).
 					Return(orgConfig, nil)
 
-				identityProvider := &admin.FederationIdentityProvider{
+				identityProvider := admin.FederationIdentityProvider{
 					SsoDebugEnabled: pointer.Get(true),
 					OktaIdpId:       *pointer.Get(legacyTestIdentityProviderID),
 					Id:              testIdentityProviderID,
 				}
-				paginatedResult := &admin.PaginatedFederationIdentityProvider{
-					Results:    &[]admin.FederationIdentityProvider{*identityProvider},
-					TotalCount: pointer.Get(1),
-				}
 
 				store.EXPECT().
 					IdentityProviders(&admin.ListIdentityProvidersApiParams{FederationSettingsId: *pointer.Get(testFederationSettingID)}).
-					Return(paginatedResult, nil)
+					Return([]admin.FederationIdentityProvider{identityProvider}, nil)
 
 				store.EXPECT().Project("test-project-1").Return(nil, ErrGetProjectUnauthorized)
 			},
@@ -273,14 +265,9 @@ func Test_BuildAtlasFederatedAuth(t *testing.T) {
 					GetConnectedOrgConfig(&admin.GetConnectedOrgConfigApiParams{FederationSettingsId: *pointer.Get(testFederationSettingID), OrgId: testOrganizationID}).
 					Return(orgConfig, nil)
 
-				paginatedResult := &admin.PaginatedFederationIdentityProvider{
-					Results:    &[]admin.FederationIdentityProvider{},
-					TotalCount: pointer.Get(0),
-				}
-
 				store.EXPECT().
 					IdentityProviders(&admin.ListIdentityProvidersApiParams{FederationSettingsId: *pointer.Get(testFederationSettingID)}).
-					Return(paginatedResult, nil)
+					Return([]admin.FederationIdentityProvider{{}}, nil)
 			},
 			expected:      nil,
 			expectedError: ErrNoMatchingSAMLProvider,

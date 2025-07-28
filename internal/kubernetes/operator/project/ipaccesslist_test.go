@@ -25,7 +25,6 @@ import (
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator/resources"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/mocks"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/pointer"
-	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store"
 	akoapi "github.com/mongodb/mongodb-atlas-kubernetes/v2/api"
 	akov2 "github.com/mongodb/mongodb-atlas-kubernetes/v2/api/v1"
 	akov2common "github.com/mongodb/mongodb-atlas-kubernetes/v2/api/v1/common"
@@ -177,8 +176,9 @@ func TestBuildIPAccessList(t *testing.T) {
 			ialStore := mocks.NewMockProjectIPAccessListLister(ctl)
 			dictionary := resources.AtlasNameToKubernetesName()
 
-			ialStore.EXPECT().ProjectIPAccessLists(projectID, &store.ListOptions{ItemsPerPage: MaxItems}).
-				Return(&admin.PaginatedNetworkAccess{Results: &tt.ipAccessList}, nil)
+			ialStore.EXPECT().
+				ProjectIPAccessLists(projectID).
+				Return(tt.ipAccessList, nil)
 
 			atlasIPAccessList, isEmpty, err := BuildIPAccessList(
 				ialStore,
