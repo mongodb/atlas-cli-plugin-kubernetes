@@ -28,7 +28,6 @@ import (
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator/project"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator/resources"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator/streamsprocessing"
-	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/pointer"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store"
 	"go.mongodb.org/atlas-sdk/v20241113004/admin"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -448,17 +447,12 @@ func fetchClusterNames(clustersProvider store.AllClustersLister, projectID strin
 	result := make([]string, 0, DefaultClustersCount)
 
 	flexResult := make(map[string]struct{}, DefaultClustersCount)
-	flexClusters, err := clustersProvider.ListFlexClusters(
-		&admin.ListFlexClustersApiParams{
-			GroupId:      projectID,
-			ItemsPerPage: pointer.Get(maxClusters),
-		},
-	)
+	flexClusters, err := clustersProvider.ListFlexClusters(projectID)
 	if err != nil {
 		return nil, err
 	}
 
-	for _, cluster := range flexClusters.GetResults() {
+	for _, cluster := range flexClusters {
 		if reflect.ValueOf(cluster).IsZero() {
 			continue
 		}
@@ -467,7 +461,7 @@ func fetchClusterNames(clustersProvider store.AllClustersLister, projectID strin
 		flexResult[cluster.GetName()] = struct{}{}
 	}
 
-	clusters, err := clustersProvider.ProjectClusters(projectID, &store.ListOptions{ItemsPerPage: maxClusters})
+	clusters, err := clustersProvider.ListAtlasClusters(projectID)
 	if err != nil {
 		return nil, err
 	}
@@ -476,7 +470,7 @@ func fetchClusterNames(clustersProvider store.AllClustersLister, projectID strin
 		return nil, ErrNoCloudManagerClusters
 	}
 
-	for _, cluster := range clusters.GetResults() {
+	for _, cluster := range clusters {
 		if reflect.ValueOf(cluster).IsZero() {
 			continue
 		}
@@ -489,7 +483,7 @@ func fetchClusterNames(clustersProvider store.AllClustersLister, projectID strin
 		result = append(result, cluster.GetName())
 	}
 
-	serverlessInstances, err := clustersProvider.ServerlessInstances(projectID, &store.ListOptions{ItemsPerPage: maxClusters})
+	serverlessInstances, err := clustersProvider.ServerlessInstances(projectID)
 	if err != nil {
 		return nil, err
 	}
@@ -498,7 +492,7 @@ func fetchClusterNames(clustersProvider store.AllClustersLister, projectID strin
 		return result, nil
 	}
 
-	for _, cluster := range serverlessInstances.GetResults() {
+	for _, cluster := range serverlessInstances {
 		// Deduplicate non-migrated instances
 		if _, ok := flexResult[cluster.GetName()]; ok {
 			continue
@@ -552,11 +546,11 @@ func (e *ConfigExporter) exportAtlasStreamProcessing(projectName string) ([]runt
 		return nil, nil
 	}
 
-	instancesList, err := e.dataProvider.ProjectStreams(&admin.ListStreamInstancesApiParams{GroupId: e.projectID})
+	instancesList, err := e.dataProvider.ProjectStreams(e.projectID)
 	if err != nil {
 		return nil, err
 	}
-	instances := instancesList.GetResults()
+	instances := instancesList
 	result := make([]runtime.Object, 0, len(instances))
 
 	for i := range instances {

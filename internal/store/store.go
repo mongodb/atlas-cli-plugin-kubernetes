@@ -37,6 +37,10 @@ const (
 	cloudGovServiceURL = "https://cloud.mongodbgov.com/"
 )
 
+const (
+	DefaultAPIPageSize = 10
+)
+
 var errUnsupportedService = errors.New("unsupported service")
 
 type Store struct {
@@ -290,4 +294,26 @@ func New(opts ...Option) (*Store, error) {
 	}
 
 	return store, nil
+}
+
+// AllPages should be used to retrive all the occurences of a resource
+// when listing. If not used, Atlas SDK will fallback to a default amount.
+type getPageFn[T any] func(int, int) ([]T, error)
+
+func AllPages[T any](getPageFn getPageFn[T]) ([]T, error) {
+	allPages := []T{}
+	pageNum := 1
+	itemsPerPage := DefaultAPIPageSize
+	for {
+		page, err := getPageFn(pageNum, itemsPerPage)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get all pages: %w", err)
+		}
+		allPages = append(allPages, page...)
+		if len(page) < itemsPerPage {
+			break
+		}
+		pageNum += 1
+	}
+	return allPages, nil
 }

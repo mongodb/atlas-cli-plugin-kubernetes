@@ -32,7 +32,6 @@ import (
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator/secrets"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/mocks"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/pointer"
-	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store"
 	akoapi "github.com/mongodb/mongodb-atlas-kubernetes/v2/api"
 	akov2 "github.com/mongodb/mongodb-atlas-kubernetes/v2/api/v1"
 	akov2common "github.com/mongodb/mongodb-atlas-kubernetes/v2/api/v1/common"
@@ -63,19 +62,15 @@ func TestBuildAtlasProject(t *testing.T) {
 		WithDefaultAlertsSettings: pointer.Get(false),
 	}
 
-	ipAccessLists := &atlasv2.PaginatedNetworkAccess{
-		Links: nil,
-		Results: &[]atlasv2.NetworkPermissionEntry{
-			{
-				AwsSecurityGroup: pointer.Get("TestSecurity group"),
-				CidrBlock:        pointer.Get("0.0.0.0/0"),
-				Comment:          pointer.Get("Allow everyone"),
-				DeleteAfterDate:  pointer.Get(time.Now()),
-				GroupId:          pointer.Get("TestGroupID"),
-				IpAddress:        pointer.Get("0.0.0.0"),
-			},
+	ipAccessLists := []atlasv2.NetworkPermissionEntry{
+		{
+			AwsSecurityGroup: pointer.Get("TestSecurity group"),
+			CidrBlock:        pointer.Get("0.0.0.0/0"),
+			Comment:          pointer.Get("Allow everyone"),
+			DeleteAfterDate:  pointer.Get(time.Now()),
+			GroupId:          pointer.Get("TestGroupID"),
+			IpAddress:        pointer.Get("0.0.0.0"),
 		},
-		TotalCount: pointer.Get(1),
 	}
 
 	auditing := &atlasv2.AuditLog{
@@ -113,17 +108,13 @@ func TestBuildAtlasProject(t *testing.T) {
 		},
 	}
 
-	thirdPartyIntegrations := &atlasv2.PaginatedIntegration{
-		Links: nil,
-		Results: &[]atlasv2.ThirdPartyIntegration{
-			{
-				Type:             pointer.Get("PROMETHEUS"),
-				Username:         pointer.Get("TestPrometheusUserName"),
-				Password:         pointer.Get("TestPrometheusPassword"),
-				ServiceDiscovery: pointer.Get("TestPrometheusServiceDiscovery"),
-			},
+	thirdPartyIntegrations := []atlasv2.ThirdPartyIntegration{
+		{
+			Type:             pointer.Get("PROMETHEUS"),
+			Username:         pointer.Get("TestPrometheusUserName"),
+			Password:         pointer.Get("TestPrometheusPassword"),
+			ServiceDiscovery: pointer.Get("TestPrometheusServiceDiscovery"),
 		},
-		TotalCount: pointer.Get(1),
 	}
 
 	mw := &atlasv2.GroupMaintenanceWindow{
@@ -159,58 +150,54 @@ func TestBuildAtlasProject(t *testing.T) {
 	}
 	privateEndpoints := []atlasv2.EndpointService{privateAWSEndpoint}
 
-	alertConfigResult := &atlasv2.PaginatedAlertConfig{
-		Results: &[]atlasv2.GroupAlertsConfig{
-			{
-				Enabled:       pointer.Get(true),
-				EventTypeName: pointer.Get("TestEventTypeName"),
-				Matchers: &[]atlasv2.StreamsMatcher{
-					{
-						FieldName: "TestFieldName",
-						Operator:  "TestOperator",
-						Value:     "TestValue",
-					},
+	alertConfigs := []atlasv2.GroupAlertsConfig{
+		{
+			Enabled:       pointer.Get(true),
+			EventTypeName: pointer.Get("TestEventTypeName"),
+			Matchers: &[]atlasv2.StreamsMatcher{
+				{
+					FieldName: "TestFieldName",
+					Operator:  "TestOperator",
+					Value:     "TestValue",
 				},
-				MetricThreshold: &atlasv2.ServerlessMetricThreshold{
-					MetricName: "TestMetricName",
-					Operator:   pointer.Get("TestOperator"),
-					Threshold:  pointer.Get(10.0),
-					Units:      pointer.Get("TestUnits"),
-					Mode:       pointer.Get("TestMode"),
-				},
-				Threshold: &atlasv2.GreaterThanRawThreshold{
-					Operator:  pointer.Get("TestOperator"),
-					Units:     pointer.Get("TestUnits"),
-					Threshold: pointer.Get(10),
-				},
-				Notifications: &[]atlasv2.AlertsNotificationRootForGroup{
-					{
-						ChannelName:         pointer.Get("TestChannelName"),
-						DatadogApiKey:       pointer.Get("TestDatadogAPIKey"),
-						DatadogRegion:       pointer.Get("TestDatadogRegion"),
-						DelayMin:            pointer.Get(5),
-						EmailAddress:        pointer.Get("TestEmail@mongodb.com"),
-						EmailEnabled:        pointer.Get(true),
-						IntervalMin:         pointer.Get(0),
-						MobileNumber:        pointer.Get("+12345678900"),
-						OpsGenieApiKey:      pointer.Get("TestGenieAPIKey"),
-						OpsGenieRegion:      pointer.Get("TestGenieRegion"),
-						ServiceKey:          pointer.Get("TestServiceKey"),
-						SmsEnabled:          pointer.Get(true),
-						TeamId:              pointer.Get("TestTeamID"),
-						TeamName:            pointer.Get("TestTeamName"),
-						TypeName:            pointer.Get("TestTypeName"),
-						Username:            pointer.Get("TestUserName"),
-						VictorOpsApiKey:     pointer.Get("TestVictorOpsAPIKey"),
-						VictorOpsRoutingKey: pointer.Get("TestVictorOpsRoutingKey"),
-						Roles:               &[]string{"Role1", "Role2"},
-					},
+			},
+			MetricThreshold: &atlasv2.ServerlessMetricThreshold{
+				MetricName: "TestMetricName",
+				Operator:   pointer.Get("TestOperator"),
+				Threshold:  pointer.Get(10.0),
+				Units:      pointer.Get("TestUnits"),
+				Mode:       pointer.Get("TestMode"),
+			},
+			Threshold: &atlasv2.GreaterThanRawThreshold{
+				Operator:  pointer.Get("TestOperator"),
+				Units:     pointer.Get("TestUnits"),
+				Threshold: pointer.Get(10),
+			},
+			Notifications: &[]atlasv2.AlertsNotificationRootForGroup{
+				{
+					ChannelName:         pointer.Get("TestChannelName"),
+					DatadogApiKey:       pointer.Get("TestDatadogAPIKey"),
+					DatadogRegion:       pointer.Get("TestDatadogRegion"),
+					DelayMin:            pointer.Get(5),
+					EmailAddress:        pointer.Get("TestEmail@mongodb.com"),
+					EmailEnabled:        pointer.Get(true),
+					IntervalMin:         pointer.Get(0),
+					MobileNumber:        pointer.Get("+12345678900"),
+					OpsGenieApiKey:      pointer.Get("TestGenieAPIKey"),
+					OpsGenieRegion:      pointer.Get("TestGenieRegion"),
+					ServiceKey:          pointer.Get("TestServiceKey"),
+					SmsEnabled:          pointer.Get(true),
+					TeamId:              pointer.Get("TestTeamID"),
+					TeamName:            pointer.Get("TestTeamName"),
+					TypeName:            pointer.Get("TestTypeName"),
+					Username:            pointer.Get("TestUserName"),
+					VictorOpsApiKey:     pointer.Get("TestVictorOpsAPIKey"),
+					VictorOpsRoutingKey: pointer.Get("TestVictorOpsRoutingKey"),
+					Roles:               &[]string{"Role1", "Role2"},
 				},
 			},
 		},
-		TotalCount: pointer.GetNonZeroValue(1),
 	}
-	alertConfigs := alertConfigResult.GetResults()
 
 	projectSettings := &atlasv2.GroupSettings{
 		IsCollectDatabaseSpecificsStatisticsEnabled: pointer.Get(true),
@@ -292,12 +279,6 @@ func TestBuildAtlasProject(t *testing.T) {
 				RetentionValue:    1,
 			},
 		},
-	}
-
-	listOption := &store.ListOptions{ItemsPerPage: MaxItems}
-	listAlterOpt := &atlasv2.ListAlertConfigurationsApiParams{
-		GroupId:      projectID,
-		ItemsPerPage: &listOption.ItemsPerPage,
 	}
 
 	dictionary := resources.AtlasNameToKubernetesName()
@@ -436,11 +417,11 @@ func TestBuildAtlasProject(t *testing.T) {
 					},
 					ProjectIPAccessList: []akov2project.IPAccessList{
 						{
-							AwsSecurityGroup: ipAccessLists.GetResults()[0].GetAwsSecurityGroup(),
-							CIDRBlock:        ipAccessLists.GetResults()[0].GetCidrBlock(),
-							Comment:          ipAccessLists.GetResults()[0].GetComment(),
-							DeleteAfterDate:  ipAccessLists.GetResults()[0].GetDeleteAfterDate().String(),
-							IPAddress:        ipAccessLists.GetResults()[0].GetIpAddress(),
+							AwsSecurityGroup: ipAccessLists[0].GetAwsSecurityGroup(),
+							CIDRBlock:        ipAccessLists[0].GetCidrBlock(),
+							Comment:          ipAccessLists[0].GetComment(),
+							DeleteAfterDate:  ipAccessLists[0].GetDeleteAfterDate().String(),
+							IPAddress:        ipAccessLists[0].GetIpAddress(),
 						},
 					},
 					MaintenanceWindow: akov2project.MaintenanceWindow{
@@ -493,15 +474,15 @@ func TestBuildAtlasProject(t *testing.T) {
 					X509CertRef:               nil,
 					Integrations: []akov2project.Integration{
 						{
-							Type:     thirdPartyIntegrations.GetResults()[0].GetType(),
-							UserName: thirdPartyIntegrations.GetResults()[0].GetUsername(),
+							Type:     thirdPartyIntegrations[0].GetType(),
+							UserName: thirdPartyIntegrations[0].GetUsername(),
 							PasswordRef: akov2common.ResourceRefNamespaced{
 								Name: fmt.Sprintf("%s-integration-%s",
 									strings.ToLower(projectID),
-									strings.ToLower(thirdPartyIntegrations.GetResults()[0].GetType())),
+									strings.ToLower(thirdPartyIntegrations[0].GetType())),
 								Namespace: targetNamespace,
 							},
-							ServiceDiscovery: thirdPartyIntegrations.GetResults()[0].GetServiceDiscovery(),
+							ServiceDiscovery: thirdPartyIntegrations[0].GetServiceDiscovery(),
 						},
 					},
 					EncryptionAtRest: &akov2.EncryptionAtRest{
@@ -680,14 +661,14 @@ func TestBuildAtlasProject(t *testing.T) {
 			projectStore.EXPECT().CloudProviderAccessRoles(projectID).Return(cpas, nil)
 			projectStore.EXPECT().ProjectSettings(projectID).Return(projectSettings, nil)
 			projectStore.EXPECT().Auditing(projectID).Return(auditing, nil)
-			projectStore.EXPECT().AlertConfigurations(listAlterOpt).Return(alertConfigResult, nil)
-			projectStore.EXPECT().ProjectTeams(projectID, nil).Return(projectTeams, nil)
+			projectStore.EXPECT().AlertConfigurations(projectID).Return(alertConfigs, nil)
+			projectStore.EXPECT().ProjectTeams(projectID).Return(projectTeams, nil)
 			projectStore.EXPECT().TeamByID(orgID, teamID).Return(teams, nil)
 			projectStore.EXPECT().TeamUsers(orgID, teamID).Return(teamUsers, nil)
 			projectStore.EXPECT().DescribeCompliancePolicy(projectID).Return(bcp, nil)
 			tt.privateEndpointMock(projectStore)
 			if !tt.independentResource {
-				projectStore.EXPECT().ProjectIPAccessLists(projectID, listOption).Return(ipAccessLists, nil)
+				projectStore.EXPECT().ProjectIPAccessLists(projectID).Return(ipAccessLists, nil)
 				projectStore.EXPECT().DatabaseRoles(projectID).Return(customRoles, nil)
 				projectStore.EXPECT().PeeringConnections(projectID).Return(peeringConnections, nil)
 				projectStore.EXPECT().Integrations(projectID).Return(thirdPartyIntegrations, nil)
@@ -814,45 +795,42 @@ func TestBuildProjectConnectionSecret(t *testing.T) {
 
 func Test_buildAccessLists(t *testing.T) {
 	ctl := gomock.NewController(t)
+	defer ctl.Finish()
 
 	alProvider := mocks.NewMockProjectIPAccessListLister(ctl)
 	t.Run("Can convert Access Lists", func(t *testing.T) {
-		data := &atlasv2.PaginatedNetworkAccess{
-			Links: nil,
-			Results: &[]atlasv2.NetworkPermissionEntry{
-				{
-					AwsSecurityGroup: pointer.Get("TestSecGroup"),
-					CidrBlock:        pointer.Get("0.0.0.0/0"),
-					Comment:          pointer.Get("TestComment"),
-					DeleteAfterDate:  pointer.Get(time.Now()),
-					GroupId:          pointer.Get("TestGroupID"),
-					IpAddress:        pointer.Get("0.0.0.0"),
-				},
+		ipAccessLists := []atlasv2.NetworkPermissionEntry{
+			{
+				AwsSecurityGroup: pointer.Get("TestSecGroup"),
+				CidrBlock:        pointer.Get("0.0.0.0/0"),
+				Comment:          pointer.Get("TestComment"),
+				DeleteAfterDate:  pointer.Get(time.Now()),
+				GroupId:          pointer.Get("TestGroupID"),
+				IpAddress:        pointer.Get("0.0.0.0"),
 			},
-			TotalCount: pointer.Get(1),
 		}
 
-		listOptions := &store.ListOptions{ItemsPerPage: MaxItems}
-
-		alProvider.EXPECT().ProjectIPAccessLists(projectID, listOptions).Return(data, nil)
+		alProvider.EXPECT().
+			ProjectIPAccessLists(projectID).
+			Return(ipAccessLists, nil)
 
 		got, err := buildAccessLists(alProvider, projectID)
 		if err != nil {
-			t.Errorf("%v", err)
+			t.Errorf("unexpected error: %v", err)
 		}
 
 		expected := []akov2project.IPAccessList{
 			{
-				AwsSecurityGroup: data.GetResults()[0].GetAwsSecurityGroup(),
-				CIDRBlock:        data.GetResults()[0].GetCidrBlock(),
-				Comment:          data.GetResults()[0].GetComment(),
-				DeleteAfterDate:  data.GetResults()[0].GetDeleteAfterDate().String(),
-				IPAddress:        data.GetResults()[0].GetIpAddress(),
+				AwsSecurityGroup: ipAccessLists[0].GetAwsSecurityGroup(),
+				CIDRBlock:        ipAccessLists[0].GetCidrBlock(),
+				Comment:          ipAccessLists[0].GetComment(),
+				DeleteAfterDate:  ipAccessLists[0].GetDeleteAfterDate().String(),
+				IPAddress:        ipAccessLists[0].GetIpAddress(),
 			},
 		}
 
 		if !reflect.DeepEqual(expected, got) {
-			t.Fatalf("IPAccessList mismatch.\r\nexpected: %v\r\ngot: %v\r\n", expected, got)
+			t.Fatalf("IPAccessList mismatch.\nexpected: %#v\ngot: %#v", expected, got)
 		}
 	})
 }
@@ -1090,17 +1068,13 @@ func Test_buildIntegrations(t *testing.T) {
 	t.Run("Can convert third-party integrations WITH secrets: Prometheus", func(t *testing.T) {
 		const targetNamespace = "test-namespace-3"
 		const includeSecrets = true
-		ints := &atlasv2.PaginatedIntegration{
-			Links: nil,
-			Results: &[]atlasv2.ThirdPartyIntegration{
-				{
-					Type:             pointer.Get("PROMETHEUS"),
-					Password:         pointer.Get("PrometheusTestPassword"),
-					Username:         pointer.Get("PrometheusTestUserName"),
-					ServiceDiscovery: pointer.Get("TestServiceDiscovery"),
-				},
+		ints := []atlasv2.ThirdPartyIntegration{
+			{
+				Type:             pointer.Get("PROMETHEUS"),
+				Password:         pointer.Get("PrometheusTestPassword"),
+				Username:         pointer.Get("PrometheusTestUserName"),
+				ServiceDiscovery: pointer.Get("TestServiceDiscovery"),
 			},
-			TotalCount: pointer.Get(0),
 		}
 
 		intProvider.EXPECT().Integrations(projectID).Return(ints, nil)
@@ -1112,13 +1086,13 @@ func Test_buildIntegrations(t *testing.T) {
 
 		expected := []akov2project.Integration{
 			{
-				Type:             ints.GetResults()[0].GetType(),
-				ServiceDiscovery: ints.GetResults()[0].GetServiceDiscovery(),
-				UserName:         ints.GetResults()[0].GetUsername(),
+				Type:             ints[0].GetType(),
+				ServiceDiscovery: ints[0].GetServiceDiscovery(),
+				UserName:         ints[0].GetUsername(),
 				PasswordRef: akov2common.ResourceRefNamespaced{
 					Name: fmt.Sprintf("%s-integration-%s",
 						strings.ToLower(projectID),
-						strings.ToLower(ints.GetResults()[0].GetType())),
+						strings.ToLower(ints[0].GetType())),
 					Namespace: targetNamespace,
 				},
 			},
@@ -1133,14 +1107,14 @@ func Test_buildIntegrations(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name: fmt.Sprintf("%s-integration-%s",
 						strings.ToLower(projectID),
-						strings.ToLower(ints.GetResults()[0].GetType())),
+						strings.ToLower(ints[0].GetType())),
 					Namespace: targetNamespace,
 					Labels: map[string]string{
 						secrets.TypeLabelKey: secrets.CredLabelVal,
 					},
 				},
 				Data: map[string][]byte{
-					secrets.PasswordField: []byte(ints.GetResults()[0].GetPassword()),
+					secrets.PasswordField: []byte(ints[0].GetPassword()),
 				},
 			},
 		}
@@ -1156,19 +1130,16 @@ func Test_buildIntegrations(t *testing.T) {
 	t.Run("Can convert third-party integrations WITHOUT secrets: Prometheus", func(t *testing.T) {
 		const targetNamespace = "test-namespace-4"
 		const includeSecrets = false
-		ints := &atlasv2.PaginatedIntegration{
-			Links: nil,
-			Results: &[]atlasv2.ThirdPartyIntegration{
-				{
+		ints := []atlasv2.ThirdPartyIntegration{
+			{
 
-					Type:             pointer.Get("PROMETHEUS"),
-					Password:         pointer.Get("PrometheusTestPassword"),
-					Username:         pointer.Get("PrometheusTestUserName"),
-					ServiceDiscovery: pointer.Get("TestServiceDiscovery"),
-				},
+				Type:             pointer.Get("PROMETHEUS"),
+				Password:         pointer.Get("PrometheusTestPassword"),
+				Username:         pointer.Get("PrometheusTestUserName"),
+				ServiceDiscovery: pointer.Get("TestServiceDiscovery"),
 			},
-			TotalCount: pointer.Get(0),
 		}
+
 		intProvider.EXPECT().Integrations(projectID).Return(ints, nil)
 		got, intSecrets, err := buildIntegrations(intProvider, projectID, targetNamespace, includeSecrets, dictionary)
 		if err != nil {
@@ -1177,13 +1148,13 @@ func Test_buildIntegrations(t *testing.T) {
 
 		expected := []akov2project.Integration{
 			{
-				Type:             ints.GetResults()[0].GetType(),
-				ServiceDiscovery: ints.GetResults()[0].GetServiceDiscovery(),
-				UserName:         ints.GetResults()[0].GetUsername(),
+				Type:             ints[0].GetType(),
+				ServiceDiscovery: ints[0].GetServiceDiscovery(),
+				UserName:         ints[0].GetUsername(),
 				PasswordRef: akov2common.ResourceRefNamespaced{
 					Name: fmt.Sprintf("%s-integration-%s",
 						strings.ToLower(projectID),
-						strings.ToLower(ints.GetResults()[0].GetType())),
+						strings.ToLower(ints[0].GetType())),
 					Namespace: targetNamespace,
 				},
 			},
@@ -1198,7 +1169,7 @@ func Test_buildIntegrations(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name: fmt.Sprintf("%s-integration-%s",
 						strings.ToLower(projectID),
-						strings.ToLower(ints.GetResults()[0].GetType())),
+						strings.ToLower(ints[0].GetType())),
 					Namespace: targetNamespace,
 					Labels: map[string]string{
 						secrets.TypeLabelKey: secrets.CredLabelVal,

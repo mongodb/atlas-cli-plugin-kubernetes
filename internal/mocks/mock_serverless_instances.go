@@ -8,7 +8,6 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	store "github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store"
 	admin "go.mongodb.org/atlas-sdk/v20240530005/admin"
 )
 
@@ -36,18 +35,18 @@ func (m *MockServerlessInstanceLister) EXPECT() *MockServerlessInstanceListerMoc
 }
 
 // ServerlessInstances mocks base method.
-func (m *MockServerlessInstanceLister) ServerlessInstances(arg0 string, arg1 *store.ListOptions) (*admin.PaginatedServerlessInstanceDescription, error) {
+func (m *MockServerlessInstanceLister) ServerlessInstances(arg0 string) ([]admin.ServerlessInstanceDescription, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ServerlessInstances", arg0, arg1)
-	ret0, _ := ret[0].(*admin.PaginatedServerlessInstanceDescription)
+	ret := m.ctrl.Call(m, "ServerlessInstances", arg0)
+	ret0, _ := ret[0].([]admin.ServerlessInstanceDescription)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // ServerlessInstances indicates an expected call of ServerlessInstances.
-func (mr *MockServerlessInstanceListerMockRecorder) ServerlessInstances(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockServerlessInstanceListerMockRecorder) ServerlessInstances(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ServerlessInstances", reflect.TypeOf((*MockServerlessInstanceLister)(nil).ServerlessInstances), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ServerlessInstances", reflect.TypeOf((*MockServerlessInstanceLister)(nil).ServerlessInstances), arg0)
 }
 
 // MockServerlessInstanceDescriber is a mock of ServerlessInstanceDescriber interface.

@@ -40,18 +40,18 @@ func BuildIPAccessList(
 	provider store.ProjectIPAccessListLister,
 	request IPAccessListRequest,
 ) (*akov2.AtlasIPAccessList, bool, error) {
-	ipAccessLists, err := provider.ProjectIPAccessLists(request.ProjectID, &store.ListOptions{ItemsPerPage: MaxItems})
+	ipAccessLists, err := provider.ProjectIPAccessLists(request.ProjectID)
 	if err != nil {
 		return nil, false, err
 	}
 
-	if len(ipAccessLists.GetResults()) == 0 {
-		return nil, true, nil
+	var entries []akov2.IPAccessEntry
+	for _, ipAccessList := range ipAccessLists {
+		entries = append(entries, fromAtlas(ipAccessList))
 	}
 
-	entries := make([]akov2.IPAccessEntry, 0, len(ipAccessLists.GetResults()))
-	for _, ipAccessList := range ipAccessLists.GetResults() {
-		entries = append(entries, fromAtlas(ipAccessList))
+	if len(entries) == 0 {
+		return nil, true, nil
 	}
 
 	resource := akov2.AtlasIPAccessList{
