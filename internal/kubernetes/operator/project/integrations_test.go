@@ -42,7 +42,7 @@ func TestBuildIntegrations(t *testing.T) {
 	projectName := "projectName-int"
 	targetNamespace := "intNamespace"
 	credentialName := "int-creds"
-	version := "2.9.0"
+	version := "2.10.0"
 
 	for _, tc := range []struct {
 		title               string

@@ -41,7 +41,7 @@ func TestBuildContainers(t *testing.T) {
 	projectName := "projectName-np"
 	targetNamespace := "npNamespace"
 	credentialName := "np-creds"
-	version := "2.9.0"
+	version := "2.10.0"
 
 	for _, tc := range []struct {
 		title               string
