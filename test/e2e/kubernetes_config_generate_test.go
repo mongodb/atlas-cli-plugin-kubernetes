@@ -413,7 +413,7 @@ func TestExportIPAccessList(t *testing.T) {
 
 func TestExportIntegrations(t *testing.T) {
 	s := InitialSetup(t)
-	operatorVersion := "2.10.0"
+	operatorVersion := features.LatestOperatorMajorVersion
 	datadogKey := "00000000000000000000000000000012"
 
 	cmd := exec.Command(s.atlasCliPath,
@@ -475,7 +475,7 @@ func TestExportIntegrations(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name: integrationName,
 						Labels: map[string]string{
-							"mongodb.com/atlas-resource-version": "2.10.0",
+							"mongodb.com/atlas-resource-version": features.LatestOperatorMajorVersion,
 						},
 					},
 					Spec: akov2.AtlasThirdPartyIntegrationSpec{
@@ -516,7 +516,7 @@ func TestExportIntegrations(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name: integrationName,
 						Labels: map[string]string{
-							"mongodb.com/atlas-resource-version": "2.10.0",
+							"mongodb.com/atlas-resource-version": features.LatestOperatorMajorVersion,
 						},
 					},
 					Spec: akov2.AtlasThirdPartyIntegrationSpec{
@@ -582,7 +582,7 @@ func TestExportIntegrations(t *testing.T) {
 
 func TestExportNetworkContainerAndPeerings(t *testing.T) {
 	s := InitialSetup(t)
-	operatorVersion := "2.10.0"
+	operatorVersion := features.LatestOperatorMajorVersion
 
 	awsContainerCIDR := "10.0.0.0/21"
 	awsContainerID := s.generator.generateAWSContainer(awsContainerCIDR, "EU_CENTRAL_1")

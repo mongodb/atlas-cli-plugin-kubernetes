@@ -41,7 +41,7 @@ func TestBuildPeerings(t *testing.T) {
 	projectName := "projectName-np"
 	targetNamespace := "npNamespace"
 	credentialName := "np-creds"
-	version := "2.10.0"
+	version := features.LatestOperatorMajorVersion
 
 	for _, tc := range []struct {
 		title               string

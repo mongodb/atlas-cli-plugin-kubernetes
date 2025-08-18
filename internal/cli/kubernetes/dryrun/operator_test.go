@@ -28,15 +28,17 @@ package dryrun
 
 import (
 	"context"
-	batchv1 "k8s.io/api/batch/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"testing"
 	"time"
 
-	akov2 "github.com/mongodb/mongodb-atlas-kubernetes/v2/api/v1"
 	"github.com/stretchr/testify/assert"
+	batchv1 "k8s.io/api/batch/v1"
 	"k8s.io/client-go/kubernetes/scheme"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+
+	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator/features"
+	akov2 "github.com/mongodb/mongodb-atlas-kubernetes/v2/api/v1"
 )
 
 func TestWorkerRunSuccess(t *testing.T) {
@@ -46,7 +48,7 @@ func TestWorkerRunSuccess(t *testing.T) {
 	worker := NewWorker().WithK8SClient(k8sClient).
 		WithTargetNamespace("test").
 		WithWatchNamespaces("test").
-		WithOperatorVersion("v2.7.1").
+		WithOperatorVersion(features.LatestOperatorMajorVersion).
 		WithWaitTimeoutSec(10).
 		WithWaitForCompletion(true)
 	go func() {
@@ -79,7 +81,7 @@ func TestWorkerFailure(t *testing.T) {
 	worker := NewWorker().WithK8SClient(k8sClient).
 		WithTargetNamespace("test").
 		WithWatchNamespaces("test").
-		WithOperatorVersion("v2.7.1").
+		WithOperatorVersion(features.LatestOperatorMajorVersion).
 		WithWaitTimeoutSec(10).
 		WithWaitForCompletion(true)
 	assert.Error(t, worker.Run())
