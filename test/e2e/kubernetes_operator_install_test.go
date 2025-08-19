@@ -33,7 +33,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator/features"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/test"
 )
 
@@ -96,7 +95,6 @@ func TestKubernetesOperatorInstall(t *testing.T) {
 			"operator",
 			"install",
 			"--configOnly",
-			"--operatorVersion", features.LatestOperatorMajorVersion,
 			"--targetNamespace", operatorNamespace,
 			"--kubeContext", context)
 		cmd.Env = os.Environ()
@@ -133,7 +131,6 @@ func TestKubernetesOperatorInstall(t *testing.T) {
 			"kubernetes",
 			"operator",
 			"install",
-			"--operatorVersion", features.LatestOperatorMajorVersion,
 			"--targetNamespace", operatorNamespace,
 			"--kubeContext", context)
 		cmd.Env = os.Environ()
@@ -155,7 +152,6 @@ func TestKubernetesOperatorInstall(t *testing.T) {
 			"kubernetes",
 			"operator",
 			"install",
-			"--operatorVersion", features.LatestOperatorMajorVersion,
 			"--targetNamespace", operatorNamespace,
 			"--watchNamespace", operatorWatch1,
 			"--watchNamespace", operatorWatch2,
@@ -176,7 +172,6 @@ func TestKubernetesOperatorInstall(t *testing.T) {
 			"kubernetes",
 			"operator",
 			"install",
-			"--operatorVersion", features.LatestOperatorMajorVersion,
 			"--targetNamespace", operatorNamespace,
 			"--watchNamespace", operatorNamespace,
 			"--kubeContext", context)
@@ -448,6 +443,7 @@ func checkK8sAtlasProject(t *testing.T, operator *operatorHelper, key client.Obj
 	t.Helper()
 
 	var ready bool
+	var msg string
 	project := &akov2.AtlasProject{}
 
 	for i := 0; i < maxAttempts; i++ {
@@ -459,6 +455,7 @@ func checkK8sAtlasProject(t *testing.T, operator *operatorHelper, key client.Obj
 		for _, condition := range project.Status.Conditions {
 			if condition.Status != corev1.ConditionTrue {
 				ready = false
+				msg = condition.Message
 			}
 		}
 
@@ -470,7 +467,7 @@ func checkK8sAtlasProject(t *testing.T, operator *operatorHelper, key client.Obj
 	}
 
 	if !ready {
-		t.Error("import resources failed: project is not ready")
+		t.Errorf("import resources failed: project is not ready (%s)", msg)
 	}
 }
 
