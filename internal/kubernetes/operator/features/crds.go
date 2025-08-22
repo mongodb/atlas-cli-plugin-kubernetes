@@ -27,7 +27,7 @@ import (
 )
 
 const (
-	LatestOperatorMajorVersion          = "2.9.0"
+	LatestOperatorMajorVersion          = "2.10.0"
 	maxDepth                            = 100
 	ResourceVersion                     = "mongodb.com/atlas-resource-version"
 	ResourceAtlasProject                = "atlasprojects"
@@ -58,22 +58,6 @@ var (
 	ErrDocumentHasNoSpec         = errors.New("document contains no Spec")
 
 	versionsToResourcesMap = map[string][]resource{
-		"2.7.0": {
-			resource{ResourceAtlasDatabaseUser, NopPatcher()},
-			resource{ResourceAtlasProject, NopPatcher()},
-			resource{ResourceAtlasDeployment, NopPatcher()},
-			resource{ResourceAtlasBackupSchedule, NopPatcher()},
-			resource{ResourceAtlasBackupPolicy, NopPatcher()},
-			resource{ResourceAtlasTeam, NopPatcher()},
-			resource{ResourceAtlasDataFederation, NopPatcher()},
-			resource{ResourceAtlasFederatedAuth, NopPatcher()},
-			resource{ResourceAtlasStreamInstance, NopPatcher()},
-			resource{ResourceAtlasStreamConnection, NopPatcher()},
-			resource{ResourceAtlasBackupCompliancePolicy, NopPatcher()},
-			resource{ResourceAtlasPrivateEndpoint, NopPatcher()},
-			resource{ResourceAtlasCustomRole, NopPatcher()},
-			resource{ResourceAtlasIPAccessList, NopPatcher()},
-		},
 		"2.8.0": {
 			resource{ResourceAtlasDatabaseUser, NopPatcher()},
 			resource{ResourceAtlasProject, NopPatcher()},
@@ -93,6 +77,25 @@ var (
 			resource{ResourceAtlasNetworkPeering, NopPatcher()},
 		},
 		"2.9.0": {
+			resource{ResourceAtlasDatabaseUser, NopPatcher()},
+			resource{ResourceAtlasProject, NopPatcher()},
+			resource{ResourceAtlasDeployment, NopPatcher()},
+			resource{ResourceAtlasBackupSchedule, NopPatcher()},
+			resource{ResourceAtlasBackupPolicy, NopPatcher()},
+			resource{ResourceAtlasTeam, NopPatcher()},
+			resource{ResourceAtlasDataFederation, NopPatcher()},
+			resource{ResourceAtlasFederatedAuth, NopPatcher()},
+			resource{ResourceAtlasStreamInstance, NopPatcher()},
+			resource{ResourceAtlasStreamConnection, NopPatcher()},
+			resource{ResourceAtlasBackupCompliancePolicy, NopPatcher()},
+			resource{ResourceAtlasPrivateEndpoint, NopPatcher()},
+			resource{ResourceAtlasCustomRole, NopPatcher()},
+			resource{ResourceAtlasIPAccessList, NopPatcher()},
+			resource{ResourceAtlasNetworkContainer, NopPatcher()},
+			resource{ResourceAtlasNetworkPeering, NopPatcher()},
+			resource{ResourceAtlasThirdPartyIntegration, NopPatcher()},
+		},
+		"2.10.0": {
 			resource{ResourceAtlasDatabaseUser, NopPatcher()},
 			resource{ResourceAtlasProject, NopPatcher()},
 			resource{ResourceAtlasDeployment, NopPatcher()},

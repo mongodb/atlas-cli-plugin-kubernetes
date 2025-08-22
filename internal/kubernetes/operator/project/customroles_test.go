@@ -61,7 +61,7 @@ func TestBuildCustomRoles(t *testing.T) {
 					ProjectID:       projectID,
 					TargetNamespace: targetNamespace,
 					Credentials:     credentialName,
-					Version:         "v2.7.0",
+					Version:         features.LatestOperatorMajorVersion,
 					IsIndependent:   false,
 					Dict:            resources.AtlasNameToKubernetesName(),
 				},
@@ -80,7 +80,7 @@ func TestBuildCustomRoles(t *testing.T) {
 					ProjectID:       projectID,
 					TargetNamespace: targetNamespace,
 					Credentials:     credentialName,
-					Version:         "v2.7.0",
+					Version:         features.LatestOperatorMajorVersion,
 					IsIndependent:   false,
 					Dict:            resources.AtlasNameToKubernetesName(),
 				},
@@ -100,7 +100,7 @@ func TestBuildCustomRoles(t *testing.T) {
 					ProjectID:       projectID,
 					TargetNamespace: targetNamespace,
 					Credentials:     credentialName,
-					Version:         "v2.7.0",
+					Version:         features.LatestOperatorMajorVersion,
 					IsIndependent:   false,
 					Dict:            resources.AtlasNameToKubernetesName(),
 				},
@@ -139,7 +139,7 @@ func TestBuildCustomRoles(t *testing.T) {
 						Name:      projectName + "%-custom-role-r-1",
 						Namespace: targetNamespace,
 						Labels: map[string]string{
-							features.ResourceVersion: "v2.7.0",
+							features.ResourceVersion: features.LatestOperatorMajorVersion,
 						},
 					},
 					Spec: akov2.AtlasCustomRoleSpec{
@@ -186,7 +186,7 @@ func TestBuildCustomRoles(t *testing.T) {
 					ProjectID:       projectID,
 					TargetNamespace: targetNamespace,
 					Credentials:     credentialName,
-					Version:         "v2.7.0",
+					Version:         features.LatestOperatorMajorVersion,
 					IsIndependent:   true,
 					Dict:            resources.AtlasNameToKubernetesName(),
 				},
@@ -225,7 +225,7 @@ func TestBuildCustomRoles(t *testing.T) {
 						Name:      projectName + "%-custom-role-r-1",
 						Namespace: targetNamespace,
 						Labels: map[string]string{
-							features.ResourceVersion: "v2.7.0",
+							features.ResourceVersion: features.LatestOperatorMajorVersion,
 						},
 					},
 					Spec: akov2.AtlasCustomRoleSpec{

@@ -30,7 +30,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const containerImage = "mongodb/mongodb-atlas-kubernetes-operator"
+const (
+	containerImage         = "mongodb/mongodb-atlas-kubernetes-operator"
+	fullPathContainerImage = "docker.io/" + containerImage
+)
 
 type ApplyOpts struct {
 	cli.ProjectOpts
@@ -73,11 +76,11 @@ func (opts *ApplyOpts) autoDetectParams(kubeCtl *kubernetes.KubeCtl) error {
 	}
 
 	if opts.operatorVersion == "" {
-		if !strings.HasPrefix(operatorDeployment.Spec.Template.Spec.Containers[0].Image, containerImage+":") {
+		image := operatorDeployment.Spec.Template.Spec.Containers[0].Image
+		if !strings.HasPrefix(image, containerImage+":") && !strings.HasPrefix(image, fullPathContainerImage+":") {
 			return errors.New("unable to auto detect operator version. you should explicitly set operator version if you are running an openshift certified installation")
 		}
-
-		opts.operatorVersion = getOperatorMajorVersion(operatorDeployment.Spec.Template.Spec.Containers[0].Image)
+		opts.operatorVersion = getOperatorMajorVersion(image)
 	}
 
 	return nil
@@ -179,6 +182,7 @@ func ApplyBuilder() *cobra.Command {
 
 func getOperatorMajorVersion(image string) string {
 	version := strings.TrimPrefix(image, containerImage+":")
+	version = strings.TrimPrefix(version, fullPathContainerImage+":")
 
 	semVer := strings.Split(version, ".")
 	semVer[2] = "0"

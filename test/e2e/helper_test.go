@@ -34,7 +34,6 @@ import (
 	akov2 "github.com/mongodb/mongodb-atlas-kubernetes/v2/api/v1"
 	akov2common "github.com/mongodb/mongodb-atlas-kubernetes/v2/api/v1/common"
 	akov2status "github.com/mongodb/mongodb-atlas-kubernetes/v2/api/v1/status"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	atlasv2 "go.mongodb.org/atlas-sdk/v20241113004/admin"
 	atlasv20250219001 "go.mongodb.org/atlas-sdk/v20250219001/admin"
@@ -524,43 +523,6 @@ func createProjectWithoutAlertSettings(projectName string) (string, error) {
 	return project.GetId(), nil
 }
 
-func deleteAllNetworkPeers(t *testing.T, projectID, provider string) {
-	t.Helper()
-	cliPath, err := AtlasCLIBin()
-	cmd := exec.Command(cliPath,
-		networkingEntity,
-		networkPeeringEntity,
-		"list",
-		"--provider",
-		provider,
-		"--projectId",
-		projectID,
-		"-o=json",
-	)
-	cmd.Env = os.Environ()
-	resp, err := test.RunAndGetStdOut(cmd)
-	t.Log("available network peers", string(resp))
-	require.NoError(t, err, string(resp))
-	var networkPeers []atlasv2.BaseNetworkPeeringConnectionSettings
-	err = json.Unmarshal(resp, &networkPeers)
-	require.NoError(t, err)
-	for _, peer := range networkPeers {
-		peerID := peer.GetId()
-		cmd = exec.Command(cliPath,
-			networkingEntity,
-			networkPeeringEntity,
-			"delete",
-			peerID,
-			"--projectId",
-			projectID,
-			"--force",
-		)
-		cmd.Env = os.Environ()
-		resp, err = test.RunAndGetStdOut(cmd)
-		assert.NoError(t, err, string(resp))
-	}
-}
-
 func deleteTeam(teamID string) error {
 	cliPath, err := AtlasCLIBin()
 	if err != nil {
@@ -860,33 +822,6 @@ func referenceDataFederation(name, namespace, projectName string, labels map[str
 			},
 		},
 	}
-}
-
-func getFederationSettingsID(t *testing.T) string {
-	t.Helper()
-
-	cliPath, err := AtlasCLIBin()
-	require.NoError(t, err, "could not find Atlas CLI binary")
-
-	cmd := exec.Command(cliPath,
-		federatedAuthenticationEntity,
-		federationSettingsEntity,
-		"describe",
-		"-o=json",
-	)
-	cmd.Env = os.Environ()
-
-	resp, err := test.RunAndGetStdOut(cmd)
-	require.NoError(t, err, string(resp))
-
-	var settings atlasv2.OrgFederationSettings
-	require.NoError(t, json.Unmarshal(resp, &settings))
-
-	require.NotEmpty(t, settings)
-	id := settings.GetId()
-	require.NotEmpty(t, id, "no federation settings were present")
-
-	return id
 }
 
 func generateTestAtlasProject(t *testing.T) (string, string) {

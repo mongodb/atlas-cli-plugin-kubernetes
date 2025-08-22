@@ -413,7 +413,7 @@ func TestExportIPAccessList(t *testing.T) {
 
 func TestExportIntegrations(t *testing.T) {
 	s := InitialSetup(t)
-	operatorVersion := "2.9.0"
+	operatorVersion := features.LatestOperatorMajorVersion
 	datadogKey := "00000000000000000000000000000012"
 
 	cmd := exec.Command(s.atlasCliPath,
@@ -475,7 +475,7 @@ func TestExportIntegrations(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name: integrationName,
 						Labels: map[string]string{
-							"mongodb.com/atlas-resource-version": "2.9.0",
+							"mongodb.com/atlas-resource-version": features.LatestOperatorMajorVersion,
 						},
 					},
 					Spec: akov2.AtlasThirdPartyIntegrationSpec{
@@ -516,7 +516,7 @@ func TestExportIntegrations(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name: integrationName,
 						Labels: map[string]string{
-							"mongodb.com/atlas-resource-version": "2.9.0",
+							"mongodb.com/atlas-resource-version": features.LatestOperatorMajorVersion,
 						},
 					},
 					Spec: akov2.AtlasThirdPartyIntegrationSpec{
@@ -582,7 +582,7 @@ func TestExportIntegrations(t *testing.T) {
 
 func TestExportNetworkContainerAndPeerings(t *testing.T) {
 	s := InitialSetup(t)
-	operatorVersion := "2.9.0"
+	operatorVersion := features.LatestOperatorMajorVersion
 
 	awsContainerCIDR := "10.0.0.0/21"
 	awsContainerID := s.generator.generateAWSContainer(awsContainerCIDR, "EU_CENTRAL_1")
@@ -1900,76 +1900,6 @@ func TestProjectWithMaintenanceWindow(t *testing.T) {
 		cmd.Env = os.Environ()
 
 		resp, err := test.RunAndGetStdOut(cmd)
-		t.Log(string(resp))
-		require.NoError(t, err, string(resp))
-
-		var objects []runtime.Object
-		objects, err = getK8SEntities(resp)
-		require.NoError(t, err, "should not fail on decode")
-		require.NotEmpty(t, objects)
-		checkProject(t, objects, expectedProject)
-	})
-}
-
-// TestProjectWithNetworkPeering embedded in project
-// TODO: remove test when 2.7 is deprecated, last version with embedded network peerings
-func TestProjectWithNetworkPeering(t *testing.T) {
-	s := InitialSetup(t)
-	cliPath := s.cliPath
-	atlasCliPath := s.atlasCliPath
-	generator := s.generator
-	operatorVersion := "2.7.1"
-	expectedProject := referenceProject(s.generator.projectName, targetNamespace, map[string]string{
-		features.ResourceVersion: operatorVersion,
-	})
-
-	atlasCidrBlock := "10.8.0.0/18"
-	networkPeer := akov2.NetworkPeer{
-		ProviderName: akov2provider.ProviderGCP,
-		NetworkName:  "test-network",
-		GCPProjectID: "test-project-gcp",
-	}
-	expectedProject.Spec.NetworkPeers = []akov2.NetworkPeer{
-		networkPeer,
-	}
-
-	t.Run("Add network peer to the project", func(t *testing.T) {
-		cmd := exec.Command(atlasCliPath,
-			networkingEntity,
-			networkPeeringEntity,
-			"create",
-			gcpEntity,
-			"--atlasCidrBlock",
-			atlasCidrBlock,
-			"--network",
-			networkPeer.NetworkName,
-			"--gcpProjectId",
-			networkPeer.GCPProjectID,
-			"--projectId",
-			generator.projectID,
-			"-o=json")
-		cmd.Env = os.Environ()
-		resp, err := test.RunAndGetStdOut(cmd)
-		require.NoError(t, err, string(resp))
-		t.Cleanup(func() {
-			deleteAllNetworkPeers(t, generator.projectID, gcpEntity)
-		})
-		var createdNetworkPeer atlasv2.BaseNetworkPeeringConnectionSettings
-		err = json.Unmarshal(resp, &createdNetworkPeer)
-		require.NoError(t, err)
-		expectedProject.Spec.NetworkPeers[0].ContainerID = createdNetworkPeer.ContainerId
-
-		cmd = exec.Command(cliPath,
-			"kubernetes",
-			"config",
-			"generate",
-			"--projectId", generator.projectID,
-			"--targetNamespace", targetNamespace,
-			"--operatorVersion", operatorVersion,
-			"--includeSecrets")
-		cmd.Env = os.Environ()
-
-		resp, err = test.RunAndGetStdOut(cmd)
 		t.Log(string(resp))
 		require.NoError(t, err, string(resp))
 
