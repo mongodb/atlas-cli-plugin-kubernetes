@@ -39,7 +39,7 @@ import (
 	akov2status "github.com/mongodb/mongodb-atlas-kubernetes/v2/api/v1/status"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	atlasv2 "go.mongodb.org/atlas-sdk/v20241113004/admin"
+	atlasv2 "go.mongodb.org/atlas-sdk/v20250312006/admin"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -53,20 +53,24 @@ import (
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/test"
 )
 
-const targetNamespace = "importer-namespace"
-const credSuffixTest = "-credentials"
-const activeStatus = "ACTIVE"
+const (
+	targetNamespace = "importer-namespace"
+	credSuffixTest  = "-credentials"
+	activeStatus    = "ACTIVE"
+)
 
 // These kinds represent global types in AKO which are independent of any Atlas Project.
 // They can be filtered in concurrent e2e tests if they are not relevant for assertion.
-var globalKinds = []string{"AtlasFederatedAuth"}
+var globalKinds = []string{"AtlasFederatedAuth", "AtlasOrgSettings"}
 
-var federationSettingsID string
-var identityProviderStatus string
-var samlIdentityProviderID string
-var expectedLabels = map[string]string{
-	features.ResourceVersion: features.LatestOperatorMajorVersion,
-}
+var (
+	federationSettingsID   string
+	identityProviderStatus string
+	samlIdentityProviderID string
+	expectedLabels         = map[string]string{
+		features.ResourceVersion: features.LatestOperatorMajorVersion,
+	}
+)
 
 func getK8SEntities(data []byte) ([]runtime.Object, error) {
 	b := bufio.NewReader(bytes.NewReader(data))
@@ -1618,6 +1622,62 @@ func TestProjectWithNonDefaultAlertConf(t *testing.T) {
 		checkProject(t, objects, expectedProject)
 	})
 }
+
+// func TestProjectWithOrgSettings(t *testing.T) {
+// 	s := InitialSetup(t)
+// 	cliPath := s.cliPath
+// 	generator := s.generator
+// 	expectedProject := s.expectedProject
+//
+// 	t.Run("Should export OrgSettings", func(t *testing.T) {
+// 		cmd := exec.Command(cliPath,
+// 			"kubernetes",
+// 			"config",
+// 			"generate",
+// 			"--projectId",
+// 			generator.projectID,
+// 			"--targetNamespace",
+// 			targetNamespace,
+// 			"--includeSecrets")
+// 		cmd.Env = os.Environ()
+//
+// 		resp, err := test.RunAndGetStdOut(cmd)
+// 		t.Log(string(resp))
+// 		require.NoError(t, err, string(resp))
+//
+// 		var objects []runtime.Object
+// 		objects, err = getK8SEntities(resp)
+// 		require.NoError(t, err)
+// 		require.NotEmpty(t, objects)
+// 		checkProject(t, objects, expectedProject)
+// 		checkOrgSettings(t, objects)
+// 	})
+// }
+//
+// func checkOrgSettings(t *testing.T, output []runtime.Object) {
+// 	t.Helper()
+// 	found := false
+// 	var orgSettings *akov2.AtlasOrgSettings
+// 	for i := range output {
+// 		p, ok := output[i].(*akov2.AtlasOrgSettings)
+// 		if ok {
+// 			found = true
+// 			orgSettings = p
+// 			break
+// 		}
+// 	}
+// 	require.True(t, found, "AtlasOrgSettings is not found in results")
+// 	secretName := orgSettings.Spec.ConnectionSecretRef.Name
+// 	found = false
+// 	for i := range output {
+// 		p, ok := output[i].(*corev1.Secret)
+// 		if ok && p.GetName() == secretName {
+// 			found = true
+// 			break
+// 		}
+// 	}
+// 	require.True(t, found, "AtlasOrgSettings secret is not found in results")
+// }
 
 func TestProjectWithAccessRole(t *testing.T) {
 	s := InitialSetup(t)

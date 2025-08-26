@@ -15,17 +15,17 @@
 package store
 
 import (
-	atlasv2 "go.mongodb.org/atlas-sdk/v20241113004/admin"
+	atlasv2 "go.mongodb.org/atlas-sdk/v20250312006/admin"
 )
 
 //go:generate mockgen -destination=../mocks/mock_users.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store TeamUserLister
 
 type TeamUserLister interface {
-	TeamUsers(string, string) (*atlasv2.PaginatedAppUser, error)
+	TeamUsers(string, string) (*atlasv2.PaginatedOrgUser, error)
 }
 
 // TeamUsers encapsulates the logic to manage different cloud providers.
-func (s *Store) TeamUsers(orgID, teamID string) (*atlasv2.PaginatedAppUser, error) {
-	result, _, err := s.clientv2.TeamsApi.ListTeamUsers(s.ctx, orgID, teamID).Execute()
+func (s *Store) TeamUsers(orgID, teamID string) (*atlasv2.PaginatedOrgUser, error) {
+	result, _, err := s.clientv2.MongoDBCloudUsersApi.ListTeamUsers(s.ctx, orgID, teamID).Execute()
 	return result, err
 }

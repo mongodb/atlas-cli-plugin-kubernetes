@@ -8,7 +8,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	admin "go.mongodb.org/atlas-sdk/v20241113004/admin"
+	admin "go.mongodb.org/atlas-sdk/v20250312006/admin"
 )
 
 // MockConnectedOrgConfigsDescriber is a mock of ConnectedOrgConfigsDescriber interface.

@@ -25,11 +25,12 @@ import (
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator/deployment"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator/features"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator/federatedauthentication"
+	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator/orgsettings"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator/project"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator/resources"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator/streamsprocessing"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store"
-	"go.mongodb.org/atlas-sdk/v20241113004/admin"
+	"go.mongodb.org/atlas-sdk/v20250312006/admin"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -122,6 +123,7 @@ func (e *ConfigExporter) WithIndependentResources(enabled bool) *ConfigExporter 
 	e.independentResources = enabled
 	return e
 }
+
 func (e *ConfigExporter) Run() (string, error) {
 	// TODO: Add REST to OPERATOR entities matcher
 	output := bytes.NewBufferString(yamlSeparator)
@@ -163,6 +165,12 @@ func (e *ConfigExporter) Run() (string, error) {
 		return "", err
 	}
 	r = append(r, streamProcessingResources...)
+
+	orgSettingsResources, err := e.exportAtlasOrgSettings(e.orgID)
+	if err != nil {
+		return "", err
+	}
+	r = append(r, orgSettingsResources...)
 
 	for _, res := range r {
 		if e.patcher != nil {
@@ -584,6 +592,23 @@ func (e *ConfigExporter) exportAtlasStreamProcessing(projectName string) ([]runt
 	}
 
 	return result, nil
+}
+
+func (e *ConfigExporter) exportAtlasOrgSettings(orgId string) ([]runtime.Object, error) {
+	if !e.featureValidator.IsResourceSupported(features.ResourceAtlasOrgSettings) {
+		return nil, nil
+	}
+
+	atlasOrgConfig, secret, err := orgsettings.BuildAtlasOrgSettings(orgId, e.dataProvider, e.credsProvider,
+		e.targetNamespace, e.includeSecretsData, e.dictionaryForAtlasNames)
+	if err != nil {
+		return nil, fmt.Errorf("failed to export org config: %w", err)
+	}
+
+	return []runtime.Object{
+		atlasOrgConfig,
+		secret,
+	}, nil
 }
 
 func (e *ConfigExporter) exportAtlasFederatedAuth(projectName string) ([]runtime.Object, error) {
