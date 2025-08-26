@@ -83,6 +83,11 @@ type StreamProcessingStore interface {
 	StreamsConnectionLister
 }
 
+type OrgSettingsStore interface {
+	OrgSettingsDescriber
+	OrgSettingsUpdater
+}
+
 type OperatorGenericStore interface {
 	OperatorOrgStore
 	OperatorProjectStore
@@ -94,4 +99,6 @@ type OperatorGenericStore interface {
 	IdentityProviderLister
 	ConnectedOrgConfigsDescriber
 	IdentityProviderDescriber
+	OrgSettingsDescriber
+	OrgSettingsStore
 }
