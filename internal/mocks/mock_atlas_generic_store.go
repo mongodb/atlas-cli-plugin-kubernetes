@@ -9,7 +9,7 @@ import (
 
 	gomock "github.com/golang/mock/gomock"
 	admin "go.mongodb.org/atlas-sdk/v20240530005/admin"
-	admin0 "go.mongodb.org/atlas-sdk/v20241113004/admin"
+	admin0 "go.mongodb.org/atlas-sdk/v20250312006/admin"
 )
 
 // MockOperatorGenericStore is a mock of OperatorGenericStore interface.
@@ -695,10 +695,10 @@ func (mr *MockOperatorGenericStoreMockRecorder) TeamByID(arg0, arg1 interface{})
 }
 
 // TeamUsers mocks base method.
-func (m *MockOperatorGenericStore) TeamUsers(arg0, arg1 string) (*admin0.PaginatedAppUser, error) {
+func (m *MockOperatorGenericStore) TeamUsers(arg0, arg1 string) (*admin0.PaginatedOrgUser, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "TeamUsers", arg0, arg1)
-	ret0, _ := ret[0].(*admin0.PaginatedAppUser)
+	ret0, _ := ret[0].(*admin0.PaginatedOrgUser)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

@@ -25,7 +25,7 @@ import (
 	akov2 "github.com/mongodb/mongodb-atlas-kubernetes/v2/api/v1"
 	akov2common "github.com/mongodb/mongodb-atlas-kubernetes/v2/api/v1/common"
 	akov2status "github.com/mongodb/mongodb-atlas-kubernetes/v2/api/v1/status"
-	atlasv2 "go.mongodb.org/atlas-sdk/v20241113004/admin"
+	atlasv2 "go.mongodb.org/atlas-sdk/v20250312006/admin"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -140,7 +140,7 @@ func getRoleMappings(mappings []atlasv2.AuthFederationRoleMapping, projectStore 
 }
 
 // getRoleAssignments converts RoleAssignments from AuthFederationRoleMapping.
-func getRoleAssignments(assignments []atlasv2.RoleAssignment, projectStore store.OperatorProjectStore) ([]akov2.RoleAssignment, error) {
+func getRoleAssignments(assignments []atlasv2.ConnectedOrgConfigRoleAssignment, projectStore store.OperatorProjectStore) ([]akov2.RoleAssignment, error) {
 	roleAssignments := make([]akov2.RoleAssignment, 0, len(assignments))
 	for _, ra := range assignments {
 		roleAssignment := akov2.RoleAssignment{Role: ra.GetRole()}

@@ -17,7 +17,7 @@
 package store
 
 import (
-	"go.mongodb.org/atlas-sdk/v20241113004/admin"
+	"go.mongodb.org/atlas-sdk/v20250312006/admin"
 )
 
 //go:generate mockgen -destination=../mocks/mock_data_federation.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store DataFederationLister,DataFederationDescriber,DataFederationStore

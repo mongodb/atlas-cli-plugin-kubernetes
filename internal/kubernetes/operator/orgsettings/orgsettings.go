@@ -54,8 +54,7 @@ func BuildAtlasOrgSettings(orgID string, provider store.OrgSettingsStore, creds 
 			MultiFactorAuthRequired:                res.MultiFactorAuthRequired,
 			RestrictEmployeeAccess:                 res.RestrictEmployeeAccess,
 			SecurityContact:                        res.SecurityContact,
-			// Only available in Atlas v20250312006+ API version
-			//StreamsCrossGroupEnabled:               res.StreamsCrossGroupEnabled,
+			StreamsCrossGroupEnabled:               res.StreamsCrossGroupEnabled,
 		},
 	}, secret, nil
 }
