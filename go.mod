@@ -17,7 +17,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/mongodb-forks/digest v1.1.0
 	github.com/mongodb-labs/cobra2snooty v1.19.1
-	github.com/mongodb/atlas-cli-core v0.0.0-20250822132614-230a610dbe0f
+	github.com/mongodb/atlas-cli-core v0.0.0-20250827124955-3a1f456f077e
 	github.com/mongodb/mongodb-atlas-kubernetes/v2 v2.10.0
 	github.com/spf13/afero v1.14.0
 	github.com/spf13/cobra v1.9.1
@@ -98,6 +98,7 @@ require (
 	github.com/x448/float16 v0.8.4 // indirect
 	github.com/zalando/go-keyring v0.2.6 // indirect
 	go.mongodb.org/atlas-sdk/v20250312002 v20250312002.0.0 // indirect
+	go.mongodb.org/atlas-sdk/v20250312006 v20250312006.0.0 // indirect
 	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.61.0 // indirect
 	go.opentelemetry.io/otel v1.36.0 // indirect
