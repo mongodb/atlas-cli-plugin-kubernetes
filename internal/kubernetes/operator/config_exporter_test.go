@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build unit
+// //go:build unit
 
 package operator
 
@@ -653,4 +653,145 @@ func setupAuthRoleMappings(testProjectID, secondTestProjectID, testRoleProject, 
 		}
 	}
 	return AuthRoleMappings
+}
+
+func TestExportAtlasOrgSettings(t *testing.T) {
+	testCases := []struct {
+		name          string
+		setupMocks    func(*mocks.MockOperatorGenericStore, *mocks.MockFeatureValidator, *mocks.MockCredentialsGetter)
+		expected      []runtime.Object
+		expectedError string
+	}{
+		{
+			name: "should return nil when resource is not supported",
+			setupMocks: func(_ *mocks.MockOperatorGenericStore, featureValidator *mocks.MockFeatureValidator, _ *mocks.MockCredentialsGetter) {
+				featureValidator.EXPECT().
+					IsResourceSupported(features.ResourceAtlasOrgSettings).
+					Return(false)
+			},
+			expected:      nil,
+			expectedError: "",
+		},
+		{
+			name: "should return error when GetOrgSettings fails",
+			setupMocks: func(store *mocks.MockOperatorGenericStore, featureValidator *mocks.MockFeatureValidator, _ *mocks.MockCredentialsGetter) {
+				featureValidator.EXPECT().
+					IsResourceSupported(features.ResourceAtlasOrgSettings).
+					Return(true)
+				store.EXPECT().
+					GetOrgSettings(orgID).
+					Return(nil, errors.New("failed to get org settings"))
+			},
+			expected:      nil,
+			expectedError: "failed to export org config: error retrieving orgsettings: failed to get org settings",
+		},
+		{
+			name: "should return nil when org settings is nil",
+			setupMocks: func(store *mocks.MockOperatorGenericStore, featureValidator *mocks.MockFeatureValidator, _ *mocks.MockCredentialsGetter) {
+				featureValidator.EXPECT().
+					IsResourceSupported(features.ResourceAtlasOrgSettings).
+					Return(true)
+				store.EXPECT().
+					GetOrgSettings(orgID).
+					Return(nil, nil)
+			},
+			expected:      []runtime.Object{(*akov2.AtlasOrgSettings)(nil), (*corev1.Secret)(nil)},
+			expectedError: "",
+		},
+		{
+			name: "should return exported resources with secrets data included",
+			setupMocks: func(store *mocks.MockOperatorGenericStore, featureValidator *mocks.MockFeatureValidator, credsProvider *mocks.MockCredentialsGetter) {
+				featureValidator.EXPECT().
+					IsResourceSupported(features.ResourceAtlasOrgSettings).
+					Return(true)
+
+				orgSettings := &admin.OrganizationSettings{
+					ApiAccessListRequired:                  pointer.Get(true),
+					GenAIFeaturesEnabled:                   pointer.Get(false),
+					MaxServiceAccountSecretValidityInHours: pointer.Get(int(24)),
+					MultiFactorAuthRequired:                pointer.Get(true),
+					RestrictEmployeeAccess:                 pointer.Get(false),
+					SecurityContact:                        pointer.Get("security@example.com"),
+					StreamsCrossGroupEnabled:               pointer.Get(true),
+				}
+
+				store.EXPECT().
+					GetOrgSettings(orgID).
+					Return(orgSettings, nil)
+
+				credsProvider.EXPECT().PublicAPIKey().Return("test-public-key")
+				credsProvider.EXPECT().PrivateAPIKey().Return("test-private-key")
+			},
+			expected: []runtime.Object{
+				&akov2.AtlasOrgSettings{
+					TypeMeta: metav1.TypeMeta{
+						Kind:       "AtlasOrgSettings",
+						APIVersion: "atlas.mongodb.com/v1",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "orgsettings-" + orgID,
+						Namespace: "test",
+					},
+					Spec: akov2.AtlasOrgSettingsSpec{
+						OrgID:                                  orgID,
+						ConnectionSecretRef:                    &akoapi.LocalObjectReference{Name: "atlas-secret"},
+						ApiAccessListRequired:                  pointer.Get(true),
+						GenAIFeaturesEnabled:                   pointer.Get(false),
+						MaxServiceAccountSecretValidityInHours: pointer.Get(int(24)),
+						MultiFactorAuthRequired:                pointer.Get(true),
+						RestrictEmployeeAccess:                 pointer.Get(false),
+						SecurityContact:                        pointer.Get("security@example.com"),
+						StreamsCrossGroupEnabled:               pointer.Get(true),
+					},
+				},
+				&corev1.Secret{
+					TypeMeta: metav1.TypeMeta{
+						Kind:       "Secret",
+						APIVersion: "v1",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "org-settings-testorgid",
+						Namespace: "test",
+						Labels: map[string]string{
+							secrets.TypeLabelKey: secrets.CredLabelVal,
+						},
+					},
+					Data: map[string][]byte{
+						secrets.CredOrgID:         []byte(orgID),
+						secrets.CredPublicAPIKey:  []byte("test-public-key"),
+						secrets.CredPrivateAPIKey: []byte("test-private-key"),
+					},
+				},
+			},
+			expectedError: "",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			ctl := gomock.NewController(t)
+			defer ctl.Finish()
+
+			store := mocks.NewMockOperatorGenericStore(ctl)
+			featureValidator := mocks.NewMockFeatureValidator(ctl)
+			credsProvider := mocks.NewMockCredentialsGetter(ctl)
+
+			ce := NewConfigExporter(store, credsProvider, projectID, orgID).
+				WithTargetNamespace("test").
+				WithFeatureValidator(featureValidator).
+				WithSecretsData(true)
+
+			tc.setupMocks(store, featureValidator, credsProvider)
+
+			resources, err := ce.exportAtlasOrgSettings(orgID)
+
+			if tc.expectedError != "" {
+				require.ErrorContains(t, err, tc.expectedError)
+				assert.Nil(t, resources)
+			} else {
+				require.NoError(t, err)
+				assert.Equal(t, tc.expected, resources)
+			}
+		})
+	}
 }
