@@ -122,7 +122,6 @@ type CredentialsGetter interface {
 	PublicAPIKey() string
 	PrivateAPIKey() string
 	Token() (*atlasauth.Token, error)
-	AuthType() config.AuthMechanism
 }
 
 // WithAuthentication sets the store credentials.
