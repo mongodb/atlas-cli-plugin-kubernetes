@@ -33,8 +33,8 @@ import (
 func Builder() *cobra.Command {
 	const use = "kubernetes"
 	var (
-		profile    string
-		debugLevel bool
+		profileName string
+		debugLevel  bool
 	)
 
 	cmd := &cobra.Command{
@@ -47,11 +47,14 @@ func Builder() *cobra.Command {
 				log.SetLevel(log.DebugLevel)
 			}
 
-			err := coreConfig.LoadAtlasCLIConfig()
+			profile, err := coreConfig.LoadAtlasCLIConfig()
 			if err != nil {
 				return fmt.Errorf("failed to load Atlas CLI configuration: %v", err)
 			}
-			if err := coreConfig.InitProfile(profile); err != nil {
+
+			coreConfig.WithProfile(cmd.Context(), profile)
+
+			if err := coreConfig.InitProfile(profileName); err != nil {
 				return fmt.Errorf("failed to initialise Atlas CLI profile: %w", err)
 			}
 
@@ -62,7 +65,7 @@ func Builder() *cobra.Command {
 
 	cmd.AddCommand(config.Builder(), operator.Builder(), dryrun.Builder())
 
-	cmd.PersistentFlags().StringVarP(&profile, flag.Profile, flag.ProfileShort, "", usage.ProfileAtlasCLI)
+	cmd.PersistentFlags().StringVarP(&profileName, flag.Profile, flag.ProfileShort, "", usage.ProfileAtlasCLI)
 	cmd.PersistentFlags().BoolVarP(&debugLevel, flag.Debug, flag.DebugShort, false, usage.Debug)
 	_ = cmd.PersistentFlags().MarkHidden(flag.Debug)
 
