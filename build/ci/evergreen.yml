@@ -94,7 +94,7 @@ functions:
           - MCLI_PUBLIC_API_KEY
           - MCLI_SERVICE
           - TEST_CMD
-          - E2E_TAGS
+          - E2E_RUN_PATTERN
           - MCLI_OPS_MANAGER_URL
           - OM_VERSION
           - LOCAL_KEY
@@ -262,7 +262,7 @@ tasks:
           AZURE_CLIENT_SECRET: ${azure_client_secret}
           GOOGLE_PROJECT_ID: ${google_project_id}
           GCP_SA_CRED: ${gcp_sa_cred}
-          E2E_TAGS: atlas,cli
+          E2E_RUN_PATTERN: TestKubernetesPluginBinary
   - name: atlas_kubernetes_generate_e2e
     tags: ["e2e","required","kubernetes", "assigned_to_jira_team_cloudp_kubernetes_atlas"]
     must_have_test_results: true
@@ -290,7 +290,7 @@ tasks:
           AZURE_CLIENT_SECRET: ${azure_client_secret}
           GOOGLE_PROJECT_ID: ${google_project_id}
           GCP_SA_CRED: ${gcp_sa_cred}
-          E2E_TAGS: generate
+          E2E_RUN_PATTERN: TestExport.*|TestGenerate.*|TestProject.*|TestFederatedAuthTest|TestEmptyProject|TestKubernetesConfigGenerate.*
   - name: atlas_kubernetes_apply_e2e
     tags: [ "e2e","required","kubernetes", "assigned_to_jira_team_cloudp_kubernetes_atlas" ]
     must_have_test_results: true
@@ -318,7 +318,7 @@ tasks:
           AZURE_CLIENT_SECRET: ${azure_client_secret}
           GOOGLE_PROJECT_ID: ${google_project_id}
           GCP_SA_CRED: ${gcp_sa_cred}
-          E2E_TAGS: apply
+          E2E_RUN_PATTERN: TestKubernetesConfigApply.*
   - name: atlas_kubernetes_install_e2e
     tags: [ "e2e","required","kubernetes", "assigned_to_jira_team_cloudp_kubernetes_atlas" ]
     must_have_test_results: true
@@ -346,7 +346,7 @@ tasks:
           AZURE_CLIENT_SECRET: ${azure_client_secret}
           GOOGLE_PROJECT_ID: ${google_project_id}
           GCP_SA_CRED: ${gcp_sa_cred}
-          E2E_TAGS: install
+          E2E_RUN_PATTERN: TestKubernetesOperatorInstall
 buildvariants:
   - name: code_health
     display_name: "Code Health"

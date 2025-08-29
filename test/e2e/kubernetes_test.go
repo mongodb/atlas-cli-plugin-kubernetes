@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build e2e || apply || generate || install
 
 package e2e
 
