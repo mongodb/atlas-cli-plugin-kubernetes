@@ -543,8 +543,8 @@ func TestBuildAtlasProject(t *testing.T) {
 						},
 					},
 					BackupCompliancePolicyRef: &akov2common.ResourceRefNamespaced{
-						Name:      expectedBCP.ObjectMeta.Name,
-						Namespace: expectedBCP.ObjectMeta.Namespace,
+						Name:      expectedBCP.Name,
+						Namespace: expectedBCP.Namespace,
 					},
 				},
 				Status: akov2status.AtlasProjectStatus{
@@ -637,8 +637,8 @@ func TestBuildAtlasProject(t *testing.T) {
 						},
 					},
 					BackupCompliancePolicyRef: &akov2common.ResourceRefNamespaced{
-						Name:      expectedBCP.ObjectMeta.Name,
-						Namespace: expectedBCP.ObjectMeta.Namespace,
+						Name:      expectedBCP.Name,
+						Namespace: expectedBCP.Namespace,
 					},
 				},
 				Status: akov2status.AtlasProjectStatus{
