@@ -20,6 +20,7 @@ package store
 //go:generate mockgen -destination=../mocks/mock_atlas_operator_private_endpoint_store.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store OperatorPrivateEndpointStore
 //go:generate mockgen -destination=../mocks/mock_atlas_operator_org_store.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store OperatorOrgStore
 //go:generate mockgen -destination=../mocks/mock_atlas_generic_store.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store OperatorGenericStore
+//go:generate mockgen -destination=../mocks/mock_atlas_org_settings_store.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store OrgSettingsStore
 
 type OperatorProjectStore interface {
 	OperatorTeamsStore
@@ -83,6 +84,11 @@ type StreamProcessingStore interface {
 	StreamsConnectionLister
 }
 
+type OrgSettingsStore interface {
+	OrgSettingsDescriber
+	OrgSettingsUpdater
+}
+
 type OperatorGenericStore interface {
 	OperatorOrgStore
 	OperatorProjectStore
@@ -94,4 +100,6 @@ type OperatorGenericStore interface {
 	IdentityProviderLister
 	ConnectedOrgConfigsDescriber
 	IdentityProviderDescriber
+	OrgSettingsDescriber
+	OrgSettingsStore
 }

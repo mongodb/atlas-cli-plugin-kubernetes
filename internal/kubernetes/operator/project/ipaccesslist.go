@@ -22,7 +22,7 @@ import (
 	akov2 "github.com/mongodb/mongodb-atlas-kubernetes/v2/api/v1"
 	akov2common "github.com/mongodb/mongodb-atlas-kubernetes/v2/api/v1/common"
 	akov2status "github.com/mongodb/mongodb-atlas-kubernetes/v2/api/v1/status"
-	"go.mongodb.org/atlas-sdk/v20241113004/admin"
+	"go.mongodb.org/atlas-sdk/v20250312006/admin"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 

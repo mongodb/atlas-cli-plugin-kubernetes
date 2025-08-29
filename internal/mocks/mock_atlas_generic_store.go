@@ -9,7 +9,7 @@ import (
 
 	gomock "github.com/golang/mock/gomock"
 	admin "go.mongodb.org/atlas-sdk/v20240530005/admin"
-	admin0 "go.mongodb.org/atlas-sdk/v20241113004/admin"
+	admin0 "go.mongodb.org/atlas-sdk/v20250312006/admin"
 )
 
 // MockOperatorGenericStore is a mock of OperatorGenericStore interface.
@@ -332,6 +332,21 @@ func (m *MockOperatorGenericStore) GetOrgProjects(arg0 string) (*admin0.Paginate
 func (mr *MockOperatorGenericStoreMockRecorder) GetOrgProjects(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrgProjects", reflect.TypeOf((*MockOperatorGenericStore)(nil).GetOrgProjects), arg0)
+}
+
+// GetOrgSettings mocks base method.
+func (m *MockOperatorGenericStore) GetOrgSettings(arg0 string) (*admin0.OrganizationSettings, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetOrgSettings", arg0)
+	ret0, _ := ret[0].(*admin0.OrganizationSettings)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetOrgSettings indicates an expected call of GetOrgSettings.
+func (mr *MockOperatorGenericStoreMockRecorder) GetOrgSettings(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrgSettings", reflect.TypeOf((*MockOperatorGenericStore)(nil).GetOrgSettings), arg0)
 }
 
 // GetServerlessInstance mocks base method.
@@ -680,10 +695,10 @@ func (mr *MockOperatorGenericStoreMockRecorder) TeamByID(arg0, arg1 interface{})
 }
 
 // TeamUsers mocks base method.
-func (m *MockOperatorGenericStore) TeamUsers(arg0, arg1 string) (*admin0.PaginatedAppUser, error) {
+func (m *MockOperatorGenericStore) TeamUsers(arg0, arg1 string) (*admin0.PaginatedOrgUser, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "TeamUsers", arg0, arg1)
-	ret0, _ := ret[0].(*admin0.PaginatedAppUser)
+	ret0, _ := ret[0].(*admin0.PaginatedOrgUser)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -692,4 +707,19 @@ func (m *MockOperatorGenericStore) TeamUsers(arg0, arg1 string) (*admin0.Paginat
 func (mr *MockOperatorGenericStoreMockRecorder) TeamUsers(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TeamUsers", reflect.TypeOf((*MockOperatorGenericStore)(nil).TeamUsers), arg0, arg1)
+}
+
+// UpdateOrgSettings mocks base method.
+func (m *MockOperatorGenericStore) UpdateOrgSettings(arg0 string, arg1 *admin0.OrganizationSettings) (*admin0.OrganizationSettings, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateOrgSettings", arg0, arg1)
+	ret0, _ := ret[0].(*admin0.OrganizationSettings)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateOrgSettings indicates an expected call of UpdateOrgSettings.
+func (mr *MockOperatorGenericStoreMockRecorder) UpdateOrgSettings(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateOrgSettings", reflect.TypeOf((*MockOperatorGenericStore)(nil).UpdateOrgSettings), arg0, arg1)
 }
