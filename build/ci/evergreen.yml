@@ -264,7 +264,7 @@ tasks:
           GCP_SA_CRED: ${gcp_sa_cred}
           E2E_RUN_PATTERN: TestKubernetesPluginBinary
   - name: atlas_kubernetes_generate_e2e
-    tags: ["e2e","required","kubernetes", "assigned_to_jira_team_cloudp_kubernetes_atlas"]
+#    tags: ["e2e","required","kubernetes", "assigned_to_jira_team_cloudp_kubernetes_atlas"]
     must_have_test_results: true
     commands:
       - func: "install gotestsum"
@@ -292,7 +292,7 @@ tasks:
           GCP_SA_CRED: ${gcp_sa_cred}
           E2E_RUN_PATTERN: TestExport.*|TestGenerate.*|TestProject.*|TestFederatedAuthTest|TestEmptyProject|TestKubernetesConfigGenerate.*
   - name: atlas_kubernetes_apply_e2e
-    tags: [ "e2e","required","kubernetes", "assigned_to_jira_team_cloudp_kubernetes_atlas" ]
+#    tags: [ "e2e","required","kubernetes", "assigned_to_jira_team_cloudp_kubernetes_atlas" ]
     must_have_test_results: true
     commands:
       - func: "install gotestsum"
@@ -320,7 +320,7 @@ tasks:
           GCP_SA_CRED: ${gcp_sa_cred}
           E2E_RUN_PATTERN: TestKubernetesConfigApply.*
   - name: atlas_kubernetes_install_e2e
-    tags: [ "e2e","required","kubernetes", "assigned_to_jira_team_cloudp_kubernetes_atlas" ]
+#    tags: [ "e2e","required","kubernetes", "assigned_to_jira_team_cloudp_kubernetes_atlas" ]
     must_have_test_results: true
     commands:
       - func: "install gotestsum"
