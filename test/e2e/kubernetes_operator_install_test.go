@@ -58,7 +58,7 @@ func TestKubernetesOperatorInstall(t *testing.T) {
 		cmd.Env = os.Environ()
 		_, inErr := test.RunAndGetStdOutAndErr(cmd)
 		require.Error(t, inErr)
-		assert.Contains(t, inErr.Error(), "Error: version 100.0.0 is not supported")
+		assert.Contains(t, inErr.Error(), "Error: version 1.1.0 is not supported")
 	})
 
 	t.Run("should failed to install a non-existing version of the operator", func(t *testing.T) {
