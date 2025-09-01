@@ -15,7 +15,6 @@ require (
 	github.com/golang/mock v1.6.0
 	github.com/google/go-github/v61 v61.0.0
 	github.com/google/uuid v1.6.0
-	github.com/mongodb-forks/digest v1.1.0
 	github.com/mongodb-labs/cobra2snooty v1.19.1
 	github.com/mongodb/atlas-cli-core v0.0.0-20250827124955-3a1f456f077e
 	github.com/mongodb/mongodb-atlas-kubernetes/v2 v2.10.0
@@ -83,6 +82,7 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
+	github.com/mongodb-forks/digest v1.1.0 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/pelletier/go-toml v1.9.5 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.2 // indirect
