@@ -1,10 +1,10 @@
-// Copyright 2020 MongoDB Inc
+// Copyright 2025 MongoDB Inc
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
+//	http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -21,21 +21,25 @@ import (
 	"testing"
 
 	"github.com/mongodb/atlas-cli-core/config"
+	"github.com/stretchr/testify/require"
 	atlasauth "go.mongodb.org/atlas/auth"
 )
 
 type auth struct {
-	username string
-	password string
-	token    string
+	username     string
+	password     string
+	refreshToken string
+	clientID     string
+	clientSecret string
+	accessToken  *atlasauth.Token
 }
 
-func (auth) Token() (*atlasauth.Token, error) {
-	return nil, nil
+func (a auth) Token() (*atlasauth.Token, error) {
+	return a.accessToken, nil
 }
 
 func (a auth) RefreshToken() string {
-	return a.token
+	return a.refreshToken
 }
 
 func (a auth) PublicAPIKey() string {
@@ -46,14 +50,25 @@ func (a auth) PrivateAPIKey() string {
 	return a.password
 }
 
+func (a auth) ClientID() string {
+	return a.clientID
+}
+
+func (a auth) ClientSecret() string {
+	return a.clientSecret
+}
+
 func (a auth) AuthType() config.AuthMechanism {
 	if a.username != "" {
 		return config.APIKeys
 	}
-	if a.token != "" {
-		return config.OAuth
+	if a.accessToken != nil {
+		return config.UserAccount
 	}
-	return config.NotLoggedIn
+	if a.clientID != "" {
+		return config.ServiceAccount
+	}
+	return ""
 }
 
 var _ CredentialsGetter = &auth{}
@@ -104,21 +119,44 @@ func (c testConfig) OpsManagerURL() string {
 var _ AuthenticatedConfig = &testConfig{}
 
 func TestWithAuthentication(t *testing.T) {
-	a := auth{
-		username: "username",
-		password: "password",
+	tests := []struct {
+		name string
+		a    auth
+	}{
+		{
+			name: "api keys",
+			a: auth{
+				username: "username",
+				password: "password",
+			},
+		},
+		{
+			name: "service account",
+			a: auth{
+				clientID:     "id",
+				clientSecret: "secret",
+			},
+		},
+		{
+			name: "user account",
+			a: auth{
+				refreshToken: "token",
+				accessToken: &atlasauth.Token{
+					AccessToken:  "access",
+					RefreshToken: "refresh",
+				},
+			},
+		},
 	}
-	c, err := New(Service("cloud"), WithAuthentication(a))
 
-	if err != nil {
-		t.Fatalf("New() unexpected error: %v", err)
-	}
-
-	if c.username != a.username {
-		t.Errorf("New() username = %s; expected %s", c.username, a.username)
-	}
-	if c.password != a.password {
-		t.Errorf("New() password = %s; expected %s", c.password, a.password)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c, err := New(Service("cloud"), WithAuthentication(tt.a))
+			require.NoError(t, err)
+			require.NotNil(t, c.httpClient)
+			require.NotNil(t, c.httpClient.Transport)
+			require.NotEqual(t, c.transport(), c.httpClient.Transport) // Check transport is not default
+		})
 	}
 }
 
@@ -128,14 +166,14 @@ func TestWithContext(t *testing.T) {
 		t.Fatalf("New() unexpected error: %v", err)
 	}
 
-	if c.ctx != context.Background() {
-		t.Errorf("New() got %v; expected %v", c.ctx, context.Background())
+	if c.ctx != context.Background() { //nolint: usetesting // we test this value
+		t.Errorf("New() got %v; expected %v", c.ctx, t.Context())
 	}
 
 	type myCustomType string
 	var k, v myCustomType = "custom key", "custom value"
 
-	ctx := context.WithValue(context.Background(), k, v)
+	ctx := context.WithValue(t.Context(), k, v)
 
 	c, err = New(Service(config.CloudService), WithContext(ctx))
 	if err != nil {
