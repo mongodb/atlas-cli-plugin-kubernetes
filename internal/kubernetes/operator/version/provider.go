@@ -34,7 +34,7 @@ const (
 type AtlasOperatorVersionProvider interface {
 	GetLatest() (string, error)
 	IsSupported(version string) (bool, error)
-	DownloadResource(ctx context.Context, version, path string) (io.ReadCloser, error)
+	DownloadResource(ctx context.Context, path string) (io.ReadCloser, error)
 }
 
 type OperatorVersion struct {
@@ -81,15 +81,13 @@ func (v *OperatorVersion) IsSupported(version string) (bool, error) {
 	return true, nil
 }
 
-func (v *OperatorVersion) DownloadResource(ctx context.Context, version, path string) (io.ReadCloser, error) {
+func (v *OperatorVersion) DownloadResource(ctx context.Context, path string) (io.ReadCloser, error) {
 	data, _, err := v.ghClient.Repositories.DownloadContents(
 		ctx,
 		operatorRepositoryOrg,
 		operatorRepository,
 		path,
-		&github.RepositoryContentGetOptions{
-			Ref: "v" + version,
-		})
+		nil)
 
 	if err != nil {
 		return nil, err

@@ -74,7 +74,7 @@ func (ir *InstallResources) InstallCRDs(ctx context.Context, v string, namespace
 		target = installationTargetNamespaced
 	}
 
-	data, err := ir.versionProvider.DownloadResource(ctx, v, fmt.Sprintf("deploy/%s/crds.yaml", target))
+	data, err := ir.versionProvider.DownloadResource(ctx, fmt.Sprintf("releases/v%s/deploy/%s/crds.yaml", v, target))
 	if err != nil {
 		return fmt.Errorf("unable to retrieve CRDs from repository: %w", err)
 	}
@@ -112,7 +112,7 @@ func (ir *InstallResources) InstallConfiguration(ctx context.Context, installCon
 		target = installationTargetNamespaced
 	}
 
-	data, err := ir.versionProvider.DownloadResource(ctx, installConfig.Version, fmt.Sprintf("deploy/%s/%s-config.yaml", target, target))
+	data, err := ir.versionProvider.DownloadResource(ctx, fmt.Sprintf("releases/v%s/deploy/%s/%s-config.yaml", installConfig.Version, target, target))
 	if err != nil {
 		return fmt.Errorf("unable to retrieve configuration from repository: %w", err)
 	}
