@@ -26,7 +26,7 @@ import (
 )
 
 const (
-	urlTemplate    = "https://raw.githubusercontent.com/mongodb/mongodb-atlas-kubernetes/v%s/bundle/manifests/atlas.mongodb.com_%s.yaml"
+	urlTemplate    = "https://raw.githubusercontent.com/mongodb/mongodb-atlas-kubernetes/main/releases/v%s/bundle/manifests/atlas.mongodb.com_%s.yaml"
 	requestTimeout = 10 * time.Second
 )
 
