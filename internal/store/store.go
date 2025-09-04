@@ -112,7 +112,7 @@ type CredentialsGetter interface {
 }
 
 // WithAuthentication sets the store credentials.
-func WithAuthentication(c CredentialsGetter) Option {
+func WithAuthentication() Option {
 	return func(s *Store) error {
 		client, err := transport.HTTPClient(version.Version, s.transport())
 		if err != nil {
@@ -224,7 +224,7 @@ type AuthenticatedConfig interface {
 
 // AuthenticatedPreset is the default Option when connecting to the public API with authentication.
 func AuthenticatedPreset(c AuthenticatedConfig) Option {
-	options := []Option{Service(c.Service()), WithAuthentication(c)}
+	options := []Option{Service(c.Service()), WithAuthentication()}
 	if baseURLOpt := baseURLOption(c); baseURLOpt != nil {
 		options = append(options, baseURLOpt)
 	}
