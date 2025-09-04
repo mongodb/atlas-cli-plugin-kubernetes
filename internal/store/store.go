@@ -56,34 +56,6 @@ type Store struct {
 	ctx            context.Context
 }
 
-func HttpClient(c CredentialsGetter, httpTransport http.RoundTripper) (*http.Client, error) {
-	switch c.AuthType() {
-	case config.APIKeys:
-		t := transport.NewDigestTransport(c.PublicAPIKey(), c.PrivateAPIKey(), httpTransport)
-		return t.Client()
-	case config.UserAccount:
-		token, err := c.Token()
-		if err != nil {
-			return nil, err
-		}
-		tr, err := transport.NewAccessTokenTransport(token, httpTransport, version.Version, func(t *atlasauth.Token) error {
-			config.SetAccessToken(t.AccessToken)
-			config.SetRefreshToken(t.RefreshToken)
-			return config.Save()
-		})
-		if err != nil {
-			return nil, err
-		}
-		return &http.Client{Transport: tr}, nil
-	case config.ServiceAccount:
-		return transport.NewServiceAccountClientWithHost(c.ClientID(), c.ClientSecret(), config.OpsManagerURL()), nil
-	case config.NoAuth:
-		fallthrough
-	default:
-		return &http.Client{Transport: httpTransport}, nil
-	}
-}
-
 func (s *Store) transport() *http.Transport {
 	switch {
 	case s.telemetry:
@@ -142,7 +114,7 @@ type CredentialsGetter interface {
 // WithAuthentication sets the store credentials.
 func WithAuthentication(c CredentialsGetter) Option {
 	return func(s *Store) error {
-		client, err := HttpClient(c, s.transport())
+		client, err := transport.HTTPClient(version.Version, s.transport())
 		if err != nil {
 			return err
 		}
