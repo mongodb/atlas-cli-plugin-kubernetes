@@ -16,7 +16,7 @@ require (
 	github.com/google/go-github/v61 v61.0.0
 	github.com/google/uuid v1.6.0
 	github.com/mongodb-labs/cobra2snooty v1.19.1
-	github.com/mongodb/atlas-cli-core v0.0.0-20250904105537-cdeae83f46e0
+	github.com/mongodb/atlas-cli-core v0.0.0-20250909113945-ffb322e05f59
 	github.com/mongodb/mongodb-atlas-kubernetes/v2 v2.10.0
 	github.com/spf13/afero v1.14.0
 	github.com/spf13/cobra v1.9.1
