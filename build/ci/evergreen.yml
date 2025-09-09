@@ -116,6 +116,7 @@ functions:
         env:
           <<: *go_env
           MCLI_SKIP_UPDATE_CHECK: "yes"
+          MCLI_SILENCE_STORAGE_WARNING: "true"
           DO_NOT_TRACK: "1"
           TEST_CMD: gotestsum --junitfile e2e-tests.xml --format standard-verbose --
         command: make e2e-test
@@ -254,7 +255,6 @@ tasks:
           MCLI_PUBLIC_API_KEY: ${atlas_public_api_key}
           MCLI_OPS_MANAGER_URL: ${mcli_ops_manager_url}
           MCLI_SERVICE: cloud
-          MCLI_SILENCE_STORAGE_WARNING: true
           AWS_ACCOUNT_ID: ${aws_account_id}
           AWS_ACCESS_KEY_ID: ${aws_access_key_id}
           AWS_SECRET_ACCESS_KEY: ${aws_secret_access_key}
@@ -283,7 +283,6 @@ tasks:
           MCLI_PUBLIC_API_KEY: ${atlas_public_api_key}
           MCLI_OPS_MANAGER_URL: ${mcli_ops_manager_url}
           MCLI_SERVICE: cloud
-          MCLI_SILENCE_STORAGE_WARNING: true
           AWS_ACCOUNT_ID: ${aws_account_id}
           AWS_ACCESS_KEY_ID: ${aws_access_key_id}
           AWS_SECRET_ACCESS_KEY: ${aws_secret_access_key}
@@ -312,7 +311,6 @@ tasks:
           MCLI_PUBLIC_API_KEY: ${atlas_public_api_key}
           MCLI_OPS_MANAGER_URL: ${mcli_ops_manager_url}
           MCLI_SERVICE: cloud
-          MCLI_SILENCE_STORAGE_WARNING: true
           AWS_ACCOUNT_ID: ${aws_account_id}
           AWS_ACCESS_KEY_ID: ${aws_access_key_id}
           AWS_SECRET_ACCESS_KEY: ${aws_secret_access_key}
@@ -341,7 +339,6 @@ tasks:
           MCLI_PUBLIC_API_KEY: ${atlas_public_api_key}
           MCLI_OPS_MANAGER_URL: ${mcli_ops_manager_url}
           MCLI_SERVICE: cloud
-          MCLI_SILENCE_STORAGE_WARNING: true
           AWS_ACCOUNT_ID: ${aws_account_id}
           AWS_ACCESS_KEY_ID: ${aws_access_key_id}
           AWS_SECRET_ACCESS_KEY: ${aws_secret_access_key}
