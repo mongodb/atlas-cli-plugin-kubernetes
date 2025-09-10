@@ -17,14 +17,13 @@ MANIFEST_FILE?=manifest.yml
 WIN_MANIFEST_FILE?=manifest.windows.yml
 
 TEST_CMD?=go test
-UNIT_TAGS?=unit
 COVERAGE?=coverage.out
 
 E2E_PLUGIN_BINARY_PATH=../../$(PLUGIN_BINARY_PATH)
-E2E_TAGS?=e2e
 E2E_TIMEOUT?=60m
 E2E_PARALLEL?=1
 E2E_EXTRA_ARGS?=
+E2E_RUN_PATTERN?=.*
 
 export E2E_PLUGIN_BINARY_PATH
 export E2E_ATLASCLI_BINARY_PATH
@@ -63,12 +62,12 @@ lint: ## Run linter
 .PHONY: unit-test
 unit-test: ## Run unit-tests
 	@echo "==> Running unit tests..."
-	$(TEST_CMD) --tags="$(UNIT_TAGS)" -race -cover -coverprofile $(COVERAGE) -count=1 ./...
+	$(TEST_CMD) -race -cover -coverprofile $(COVERAGE) -count=1 ./internal/... ./cmd/...
 
 .PHONY: fuzz-normalizer-test
 fuzz-normalizer-test: ## Run fuzz test
 	@echo "==> Running fuzz test..."
-	$(TEST_CMD) -fuzz=Fuzz -fuzztime 50s --tags="$(UNIT_TAGS)" -race ./internal/kubernetes/operator/resources
+	$(TEST_CMD) -fuzz=Fuzz -fuzztime 50s -race ./internal/kubernetes/operator/resources
 
 .PHONY: build-debug
 build-debug: ## Generate a binary in ./bin for debugging plugin
@@ -80,7 +79,7 @@ e2e-test: build-debug ## Run E2E tests
 # the target assumes the MCLI_* environment variables are exported
 	@./scripts/atlas-binary.sh
 	@echo "==> Running E2E tests..."
-	GOCOVERDIR=$(GOCOVERDIR) $(TEST_CMD) -race -v -p 1 -parallel $(E2E_PARALLEL) -v -timeout $(E2E_TIMEOUT) -tags="$(E2E_TAGS)" ./test/e2e... $(E2E_EXTRA_ARGS)
+	GOCOVERDIR=$(GOCOVERDIR) $(TEST_CMD) -race -v -p 1 -parallel $(E2E_PARALLEL) -v -timeout $(E2E_TIMEOUT) -run="$(E2E_RUN_PATTERN)" ./test/e2e... $(E2E_EXTRA_ARGS)
 
 .PHONY: gen-mocks
 gen-mocks: ## Generate mocks

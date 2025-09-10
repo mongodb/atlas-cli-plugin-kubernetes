@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build e2e || install || generate || apply
 
 package e2e
 
@@ -31,15 +30,14 @@ import (
 	"cloud.google.com/go/compute/apiv1/computepb"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/network/armnetwork/v2"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/aws/aws-sdk-go/aws" //nolint:staticcheck
+	"github.com/aws/aws-sdk-go/aws/session" //nolint:staticcheck
+	"github.com/aws/aws-sdk-go/service/ec2" //nolint:staticcheck
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/pointer"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/test"
 	akov2provider "github.com/mongodb/mongodb-atlas-kubernetes/v2/api/v1/provider"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.mongodb.org/atlas-sdk/v20241113004/admin"
 	atlasv2 "go.mongodb.org/atlas-sdk/v20241113004/admin"
 )
 
@@ -642,7 +640,7 @@ func ensureGCPCredentials() error {
 		return fmt.Errorf("failed to save credentials contents GCP_SA_CRED to %s: %w",
 			googleSAFilename, err)
 	}
-	os.Setenv("GOOGLE_APPLICATION_CREDENTIALS", googleSAFilename)
+	_ = os.Setenv("GOOGLE_APPLICATION_CREDENTIALS", googleSAFilename)
 	return nil
 }
 
@@ -670,7 +668,7 @@ func (g *atlasE2ETestGenerator) deletePeering(id string) {
 	timeout := 5 * time.Minute
 	for {
 		_, _, err := client.NetworkPeeringApi.GetPeeringConnection(ctx, g.projectID, id).Execute()
-		if admin.IsErrorCode(err, "PEER_NOT_FOUND") {
+		if atlasv2.IsErrorCode(err, "PEER_NOT_FOUND") {
 			return
 		}
 		if err != nil {
@@ -756,7 +754,7 @@ func deleteProjectWithRetry(t *testing.T, projectID string) {
 
 func deleteKeys(t *testing.T, toDelete map[string]struct{}) {
 	t.Helper()
-	cliPath, err := AtlasCLIBin()
+	cliPath, _ := AtlasCLIBin()
 
 	cmd := exec.Command(cliPath,
 		orgEntity,
