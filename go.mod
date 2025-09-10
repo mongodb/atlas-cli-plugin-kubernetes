@@ -18,7 +18,7 @@ require (
 	github.com/mongodb-labs/cobra2snooty v1.19.1
 	github.com/mongodb/atlas-cli-core v0.0.0-20250909113945-ffb322e05f59
 	github.com/mongodb/mongodb-atlas-kubernetes/v2 v2.10.0
-	github.com/spf13/afero v1.14.0
+	github.com/spf13/afero v1.15.0
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/pflag v1.0.7
 	github.com/stretchr/testify v1.11.1
@@ -113,7 +113,7 @@ require (
 	golang.org/x/oauth2 v0.30.0 // indirect
 	golang.org/x/sys v0.35.0 // indirect
 	golang.org/x/term v0.33.0 // indirect
-	golang.org/x/text v0.27.0 // indirect
+	golang.org/x/text v0.28.0 // indirect
 	golang.org/x/time v0.12.0 // indirect
 	google.golang.org/api v0.246.0 // indirect
 	google.golang.org/genproto v0.0.0-20250603155806-513f23925822 // indirect
