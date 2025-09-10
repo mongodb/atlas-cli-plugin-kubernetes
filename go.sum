@@ -170,8 +170,8 @@ github.com/mongodb-forks/digest v1.1.0 h1:7eUdsR1BtqLv0mdNm4OXs6ddWvR4X2/OsLwdKk
 github.com/mongodb-forks/digest v1.1.0/go.mod h1:rb+EX8zotClD5Dj4NdgxnJXG9nwrlx3NWKJ8xttz1Dg=
 github.com/mongodb-labs/cobra2snooty v1.19.1 h1:GDEQZWy8f/DeJlImNgVvStu6sgNi8nuSOR1Oskcw8BI=
 github.com/mongodb-labs/cobra2snooty v1.19.1/go.mod h1:Hyq4YadN8dwdOiz56MXwTuVN63p0WlkQwxdLxOSGdX8=
-github.com/mongodb/atlas-cli-core v0.0.0-20250904105537-cdeae83f46e0 h1:1g0tih3u0OGiMVmo4R5iBkduFtrNJMZUJD6MwEyWtr4=
-github.com/mongodb/atlas-cli-core v0.0.0-20250904105537-cdeae83f46e0/go.mod h1:QDfVGpdfxXM1httLNXCKsfWTKv6slzCqBZxkkPIktlQ=
+github.com/mongodb/atlas-cli-core v0.0.0-20250909113945-ffb322e05f59 h1:uIxkUglkDOtrvfzyNsV/FHwGC717mAI0S4/jzFOBvsM=
+github.com/mongodb/atlas-cli-core v0.0.0-20250909113945-ffb322e05f59/go.mod h1:QDfVGpdfxXM1httLNXCKsfWTKv6slzCqBZxkkPIktlQ=
 github.com/mongodb/mongodb-atlas-kubernetes/v2 v2.10.0 h1:6vJu9bj6MLnF3Vp4Zo4jQcgbuzO69IUmY3MRT3oCtAw=
 github.com/mongodb/mongodb-atlas-kubernetes/v2 v2.10.0/go.mod h1:SaiLtnWefhrHd0rqBJosYuyn7kJ7pImY4Jqtna5hl7s=
 github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 h1:C3w9PqII01/Oq1c1nUAm88MOHcQC9l5mIlSMApZMrHA=
