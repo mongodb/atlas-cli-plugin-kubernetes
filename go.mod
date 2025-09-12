@@ -19,7 +19,7 @@ require (
 	github.com/mongodb/atlas-cli-core v0.0.0-20250909113945-ffb322e05f59
 	github.com/mongodb/mongodb-atlas-kubernetes/v2 v2.10.0
 	github.com/spf13/afero v1.15.0
-	github.com/spf13/cobra v1.9.1
+	github.com/spf13/cobra v1.10.1
 	github.com/spf13/pflag v1.0.10
 	github.com/stretchr/testify v1.11.1
 	github.com/tangzero/inflector v1.0.0
