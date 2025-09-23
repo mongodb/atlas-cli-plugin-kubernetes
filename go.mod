@@ -5,7 +5,7 @@ go 1.24.2
 toolchain go1.24.6
 
 require (
-	cloud.google.com/go/compute v1.46.0
+	cloud.google.com/go/compute v1.47.0
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.11.0
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/network/armnetwork/v2 v2.2.1
 	github.com/Masterminds/semver/v3 v3.4.0
