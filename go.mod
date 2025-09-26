@@ -29,12 +29,12 @@ require (
 	go.mongodb.org/atlas-sdk/v20250219001 v20250219001.1.0
 	golang.org/x/exp v0.0.0-20240719175910-8a7402abbf56
 	gopkg.in/yaml.v3 v3.0.1
-	k8s.io/api v0.34.0
-	k8s.io/apiextensions-apiserver v0.34.0
-	k8s.io/apimachinery v0.34.0
-	k8s.io/apiserver v0.34.0
-	k8s.io/client-go v0.34.0
-	sigs.k8s.io/controller-runtime v0.22.0
+	k8s.io/api v0.34.1
+	k8s.io/apiextensions-apiserver v0.34.1
+	k8s.io/apimachinery v0.34.1
+	k8s.io/apiserver v0.34.1
+	k8s.io/client-go v0.34.1
+	sigs.k8s.io/controller-runtime v0.22.1
 	sigs.k8s.io/kind v0.30.0
 	sigs.k8s.io/yaml v1.6.0
 )
