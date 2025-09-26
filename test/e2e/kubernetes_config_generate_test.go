@@ -61,7 +61,7 @@ const (
 
 // These kinds represent global types in AKO which are independent of any Atlas Project.
 // They can be filtered in concurrent e2e tests if they are not relevant for assertion.
-var globalKinds = []string{"AtlasFederatedAuth", "AtlasOrgSettings"}
+var globalkinds = []string{"AtlasFederatedAuth", "AtlasOrgSettings"}
 
 var (
 	federationSettingsID   string
@@ -232,7 +232,9 @@ func TestExportIndependentOrNot(t *testing.T) {
 			objects, err = getK8SEntities(resp)
 			// We want to filter spurious federated auth resources from other tests
 			// as these are global resources across all projects.
+			t.Log("pre filtered", len(objects))
 			objects = filtered(objects).byKind(globalKinds...)
+			t.Log("post filtered", len(objects))
 			require.NoError(t, err, "should not fail on decode but got:\n"+string(resp))
 			require.NotEmpty(t, objects)
 			require.Equal(t, tc.expected, objects)
