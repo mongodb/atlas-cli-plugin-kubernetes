@@ -61,7 +61,7 @@ const (
 
 // These kinds represent global types in AKO which are independent of any Atlas Project.
 // They can be filtered in concurrent e2e tests if they are not relevant for assertion.
-var globalkinds = []string{"AtlasFederatedAuth", "AtlasOrgSettings"}
+var globalKinds = []string{"AtlasFederatedAuth", "AtlasOrgSettings"}
 
 var (
 	federationSettingsID   string
@@ -978,7 +978,7 @@ type filtered []runtime.Object
 // 	return result
 // }
 
-func (f filtered) byKind(kind ...string) []runtime.Object {
+func (f filtered) byKind(kinds ...string) []runtime.Object {
 	ban := map[string]any{}
 	for _, k := range kinds {
 		ban[k] = struct{}{}
@@ -987,7 +987,7 @@ func (f filtered) byKind(kind ...string) []runtime.Object {
 	result := make([]runtime.Object, 0, len(f))
 
 	for _, obj := range f {
-		kind := obj.GetObjectKind().GetVersionKind().Kind
+		kind := obj.GetObjectKind().GroupVersionKind().Kind
 		if _, ok := ban[kind]; !ok {
 			result = append(result, obj)
 		}
@@ -1641,61 +1641,61 @@ func TestProjectWithNonDefaultAlertConf(t *testing.T) {
 	})
 }
 
-// func TestProjectWithOrgSettings(t *testing.T) {
-// 	s := InitialSetup(t)
-// 	cliPath := s.cliPath
-// 	generator := s.generator
-// 	expectedProject := s.expectedProject
-//
-// 	t.Run("Should export OrgSettings", func(t *testing.T) {
-// 		cmd := exec.Command(cliPath,
-// 			"kubernetes",
-// 			"config",
-// 			"generate",
-// 			"--projectId",
-// 			generator.projectID,
-// 			"--targetNamespace",
-// 			targetNamespace,
-// 			"--includeSecrets")
-// 		cmd.Env = os.Environ()
-//
-// 		resp, err := test.RunAndGetStdOut(cmd)
-// 		t.Log(string(resp))
-// 		require.NoError(t, err, string(resp))
-//
-// 		var objects []runtime.Object
-// 		objects, err = getK8SEntities(resp)
-// 		require.NoError(t, err)
-// 		require.NotEmpty(t, objects)
-// 		checkProject(t, objects, expectedProject)
-// 		checkOrgSettings(t, objects)
-// 	})
-// }
-//
-// func checkOrgSettings(t *testing.T, output []runtime.Object) {
-// 	t.Helper()
-// 	found := false
-// 	var orgSettings *akov2.AtlasOrgSettings
-// 	for i := range output {
-// 		p, ok := output[i].(*akov2.AtlasOrgSettings)
-// 		if ok {
-// 			found = true
-// 			orgSettings = p
-// 			break
-// 		}
-// 	}
-// 	require.True(t, found, "AtlasOrgSettings is not found in results")
-// 	secretName := orgSettings.Spec.ConnectionSecretRef.Name
-// 	found = false
-// 	for i := range output {
-// 		p, ok := output[i].(*corev1.Secret)
-// 		if ok && p.GetName() == secretName {
-// 			found = true
-// 			break
-// 		}
-// 	}
-// 	require.True(t, found, "AtlasOrgSettings secret is not found in results")
-// }
+func TestProjectWithOrgSettings(t *testing.T) {
+	s := InitialSetup(t)
+	cliPath := s.cliPath
+	generator := s.generator
+	expectedProject := s.expectedProject
+
+	t.Run("Should export OrgSettings", func(t *testing.T) {
+		cmd := exec.Command(cliPath,
+			"kubernetes",
+			"config",
+			"generate",
+			"--projectId",
+			generator.projectID,
+			"--targetNamespace",
+			targetNamespace,
+			"--includeSecrets")
+		cmd.Env = os.Environ()
+
+		resp, err := test.RunAndGetStdOut(cmd)
+		t.Log(string(resp))
+		require.NoError(t, err, string(resp))
+
+		var objects []runtime.Object
+		objects, err = getK8SEntities(resp)
+		require.NoError(t, err)
+		require.NotEmpty(t, objects)
+		checkProject(t, objects, expectedProject)
+		checkOrgSettings(t, objects)
+	})
+}
+
+func checkOrgSettings(t *testing.T, output []runtime.Object) {
+	t.Helper()
+	found := false
+	var orgSettings *akov2.AtlasOrgSettings
+	for i := range output {
+		p, ok := output[i].(*akov2.AtlasOrgSettings)
+		if ok {
+			found = true
+			orgSettings = p
+			break
+		}
+	}
+	require.True(t, found, "AtlasOrgSettings is not found in results")
+	secretName := orgSettings.Spec.ConnectionSecretRef.Name
+	found = false
+	for i := range output {
+		p, ok := output[i].(*corev1.Secret)
+		if ok && p.GetName() == secretName {
+			found = true
+			break
+		}
+	}
+	require.True(t, found, "AtlasOrgSettings secret is not found in results")
+}
 
 func TestProjectWithAccessRole(t *testing.T) {
 	s := InitialSetup(t)
