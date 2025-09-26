@@ -35,8 +35,8 @@ import (
 	akov2common "github.com/mongodb/mongodb-atlas-kubernetes/v2/api/v1/common"
 	akov2status "github.com/mongodb/mongodb-atlas-kubernetes/v2/api/v1/status"
 	"github.com/stretchr/testify/require"
-	atlasv2 "go.mongodb.org/atlas-sdk/v20241113004/admin"
 	atlasv20250219001 "go.mongodb.org/atlas-sdk/v20250219001/admin"
+	atlasv2 "go.mongodb.org/atlas-sdk/v20250312006/admin"
 	"go.mongodb.org/atlas/mongodbatlas"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	rt "k8s.io/apimachinery/pkg/runtime"
@@ -307,7 +307,6 @@ func newAvailableRegion(projectID, tier, provider string) (string, error) {
 	cmd := exec.Command(cliPath, args...)
 	cmd.Env = os.Environ()
 	resp, err := test.RunAndGetStdOut(cmd)
-
 	if err != nil {
 		return "", fmt.Errorf("error getting regions %w: %s", err, string(resp))
 	}

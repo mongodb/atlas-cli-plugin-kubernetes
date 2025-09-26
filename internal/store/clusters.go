@@ -18,7 +18,7 @@ import (
 	"fmt"
 
 	atlasClustersPinned "go.mongodb.org/atlas-sdk/v20240530005/admin"
-	atlasv2 "go.mongodb.org/atlas-sdk/v20241113004/admin"
+	atlasv2 "go.mongodb.org/atlas-sdk/v20250312006/admin"
 )
 
 //go:generate mockgen -destination=../mocks/mock_clusters.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store ClusterLister,ClusterDescriber,AtlasClusterConfigurationOptionsDescriber

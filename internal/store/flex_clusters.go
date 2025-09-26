@@ -18,7 +18,7 @@ import (
 	"fmt"
 
 	"github.com/mongodb/atlas-cli-core/config"
-	atlasv2 "go.mongodb.org/atlas-sdk/v20241113004/admin"
+	atlasv2 "go.mongodb.org/atlas-sdk/v20250312006/admin"
 )
 
 // ListFlexClusters encapsulate the logic to manage different cloud providers.
@@ -85,6 +85,6 @@ func (s *Store) DeleteFlexCluster(groupID, name string) error {
 		return fmt.Errorf("%w: %s", errUnsupportedService, s.service)
 	}
 
-	_, _, err := s.clientv2.FlexClustersApi.DeleteFlexCluster(s.ctx, groupID, name).Execute()
+	_, err := s.clientv2.FlexClustersApi.DeleteFlexCluster(s.ctx, groupID, name).Execute()
 	return err
 }
