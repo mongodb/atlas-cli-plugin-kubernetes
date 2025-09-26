@@ -232,9 +232,7 @@ func TestExportIndependentOrNot(t *testing.T) {
 			objects, err = getK8SEntities(resp)
 			// We want to filter spurious federated auth resources from other tests
 			// as these are global resources across all projects.
-			t.Log("pre filtered", len(objects))
 			objects = filtered(objects).byKind(globalKinds...)
-			t.Log("post filtered", len(objects))
 			require.NoError(t, err, "should not fail on decode but got:\n"+string(resp))
 			require.NotEmpty(t, objects)
 			require.Equal(t, tc.expected, objects)
@@ -967,13 +965,31 @@ func defaultIPAccessList(generator *atlasE2ETestGenerator, independent bool) *ak
 
 type filtered []runtime.Object
 
-func (f filtered) byKind(kinds ...string) []runtime.Object {
-	result := f[:0]
+// Previous version with a bug
+// func (f filtered) byKind(kinds ...string) []runtime.Object {
+// 	result := f[:0]
+// 	for _, obj := range f {
+// 		for _, kind := range kinds {
+// 			if obj.GetObjectKind().GroupVersionKind().Kind != kind {
+// 				result = append(result, obj)
+// 			}
+// 		}
+// 	}
+// 	return result
+// }
+
+func (f filtered) byKind(kind ...string) []runtime.Object {
+	ban := map[string]any{}
+	for _, k := range kinds {
+		ban[k] = struct{}{}
+	}
+
+	result := make([]runtime.Object, 0, len(f))
+
 	for _, obj := range f {
-		for _, kind := range kinds {
-			if obj.GetObjectKind().GroupVersionKind().Kind != kind {
-				result = append(result, obj)
-			}
+		kind := obj.GetObjectKind().GetVersionKind().Kind
+		if _, ok := ban[kind]; !ok {
+			result = append(result, obj)
 		}
 	}
 	return result
