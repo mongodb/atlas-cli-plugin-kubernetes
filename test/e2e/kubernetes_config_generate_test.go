@@ -41,6 +41,7 @@ import (
 	"github.com/stretchr/testify/require"
 	atlasv2 "go.mongodb.org/atlas-sdk/v20250312006/admin"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/yaml"
@@ -233,6 +234,7 @@ func TestExportIndependentOrNot(t *testing.T) {
 			// We want to filter spurious federated auth resources from other tests
 			// as these are global resources across all projects.
 			objects = filtered(objects).byKind(globalKinds...)
+			objects = filtered(objects).byTypeAndName(ResourceRef{Kind: "Secret", Name: "orgsettings"})
 			require.NoError(t, err, "should not fail on decode but got:\n"+string(resp))
 			require.NotEmpty(t, objects)
 			require.Equal(t, tc.expected, objects)
@@ -295,6 +297,7 @@ func TestExportPrivateEndpoint(t *testing.T) {
 			var objects []runtime.Object
 			objects, err = getK8SEntities(resp)
 			objects = filtered(objects).byKind(globalKinds...)
+			objects = filtered(objects).byTypeAndName(ResourceRef{Kind: "Secret", Name: "orgsettings"})
 			require.NoError(t, err, "should not fail on decode but got:\n"+string(resp))
 			require.NotEmpty(t, objects)
 			require.Equal(t, tc.expected, objects)
@@ -408,6 +411,7 @@ func TestExportIPAccessList(t *testing.T) {
 			var objects []runtime.Object
 			objects, err = getK8SEntities(resp)
 			objects = filtered(objects).byKind(globalKinds...)
+			objects = filtered(objects).byTypeAndName(ResourceRef{Kind: "Secret", Name: "orgsettings"})
 			require.NoError(t, err, "should not fail on decode but got:\n"+string(resp))
 			require.NotEmpty(t, objects)
 			require.Equal(t, tc.expected, objects)
@@ -568,6 +572,7 @@ func TestExportIntegrations(t *testing.T) {
 			var objects []runtime.Object
 			objects, err = getK8SEntities(resp)
 			objects = filtered(objects).byKind(globalKinds...)
+			objects = filtered(objects).byTypeAndName(ResourceRef{Kind: "Secret", Name: "orgsettings"})
 			require.NoError(t, err, "should not fail on decode but got:\n"+string(resp))
 			require.NotEmpty(t, objects)
 			credentialsName := resources.NormalizeAtlasName(
@@ -665,6 +670,7 @@ func TestExportNetworkContainerAndPeerings(t *testing.T) {
 			var objects []runtime.Object
 			objects, err = getK8SEntities(resp)
 			objects = filtered(objects).byKind(globalKinds...)
+			objects = filtered(objects).byTypeAndName(ResourceRef{Kind: "Secret", Name: "orgsettings"})
 			require.NoError(t, err, "should not fail on decode but got:\n"+string(resp))
 			require.NotEmpty(t, objects)
 			credentialsName := resources.NormalizeAtlasName(
@@ -977,6 +983,47 @@ type filtered []runtime.Object
 // 	}
 // 	return result
 // }
+
+type ResourceRef struct {
+	Group     string
+	Kind      string
+	Namespace string
+	Name      string
+}
+
+// excludeByTypeAndName removes objects that match ref. Fields in ref match if their fields are equal,
+// except the Name, that uses string.Contains()
+func (f filtered) byTypeAndName(refs ...ResourceRef) []runtime.Object {
+	out := make([]runtime.Object, 0, len(f))
+
+	for _, obj := range f {
+		gvk := obj.GetObjectKind().GroupVersionKind()
+
+		acc, err := meta.Accessor(obj)
+		if err != nil {
+			out = append(out, obj)
+			continue
+		}
+		ns, name := acc.GetNamespace(), acc.GetName()
+
+		exclude := false
+		for _, r := range refs {
+			matchGroup := (r.Group == "" || gvk.Group == r.Group)
+			matchKind := (r.Kind == "" || gvk.Kind == r.Kind)
+			matchNS := (r.Namespace == "" || ns == r.Namespace)
+			matchName := (r.Name == "" || strings.Contains(name, r.Name))
+
+			if matchGroup && matchKind && matchNS && matchName {
+				exclude = true
+				break
+			}
+		}
+		if !exclude {
+			out = append(out, obj)
+		}
+	}
+	return out
+}
 
 func (f filtered) byKind(kinds ...string) []runtime.Object {
 	ban := map[string]any{}
@@ -1928,7 +1975,7 @@ func TestProjectWithIntegration(t *testing.T) {
 		require.NoError(t, err, "should not fail on decode")
 		require.NotEmpty(t, objects)
 		objects = filtered(objects).byKind(globalKinds...)
-
+		objects = filtered(objects).byTypeAndName(ResourceRef{Kind: "Secret", Name: "orgsettings"})
 		checkProject(t, objects, expectedProject)
 		assert.Len(t, objects, 3, "should have 3 objects in the output: project, integration secret, atlas secret")
 		integrationSecret := objects[1].(*corev1.Secret)
@@ -2044,6 +2091,7 @@ func TestProjectWithPrivateEndpoint_Azure(t *testing.T) {
 		var objects []runtime.Object
 		objects, err = getK8SEntities(resp)
 		objects = filtered(objects).byKind(globalKinds...)
+		objects = filtered(objects).byTypeAndName(ResourceRef{Kind: "Secret", Name: "orgsettings"})
 		require.NoError(t, err, "should not fail on decode but got:\n"+string(resp))
 		require.NotEmpty(t, objects)
 		require.Equal(t, expected, objects)
