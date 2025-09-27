@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build e2e || generate
 
 package e2e
 
@@ -29,13 +28,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/mongodb/mongodb-atlas-kubernetes/v2/api"
 	akoapi "github.com/mongodb/mongodb-atlas-kubernetes/v2/api"
 	akov2 "github.com/mongodb/mongodb-atlas-kubernetes/v2/api/v1"
 	akov2common "github.com/mongodb/mongodb-atlas-kubernetes/v2/api/v1/common"
 	akov2project "github.com/mongodb/mongodb-atlas-kubernetes/v2/api/v1/project"
 	akov2provider "github.com/mongodb/mongodb-atlas-kubernetes/v2/api/v1/provider"
-	"github.com/mongodb/mongodb-atlas-kubernetes/v2/api/v1/status"
 	akov2status "github.com/mongodb/mongodb-atlas-kubernetes/v2/api/v1/status"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -497,7 +494,7 @@ func TestExportIntegrations(t *testing.T) {
 							SendDatabaseMetrics:          pointer.Get("disabled"),
 						},
 					},
-					Status: status.AtlasThirdPartyIntegrationStatus{
+					Status: akov2status.AtlasThirdPartyIntegrationStatus{
 						ID: integrationID,
 					},
 				},
@@ -535,7 +532,7 @@ func TestExportIntegrations(t *testing.T) {
 							SendDatabaseMetrics:          pointer.Get("disabled"),
 						},
 					},
-					Status: status.AtlasThirdPartyIntegrationStatus{
+					Status: akov2status.AtlasThirdPartyIntegrationStatus{
 						ID: integrationID,
 					},
 				},
@@ -733,8 +730,8 @@ func customContainer(generator *atlasE2ETestGenerator, independent bool, resourc
 		},
 		Spec: *spec,
 		Status: akov2status.AtlasNetworkContainerStatus{
-			Common: api.Common{
-				Conditions: []api.Condition{},
+			Common: akoapi.Common{
+				Conditions: []akoapi.Condition{},
 			},
 		},
 	}
@@ -837,8 +834,8 @@ func customPeering(generator *atlasE2ETestGenerator, independent bool, resourceN
 		},
 		Spec: *spec,
 		Status: akov2status.AtlasNetworkPeeringStatus{
-			Common: api.Common{
-				Conditions: []api.Condition{},
+			Common: akoapi.Common{
+				Conditions: []akoapi.Condition{},
 			},
 		},
 	}
@@ -1107,11 +1104,11 @@ func defaultTestUser(name, projectName, namespace string) *akov2.AtlasDatabaseUs
 
 func defaultTestUserWithID(name, projectName, projectID, namespace string, creds string) *akov2.AtlasDatabaseUser {
 	user := defaultTestUser(name, projectName, namespace)
-	user.Spec.ProjectDualReference.ProjectRef = nil
-	user.Spec.ProjectDualReference.ExternalProjectRef = &akov2.ExternalProjectReference{
+	user.Spec.ProjectRef = nil
+	user.Spec.ExternalProjectRef = &akov2.ExternalProjectReference{
 		ID: projectID,
 	}
-	user.Spec.ProjectDualReference.ConnectionSecret = &akoapi.LocalObjectReference{
+	user.Spec.ConnectionSecret = &akoapi.LocalObjectReference{
 		Name: creds,
 	}
 	return user
@@ -1179,11 +1176,11 @@ func defaultM0TestCluster(name, region, projectName, namespace string) *akov2.At
 
 func defaultM0TestClusterWithID(name, region, projectName, projectID, namespace, creds string) *akov2.AtlasDeployment {
 	deployment := defaultM0TestCluster(name, region, projectName, namespace)
-	deployment.Spec.ProjectDualReference.ProjectRef = nil
-	deployment.Spec.ProjectDualReference.ExternalProjectRef = &akov2.ExternalProjectReference{
+	deployment.Spec.ProjectRef = nil
+	deployment.Spec.ExternalProjectRef = &akov2.ExternalProjectReference{
 		ID: projectID,
 	}
-	deployment.Spec.ProjectDualReference.ConnectionSecret = &akoapi.LocalObjectReference{
+	deployment.Spec.ConnectionSecret = &akoapi.LocalObjectReference{
 		Name: creds,
 	}
 	return deployment

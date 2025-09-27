@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build unit
 
 package project
 
@@ -544,8 +543,8 @@ func TestBuildAtlasProject(t *testing.T) {
 						},
 					},
 					BackupCompliancePolicyRef: &akov2common.ResourceRefNamespaced{
-						Name:      expectedBCP.ObjectMeta.Name,
-						Namespace: expectedBCP.ObjectMeta.Namespace,
+						Name:      expectedBCP.Name,
+						Namespace: expectedBCP.Namespace,
 					},
 				},
 				Status: akov2status.AtlasProjectStatus{
@@ -638,8 +637,8 @@ func TestBuildAtlasProject(t *testing.T) {
 						},
 					},
 					BackupCompliancePolicyRef: &akov2common.ResourceRefNamespaced{
-						Name:      expectedBCP.ObjectMeta.Name,
-						Namespace: expectedBCP.ObjectMeta.Namespace,
+						Name:      expectedBCP.Name,
+						Namespace: expectedBCP.Namespace,
 					},
 				},
 				Status: akov2status.AtlasProjectStatus{

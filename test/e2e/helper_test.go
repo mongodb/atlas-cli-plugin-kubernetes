@@ -11,7 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//go:build e2e || install || generate || apply
 
 package e2e
 
@@ -1065,7 +1064,7 @@ func generateTestAtlasStreamInstance(t *testing.T, projectID string, instanceNam
 
 	t.Cleanup(func() {
 		t.Logf("Deleting test Stream Instance: %s", instanceName)
-		deleteStreamsInstance(t, projectID, instanceName)
+		_ = deleteStreamsInstance(t, projectID, instanceName)
 	})
 
 	return instanceName
@@ -1102,7 +1101,7 @@ func generateTestAtlasAdvancedDeployment(t *testing.T, projectID string, cluster
 
 	t.Cleanup(func() {
 		t.Logf("Deleting test Advanced Deployment: %s", clusterName)
-		deleteClusterForProject(projectID, clusterName)
+		_ = deleteClusterForProject(projectID, clusterName)
 	})
 
 	return clusterName
@@ -1141,7 +1140,7 @@ func generateTestAtlasFlexCluster(t *testing.T, projectID string, clusterName st
 
 	t.Cleanup(func() {
 		t.Logf("Deleting test Advanced Deployment: %s", clusterName)
-		deleteClusterForProject(projectID, clusterName)
+		_ = deleteClusterForProject(projectID, clusterName)
 	})
 
 	return clusterName

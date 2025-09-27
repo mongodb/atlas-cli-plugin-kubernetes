@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build e2e || apply || generate || install
 
 package e2e
 
@@ -68,10 +67,10 @@ func setQACredentialsEnvVars() {
 	saveEnv("MCLI_OPS_MANAGER_URL")
 	saveEnv("MCLI_PUBLIC_API_KEY")
 	saveEnv("MCLI_PRIVATE_API_KEY")
-	os.Setenv("MCLI_ORG_ID", os.Getenv("QA_MCLI_ORG_ID"))
-	os.Setenv("MCLI_OPS_MANAGER_URL", os.Getenv("QA_MCLI_OPS_MANAGER_URL"))
-	os.Setenv("MCLI_PUBLIC_API_KEY", os.Getenv("QA_MCLI_PUBLIC_API_KEY"))
-	os.Setenv("MCLI_PRIVATE_API_KEY", os.Getenv("QA_MCLI_PRIVATE_API_KEY"))
+	_ = os.Setenv("MCLI_ORG_ID", os.Getenv("QA_MCLI_ORG_ID"))
+	_ = os.Setenv("MCLI_OPS_MANAGER_URL", os.Getenv("QA_MCLI_OPS_MANAGER_URL"))
+	_ = os.Setenv("MCLI_PUBLIC_API_KEY", os.Getenv("QA_MCLI_PUBLIC_API_KEY"))
+	_ = os.Setenv("MCLI_PRIVATE_API_KEY", os.Getenv("QA_MCLI_PRIVATE_API_KEY"))
 }
 
 func restoreEnvVars() {
@@ -82,11 +81,11 @@ func restoreEnvVars() {
 }
 
 func saveEnv(envvar string) {
-	os.Setenv(savedEnvVar(envvar), os.Getenv(envvar))
+	_ = os.Setenv(savedEnvVar(envvar), os.Getenv(envvar))
 }
 
 func restoreEnv(envvar string) {
-	os.Setenv(envvar, os.Getenv(savedEnvVar(envvar)))
+	_ = os.Setenv(envvar, os.Getenv(savedEnvVar(envvar)))
 }
 
 func savedEnvVar(envvar string) string {
