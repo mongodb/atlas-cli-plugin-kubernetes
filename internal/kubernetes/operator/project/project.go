@@ -17,7 +17,6 @@ package project
 import (
 	"errors"
 	"fmt"
-	"strconv"
 	"strings"
 
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator/features"
@@ -32,7 +31,7 @@ import (
 	akov2project "github.com/mongodb/mongodb-atlas-kubernetes/v2/api/v1/project"
 	akov2provider "github.com/mongodb/mongodb-atlas-kubernetes/v2/api/v1/provider"
 	akov2status "github.com/mongodb/mongodb-atlas-kubernetes/v2/api/v1/status"
-	atlasv2 "go.mongodb.org/atlas-sdk/v20241113004/admin"
+	atlasv2 "go.mongodb.org/atlas-sdk/v20250312006/admin"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8snames "k8s.io/apiserver/pkg/storage/names"
@@ -820,7 +819,7 @@ func toMatcher(m atlasv2.StreamsMatcher) (akov2.Matcher, error) {
 	return matcher, nil
 }
 
-func convertMetricThreshold(atlasMT *atlasv2.ServerlessMetricThreshold) *akov2.MetricThreshold {
+func convertMetricThreshold(atlasMT *atlasv2.FlexClusterMetricThreshold) *akov2.MetricThreshold {
 	if atlasMT == nil {
 		return &akov2.MetricThreshold{}
 	}
@@ -833,14 +832,14 @@ func convertMetricThreshold(atlasMT *atlasv2.ServerlessMetricThreshold) *akov2.M
 	}
 }
 
-func convertThreshold(atlasT *atlasv2.GreaterThanRawThreshold) *akov2.Threshold {
+func convertThreshold(atlasT *atlasv2.StreamProcessorMetricThreshold) *akov2.Threshold {
 	if atlasT == nil {
 		return &akov2.Threshold{}
 	}
 	return &akov2.Threshold{
 		Operator:  atlasT.GetOperator(),
 		Units:     atlasT.GetUnits(),
-		Threshold: strconv.Itoa(atlasT.GetThreshold()),
+		Threshold: fmt.Sprintf("%f", atlasT.GetThreshold()),
 	}
 }
 

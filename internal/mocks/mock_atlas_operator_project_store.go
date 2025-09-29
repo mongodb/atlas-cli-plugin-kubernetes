@@ -8,7 +8,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	admin "go.mongodb.org/atlas-sdk/v20241113004/admin"
+	admin "go.mongodb.org/atlas-sdk/v20250312006/admin"
 )
 
 // MockOperatorProjectStore is a mock of OperatorProjectStore interface.
@@ -365,10 +365,10 @@ func (mr *MockOperatorProjectStoreMockRecorder) TeamByID(arg0, arg1 interface{})
 }
 
 // TeamUsers mocks base method.
-func (m *MockOperatorProjectStore) TeamUsers(arg0, arg1 string) (*admin.PaginatedAppUser, error) {
+func (m *MockOperatorProjectStore) TeamUsers(arg0, arg1 string) (*admin.PaginatedOrgUser, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "TeamUsers", arg0, arg1)
-	ret0, _ := ret[0].(*admin.PaginatedAppUser)
+	ret0, _ := ret[0].(*admin.PaginatedOrgUser)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

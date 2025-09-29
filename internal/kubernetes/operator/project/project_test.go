@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"log"
 	"reflect"
-	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -39,7 +38,7 @@ import (
 	akov2provider "github.com/mongodb/mongodb-atlas-kubernetes/v2/api/v1/provider"
 	akov2status "github.com/mongodb/mongodb-atlas-kubernetes/v2/api/v1/status"
 	"github.com/stretchr/testify/assert"
-	atlasv2 "go.mongodb.org/atlas-sdk/v20241113004/admin"
+	atlasv2 "go.mongodb.org/atlas-sdk/v20250312006/admin"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -161,17 +160,17 @@ func TestBuildAtlasProject(t *testing.T) {
 					Value:     "TestValue",
 				},
 			},
-			MetricThreshold: &atlasv2.ServerlessMetricThreshold{
+			MetricThreshold: &atlasv2.FlexClusterMetricThreshold{
 				MetricName: "TestMetricName",
 				Operator:   pointer.Get("TestOperator"),
 				Threshold:  pointer.Get(10.0),
 				Units:      pointer.Get("TestUnits"),
 				Mode:       pointer.Get("TestMode"),
 			},
-			Threshold: &atlasv2.GreaterThanRawThreshold{
+			Threshold: &atlasv2.StreamProcessorMetricThreshold{
 				Operator:  pointer.Get("TestOperator"),
 				Units:     pointer.Get("TestUnits"),
-				Threshold: pointer.Get(10),
+				Threshold: pointer.Get(10.0),
 			},
 			Notifications: &[]atlasv2.AlertsNotificationRootForGroup{
 				{
@@ -246,13 +245,18 @@ func TestBuildAtlasProject(t *testing.T) {
 		Name: pointer.Get("TestTeamName"),
 	}
 
-	teamUsers := &atlasv2.PaginatedAppUser{
-		Results: &[]atlasv2.CloudAppUser{
+	teamUsers := &atlasv2.PaginatedOrgUser{
+		Results: &[]atlasv2.OrgUserResponse{
 			{
-				EmailAddress: "testuser@mooooongodb.com",
-				FirstName:    "TestName",
-				Id:           pointer.Get("TestID"),
-				LastName:     "TestLastName",
+				Id:                  "TestID",
+				Username:            "testuser@mooooongodb.com",
+				FirstName:           pointer.Get("TestName"),
+				LastName:            pointer.Get("TestLastName"),
+				OrgMembershipStatus: "ACTIVE",
+				Roles: atlasv2.OrgUserRolesResponse{
+					GroupRoleAssignments: &[]atlasv2.GroupRoleAssignment{},
+					OrgRoles:             &[]string{},
+				},
 			},
 		},
 		TotalCount: pointer.Get(1),
@@ -286,7 +290,7 @@ func TestBuildAtlasProject(t *testing.T) {
 	expectedThreshold := &akov2.Threshold{
 		Operator:  alertConfigs[0].Threshold.GetOperator(),
 		Units:     alertConfigs[0].Threshold.GetUnits(),
-		Threshold: strconv.Itoa(alertConfigs[0].Threshold.GetThreshold()),
+		Threshold: fmt.Sprintf("%f", alertConfigs[0].Threshold.GetThreshold()),
 	}
 	expectedMatchers := []akov2.Matcher{
 		{

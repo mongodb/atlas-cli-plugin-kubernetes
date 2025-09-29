@@ -39,8 +39,9 @@ import (
 	akov2status "github.com/mongodb/mongodb-atlas-kubernetes/v2/api/v1/status"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	atlasv2 "go.mongodb.org/atlas-sdk/v20241113004/admin"
+	atlasv2 "go.mongodb.org/atlas-sdk/v20250312006/admin"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/yaml"
@@ -53,20 +54,24 @@ import (
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/test"
 )
 
-const targetNamespace = "importer-namespace"
-const credSuffixTest = "-credentials"
-const activeStatus = "ACTIVE"
+const (
+	targetNamespace = "importer-namespace"
+	credSuffixTest  = "-credentials"
+	activeStatus    = "ACTIVE"
+)
 
 // These kinds represent global types in AKO which are independent of any Atlas Project.
 // They can be filtered in concurrent e2e tests if they are not relevant for assertion.
-var globalKinds = []string{"AtlasFederatedAuth"}
+var globalKinds = []string{"AtlasFederatedAuth", "AtlasOrgSettings"}
 
-var federationSettingsID string
-var identityProviderStatus string
-var samlIdentityProviderID string
-var expectedLabels = map[string]string{
-	features.ResourceVersion: features.LatestOperatorMajorVersion,
-}
+var (
+	federationSettingsID   string
+	identityProviderStatus string
+	samlIdentityProviderID string
+	expectedLabels         = map[string]string{
+		features.ResourceVersion: features.LatestOperatorMajorVersion,
+	}
+)
 
 func getK8SEntities(data []byte) ([]runtime.Object, error) {
 	b := bufio.NewReader(bytes.NewReader(data))
@@ -229,6 +234,7 @@ func TestExportIndependentOrNot(t *testing.T) {
 			// We want to filter spurious federated auth resources from other tests
 			// as these are global resources across all projects.
 			objects = filtered(objects).byKind(globalKinds...)
+			objects = filtered(objects).byTypeAndName(ResourceRef{Kind: "Secret", Name: "orgsettings"})
 			require.NoError(t, err, "should not fail on decode but got:\n"+string(resp))
 			require.NotEmpty(t, objects)
 			require.Equal(t, tc.expected, objects)
@@ -291,6 +297,7 @@ func TestExportPrivateEndpoint(t *testing.T) {
 			var objects []runtime.Object
 			objects, err = getK8SEntities(resp)
 			objects = filtered(objects).byKind(globalKinds...)
+			objects = filtered(objects).byTypeAndName(ResourceRef{Kind: "Secret", Name: "orgsettings"})
 			require.NoError(t, err, "should not fail on decode but got:\n"+string(resp))
 			require.NotEmpty(t, objects)
 			require.Equal(t, tc.expected, objects)
@@ -404,6 +411,7 @@ func TestExportIPAccessList(t *testing.T) {
 			var objects []runtime.Object
 			objects, err = getK8SEntities(resp)
 			objects = filtered(objects).byKind(globalKinds...)
+			objects = filtered(objects).byTypeAndName(ResourceRef{Kind: "Secret", Name: "orgsettings"})
 			require.NoError(t, err, "should not fail on decode but got:\n"+string(resp))
 			require.NotEmpty(t, objects)
 			require.Equal(t, tc.expected, objects)
@@ -564,6 +572,7 @@ func TestExportIntegrations(t *testing.T) {
 			var objects []runtime.Object
 			objects, err = getK8SEntities(resp)
 			objects = filtered(objects).byKind(globalKinds...)
+			objects = filtered(objects).byTypeAndName(ResourceRef{Kind: "Secret", Name: "orgsettings"})
 			require.NoError(t, err, "should not fail on decode but got:\n"+string(resp))
 			require.NotEmpty(t, objects)
 			credentialsName := resources.NormalizeAtlasName(
@@ -661,6 +670,7 @@ func TestExportNetworkContainerAndPeerings(t *testing.T) {
 			var objects []runtime.Object
 			objects, err = getK8SEntities(resp)
 			objects = filtered(objects).byKind(globalKinds...)
+			objects = filtered(objects).byTypeAndName(ResourceRef{Kind: "Secret", Name: "orgsettings"})
 			require.NoError(t, err, "should not fail on decode but got:\n"+string(resp))
 			require.NotEmpty(t, objects)
 			credentialsName := resources.NormalizeAtlasName(
@@ -961,13 +971,72 @@ func defaultIPAccessList(generator *atlasE2ETestGenerator, independent bool) *ak
 
 type filtered []runtime.Object
 
-func (f filtered) byKind(kinds ...string) []runtime.Object {
-	result := f[:0]
+// Previous version with a bug
+// func (f filtered) byKind(kinds ...string) []runtime.Object {
+// 	result := f[:0]
+// 	for _, obj := range f {
+// 		for _, kind := range kinds {
+// 			if obj.GetObjectKind().GroupVersionKind().Kind != kind {
+// 				result = append(result, obj)
+// 			}
+// 		}
+// 	}
+// 	return result
+// }
+
+type ResourceRef struct {
+	Group     string
+	Kind      string
+	Namespace string
+	Name      string
+}
+
+// excludeByTypeAndName removes objects that match ref. Fields in ref match if their fields are equal,
+// except the Name, that uses string.Contains()
+func (f filtered) byTypeAndName(refs ...ResourceRef) []runtime.Object {
+	out := make([]runtime.Object, 0, len(f))
+
 	for _, obj := range f {
-		for _, kind := range kinds {
-			if obj.GetObjectKind().GroupVersionKind().Kind != kind {
-				result = append(result, obj)
+		gvk := obj.GetObjectKind().GroupVersionKind()
+
+		acc, err := meta.Accessor(obj)
+		if err != nil {
+			out = append(out, obj)
+			continue
+		}
+		ns, name := acc.GetNamespace(), acc.GetName()
+
+		exclude := false
+		for _, r := range refs {
+			matchGroup := (r.Group == "" || gvk.Group == r.Group)
+			matchKind := (r.Kind == "" || gvk.Kind == r.Kind)
+			matchNS := (r.Namespace == "" || ns == r.Namespace)
+			matchName := (r.Name == "" || strings.Contains(name, r.Name))
+
+			if matchGroup && matchKind && matchNS && matchName {
+				exclude = true
+				break
 			}
+		}
+		if !exclude {
+			out = append(out, obj)
+		}
+	}
+	return out
+}
+
+func (f filtered) byKind(kinds ...string) []runtime.Object {
+	ban := map[string]any{}
+	for _, k := range kinds {
+		ban[k] = struct{}{}
+	}
+
+	result := make([]runtime.Object, 0, len(f))
+
+	for _, obj := range f {
+		kind := obj.GetObjectKind().GroupVersionKind().Kind
+		if _, ok := ban[kind]; !ok {
+			result = append(result, obj)
 		}
 	}
 	return result
@@ -1619,6 +1688,62 @@ func TestProjectWithNonDefaultAlertConf(t *testing.T) {
 	})
 }
 
+func TestProjectWithOrgSettings(t *testing.T) {
+	s := InitialSetup(t)
+	cliPath := s.cliPath
+	generator := s.generator
+	expectedProject := s.expectedProject
+
+	t.Run("Should export OrgSettings", func(t *testing.T) {
+		cmd := exec.Command(cliPath,
+			"kubernetes",
+			"config",
+			"generate",
+			"--projectId",
+			generator.projectID,
+			"--targetNamespace",
+			targetNamespace,
+			"--includeSecrets")
+		cmd.Env = os.Environ()
+
+		resp, err := test.RunAndGetStdOut(cmd)
+		t.Log(string(resp))
+		require.NoError(t, err, string(resp))
+
+		var objects []runtime.Object
+		objects, err = getK8SEntities(resp)
+		require.NoError(t, err)
+		require.NotEmpty(t, objects)
+		checkProject(t, objects, expectedProject)
+		checkOrgSettings(t, objects)
+	})
+}
+
+func checkOrgSettings(t *testing.T, output []runtime.Object) {
+	t.Helper()
+	found := false
+	var orgSettings *akov2.AtlasOrgSettings
+	for i := range output {
+		p, ok := output[i].(*akov2.AtlasOrgSettings)
+		if ok {
+			found = true
+			orgSettings = p
+			break
+		}
+	}
+	require.True(t, found, "AtlasOrgSettings is not found in results")
+	secretName := orgSettings.Spec.ConnectionSecretRef.Name
+	found = false
+	for i := range output {
+		p, ok := output[i].(*corev1.Secret)
+		if ok && p.GetName() == secretName {
+			found = true
+			break
+		}
+	}
+	require.True(t, found, "AtlasOrgSettings secret is not found in results")
+}
+
 func TestProjectWithAccessRole(t *testing.T) {
 	s := InitialSetup(t)
 	cliPath := s.cliPath
@@ -1788,78 +1913,6 @@ func verifyCustomRole(t *testing.T, objects []runtime.Object, expectedRole *akov
 	assert.Equal(t, expectedRole, role)
 }
 
-// TestProjectWithIntegration tests integratiosn embedded in the project
-// TODO: remove test when 2.8 is deprecated, last version with embedded integrations
-func TestProjectWithIntegration(t *testing.T) {
-	s := InitialSetup(t)
-	cliPath := s.cliPath
-	atlasCliPath := s.atlasCliPath
-	generator := s.generator
-	operatorVersion := "2.8.2"
-	expectedProject := referenceProject(s.generator.projectName, targetNamespace, map[string]string{
-		features.ResourceVersion: operatorVersion,
-	})
-
-	datadogKey := "00000000000000000000000000000012"
-	newIntegration := akov2project.Integration{
-		Type:   datadogEntity,
-		Region: "US", // it's a default value
-		APIKeyRef: akov2common.ResourceRefNamespaced{
-			Namespace: targetNamespace,
-			Name:      fmt.Sprintf("%s-integration-%s", generator.projectID, strings.ToLower(datadogEntity)),
-		},
-	}
-	expectedProject.Spec.Integrations = []akov2project.Integration{
-		newIntegration,
-	}
-	expectedProject.Labels[features.ResourceVersion] = operatorVersion
-
-	t.Run("Add integration to the project", func(t *testing.T) {
-		cmd := exec.Command(atlasCliPath,
-			integrationsEntity,
-			"create",
-			datadogEntity,
-			"--apiKey",
-			datadogKey,
-			"--projectId",
-			generator.projectID,
-			"-o=json")
-		cmd.Env = os.Environ()
-		_, err := test.RunAndGetStdOut(cmd)
-		require.NoError(t, err)
-
-		cmd = exec.Command(cliPath,
-			"kubernetes",
-			"config",
-			"generate",
-			"--projectId",
-			generator.projectID,
-			"--targetNamespace",
-			targetNamespace,
-			"--includeSecrets",
-			"--operatorVersion", operatorVersion)
-		cmd.Env = os.Environ()
-
-		resp, err := test.RunAndGetStdOut(cmd)
-		t.Log(string(resp))
-		require.NoError(t, err, string(resp))
-
-		var objects []runtime.Object
-
-		objects, err = getK8SEntities(resp)
-		require.NoError(t, err, "should not fail on decode")
-		require.NotEmpty(t, objects)
-		objects = filtered(objects).byKind(globalKinds...)
-
-		checkProject(t, objects, expectedProject)
-		assert.Len(t, objects, 3, "should have 3 objects in the output: project, integration secret, atlas secret")
-		integrationSecret := objects[1].(*corev1.Secret)
-		password, ok := integrationSecret.Data["password"]
-		assert.True(t, ok, "should have password field in the integration secret")
-		assert.True(t, compareStingsWithHiddenPart(datadogKey, string(password), uint8('*')), "should have correct password in the integration secret")
-	})
-}
-
 func TestProjectWithMaintenanceWindow(t *testing.T) {
 	s := InitialSetup(t)
 	cliPath := s.cliPath
@@ -1966,6 +2019,7 @@ func TestProjectWithPrivateEndpoint_Azure(t *testing.T) {
 		var objects []runtime.Object
 		objects, err = getK8SEntities(resp)
 		objects = filtered(objects).byKind(globalKinds...)
+		objects = filtered(objects).byTypeAndName(ResourceRef{Kind: "Secret", Name: "orgsettings"})
 		require.NoError(t, err, "should not fail on decode but got:\n"+string(resp))
 		require.NotEmpty(t, objects)
 		require.Equal(t, expected, objects)

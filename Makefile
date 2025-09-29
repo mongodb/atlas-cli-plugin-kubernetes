@@ -86,7 +86,7 @@ e2e-test: build-debug ## Run E2E tests
 gen-mocks: ## Generate mocks
 	@echo "==> Generating mocks"
 	rm -rf ./internal/mocks
-	go generate ./internal...
+	GOFLAGS=-mod=mod go generate ./internal...
 
 .PHONY: gen-docs
 gen-docs: ## Generate docs for atlascli commands
