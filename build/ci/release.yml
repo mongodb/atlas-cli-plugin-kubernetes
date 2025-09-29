@@ -204,41 +204,6 @@ functions:
          filenames:
            - "src/github.com/mongodb/atlas-cli-plugin-kubernetes/dist/*.tar.gz"
            - "src/github.com/mongodb/atlas-cli-plugin-kubernetes/dist/*.zip"
-  "build-copybara":
-    - command: subprocess.exec
-      params:
-        <<: *go_options
-        binary: git
-        args:
-          - clone
-          - --depth=1
-          - https://github.com/google/copybara
-          - ${workdir}/copybara
-    - command: subprocess.exec
-      params:
-        <<: *go_options
-        binary: docker
-        args:
-          - build
-          - -t
-          - google/copybara
-          - ${workdir}/copybara
-  "run-copybara":
-    - command: shell.exec
-      params:
-        <<: *go_options
-        env:
-          <<: *go_env
-          TAG: ${tag}
-          GH_TOKEN: ${gh_token}
-          WORKFLOW: ${workflow}
-          EVERGREEN_USER: ${evergreen_user}
-          EVERGREEN_API_KEY: ${evergreen_api_key}
-          DOCS_SLACK_CHANNEL: ${docs_slack_channel}
-        working_dir: src/github.com/mongodb/atlas-cli-plugin-kubernetes/build/ci
-        shell: bash
-        script: |
-          ./run-copybara.sh
 tasks:
   - name: test-sbom
     tags: ["code_health"]
@@ -290,30 +255,6 @@ tasks:
       - func: "install gh-token"
       - func: "package"
       - func: "trace artifacts"
-  - name: copybara
-    depends_on:
-      - name: package_goreleaser
-        variant: release
-    commands:
-      - func: "build-copybara"
-      - command: github.generate_token
-        params:
-          expansion_name: docs_atlas_cli_token
-          owner: 10gen
-          repo: docs-mongodb-internal
-      - func: "run-copybara"
-        vars:
-          gh_token: ${docs_atlas_cli_token}
-          workflow: docs-mongodb-internal
-      - command: github.generate_token
-        params:
-          expansion_name: cloud_docs_token
-          owner: 10gen
-          repo: cloud-docs
-      - func: "run-copybara"
-        vars:
-          gh_token: ${cloud_docs_token}
-          workflow: cloud-docs
 buildvariants:
   - name: release
     display_name: "Release AtlasCLI Plugin Kubernetes (goreleaser)"
@@ -326,12 +267,3 @@ buildvariants:
       package_name: "atlas-cli-plugin-kubernetes"
     tasks:
       - name: package_goreleaser
-  - name: copybara
-    display_name: "Copybara"
-    git_tag_only: true
-    run_on:
-      - ubuntu2404-small
-    expansions:
-      <<: *go_linux_version
-    tasks:
-      - name: copybara
