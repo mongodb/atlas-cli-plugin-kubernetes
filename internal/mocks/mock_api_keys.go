@@ -72,6 +72,20 @@ func (m *MockOrganizationAPIKeyCreator) EXPECT() *MockOrganizationAPIKeyCreatorM
 	return m.recorder
 }
 
+// AddIPAccessList mocks base method.
+func (m *MockOrganizationAPIKeyCreator) AddIPAccessList(arg0, arg1 string, arg2 *[]admin.UserAccessListRequest) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AddIPAccessList", arg0, arg1, arg2)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AddIPAccessList indicates an expected call of AddIPAccessList.
+func (mr *MockOrganizationAPIKeyCreatorMockRecorder) AddIPAccessList(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddIPAccessList", reflect.TypeOf((*MockOrganizationAPIKeyCreator)(nil).AddIPAccessList), arg0, arg1, arg2)
+}
+
 // CreateOrganizationAPIKey mocks base method.
 func (m *MockOrganizationAPIKeyCreator) CreateOrganizationAPIKey(arg0 string, arg1 *admin.CreateAtlasOrganizationApiKey) (*admin.ApiKeyUserDetails, error) {
 	m.ctrl.T.Helper()

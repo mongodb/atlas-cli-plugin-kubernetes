@@ -39,4 +39,5 @@ const (
 	KubernetesClusterContext              = "kubeContext"          // KubeContext flag
 	DataFederationName                    = "dataFederationName"   // DataFederationName flag
 	IndependentResources                  = "independentResources" // IndependentResources flag
+	IPAccessList                          = "ipAccessList"         // IPAccessList flag
 )
