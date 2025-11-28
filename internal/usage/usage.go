@@ -38,4 +38,5 @@ const (
 	IndependentResources                  = "Flag that makes the generated resources that support independent usage, to use external IDs rather than Kubernetes references."
 	EnableWatch                           = "Flag that indicates whether to watch the command until it completes its execution or the watch times out. To set the time that the watch times out, use the --watchTimeout option."
 	WatchTimeout                          = "Time in seconds until a watch times out. After a watch times out, the CLI no longer watches the command."
+	IPAccessList                          = "A comma-separated list of IP or CIDR block to allowlist for Operator to communicate with Atlas APIs. Read more: https://www.mongodb.com/docs/atlas/configure-api-access-project/"
 )

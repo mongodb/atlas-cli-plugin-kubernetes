@@ -35,6 +35,20 @@ func (m *MockOperatorGenericStore) EXPECT() *MockOperatorGenericStoreMockRecorde
 	return m.recorder
 }
 
+// AddIPAccessList mocks base method.
+func (m *MockOperatorGenericStore) AddIPAccessList(arg0, arg1 string, arg2 *[]admin0.UserAccessListRequest) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AddIPAccessList", arg0, arg1, arg2)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AddIPAccessList indicates an expected call of AddIPAccessList.
+func (mr *MockOperatorGenericStoreMockRecorder) AddIPAccessList(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddIPAccessList", reflect.TypeOf((*MockOperatorGenericStore)(nil).AddIPAccessList), arg0, arg1, arg2)
+}
+
 // AlertConfigurations mocks base method.
 func (m *MockOperatorGenericStore) AlertConfigurations(arg0 string) ([]admin0.GroupAlertsConfig, error) {
 	m.ctrl.T.Helper()

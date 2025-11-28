@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator/features"
@@ -53,6 +54,7 @@ type Install struct {
 	importResources              bool
 	atlasGov                     bool
 	configOnly                   bool
+	ipAccessList                 string
 }
 
 func (i *Install) WithConfigOnly(configOnly bool) *Install {
@@ -105,6 +107,11 @@ func (i *Install) WithAtlasGov(flag bool) *Install {
 
 func (i *Install) Run(ctx context.Context, orgID string) error {
 	keys, err := i.generateKeys(orgID)
+	if err != nil {
+		return err
+	}
+
+	err = i.addAPIKeyIPAccessList(orgID, keys.GetId())
 	if err != nil {
 		return err
 	}
@@ -202,6 +209,34 @@ func (i *Install) generateKeys(orgID string) (*admin.ApiKeyUserDetails, error) {
 	}
 
 	return keys, nil
+}
+
+func (i *Install) addAPIKeyIPAccessList(orgID, apiKeyID string) error {
+	list := strings.Split(i.ipAccessList, ",")
+	entries := make([]admin.UserAccessListRequest, 0, len(list))
+
+	for _, entry := range list {
+		if strings.Contains(entry, "/") {
+			entries = append(entries, admin.UserAccessListRequest{
+				CidrBlock: &entry,
+			})
+		} else {
+			entries = append(entries, admin.UserAccessListRequest{
+				IpAddress: &entry,
+			})
+		}
+	}
+
+	err := i.atlasStore.AddIPAccessList(
+		orgID,
+		apiKeyID,
+		&entries,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to add IP access list to API key: %w", err)
+	}
+
+	return nil
 }
 
 func (i *Install) importAtlasResources(orgID, apiKeyID string) error {
@@ -326,6 +361,7 @@ func NewInstall(
 	featureValidator features.FeatureValidator,
 	kubectl *kubernetes.KubeCtl,
 	version string,
+	ipAccessList string,
 ) *Install {
 	return &Install{
 		installResources: installer,
@@ -334,5 +370,6 @@ func NewInstall(
 		featureValidator: featureValidator,
 		kubectl:          kubectl,
 		version:          version,
+		ipAccessList:     ipAccessList,
 	}
 }
