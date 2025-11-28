@@ -29,12 +29,19 @@ type ProjectAPIKeyAssigner interface {
 
 type OrganizationAPIKeyCreator interface {
 	CreateOrganizationAPIKey(string, *atlasv2.CreateAtlasOrganizationApiKey) (*atlasv2.ApiKeyUserDetails, error)
+	AddIPAccessList(string, string, *[]atlasv2.UserAccessListRequest) error
 }
 
 // CreateOrganizationAPIKey encapsulates the logic to manage different cloud providers.
 func (s *Store) CreateOrganizationAPIKey(orgID string, input *atlasv2.CreateAtlasOrganizationApiKey) (*atlasv2.ApiKeyUserDetails, error) {
 	result, _, err := s.clientv2.ProgrammaticAPIKeysApi.CreateApiKey(s.ctx, orgID, input).Execute()
 	return result, err
+}
+
+func (s *Store) AddIPAccessList(orgID string, apiKeyID string, ipAccessList *[]atlasv2.UserAccessListRequest) error {
+	_, _, err := s.clientv2.ProgrammaticAPIKeysApi.CreateApiKeyAccessList(s.ctx, orgID, apiKeyID, ipAccessList).Execute()
+
+	return err
 }
 
 // CreateProjectAPIKey creates an API Keys for a project.
