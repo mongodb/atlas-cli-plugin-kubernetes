@@ -206,6 +206,7 @@ func (oh *operatorHelper) installOperator(namespace, version string) error {
 	cmd := exec.Command(
 		cliPath,
 		"kubernetes", "operator", "install",
+		"--ipAccessList", "192.168.1.0/24",
 		"--operatorVersion", version,
 		"--targetNamespace", namespace,
 	)

@@ -66,6 +66,7 @@ func TestKubernetesOperatorInstall(t *testing.T) {
 			"kubernetes",
 			"operator",
 			"install",
+			"--ipAccessList", "104.30.164.5,192.168.100.177/24",
 			"--operatorVersion", "100.0.0")
 		cmd.Env = os.Environ()
 		_, inErr := test.RunAndGetStdOutAndErr(cmd)
@@ -78,6 +79,7 @@ func TestKubernetesOperatorInstall(t *testing.T) {
 			"kubernetes",
 			"operator",
 			"install",
+			"--ipAccessList", "104.30.164.5,192.168.100.177/24",
 			"--kubeconfig", "/path/to/non/existing/config")
 		cmd.Env = os.Environ()
 		_, inErr := test.RunAndGetStdOutAndErr(cmd)
@@ -94,6 +96,7 @@ func TestKubernetesOperatorInstall(t *testing.T) {
 			"kubernetes",
 			"operator",
 			"install",
+			"--ipAccessList", "104.30.164.5,192.168.100.177/24",
 			"--configOnly",
 			"--targetNamespace", operatorNamespace,
 			"--kubeContext", context)
@@ -113,6 +116,7 @@ func TestKubernetesOperatorInstall(t *testing.T) {
 			"kubernetes",
 			"operator",
 			"install",
+			"--ipAccessList", "104.30.164.5,192.168.100.177/24",
 			"--kubeContext", context)
 		cmd.Env = os.Environ()
 		resp, inErr := test.RunAndGetStdOutAndErr(cmd)
@@ -131,6 +135,7 @@ func TestKubernetesOperatorInstall(t *testing.T) {
 			"kubernetes",
 			"operator",
 			"install",
+			"--ipAccessList", "104.30.164.5,192.168.100.177/24",
 			"--targetNamespace", operatorNamespace,
 			"--kubeContext", context)
 		cmd.Env = os.Environ()
@@ -152,6 +157,7 @@ func TestKubernetesOperatorInstall(t *testing.T) {
 			"kubernetes",
 			"operator",
 			"install",
+			"--ipAccessList", "104.30.164.5,192.168.100.177/24",
 			"--targetNamespace", operatorNamespace,
 			"--watchNamespace", operatorWatch1,
 			"--watchNamespace", operatorWatch2,
@@ -172,6 +178,7 @@ func TestKubernetesOperatorInstall(t *testing.T) {
 			"kubernetes",
 			"operator",
 			"install",
+			"--ipAccessList", "104.30.164.5",
 			"--targetNamespace", operatorNamespace,
 			"--watchNamespace", operatorNamespace,
 			"--kubeContext", context)
@@ -193,6 +200,7 @@ func TestKubernetesOperatorInstall(t *testing.T) {
 			"kubernetes",
 			"operator",
 			"install",
+			"--ipAccessList", "192.168.100.177/24",
 			"--targetNamespace", operatorNamespace,
 			"--projectName", projectName,
 			"--import",
@@ -268,6 +276,7 @@ func TestKubernetesOperatorInstall(t *testing.T) {
 			"kubernetes",
 			"operator",
 			"install",
+			"--ipAccessList", "104.30.164.5,192.168.100.177/24",
 			"--targetNamespace", operatorNamespace,
 			"--projectName", g.projectName,
 			"--import",
@@ -298,6 +307,7 @@ func TestKubernetesOperatorInstall(t *testing.T) {
 			"kubernetes",
 			"operator",
 			"install",
+			"--ipAccessList", "104.30.164.5,192.168.100.177/24",
 			"--resourceDeletionProtection=false",
 			"--subresourceDeletionProtection=false",
 			"--targetNamespace", operatorNamespace,

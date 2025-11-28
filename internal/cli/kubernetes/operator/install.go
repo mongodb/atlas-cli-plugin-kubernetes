@@ -16,7 +16,10 @@ package operator
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"net"
+	"strings"
 
 	"github.com/google/go-github/v61/github"
 	"github.com/mongodb/atlas-cli-core/config"
@@ -53,6 +56,7 @@ type InstallOpts struct {
 	featureDeletionProtection    bool
 	featureSubDeletionProtection bool
 	configOnly                   bool
+	ipAccessList                 string
 }
 
 func (opts *InstallOpts) defaults() error {
@@ -103,6 +107,23 @@ func (opts *InstallOpts) ValidateWatchNamespace() error {
 	return nil
 }
 
+func (opts *InstallOpts) ValidateIpAccessList() error {
+	if opts.ipAccessList == "" {
+		return errors.New("IP access list cannot be empty")
+	}
+
+	list := strings.Split(opts.ipAccessList, ",")
+	for _, entry := range list {
+		if _, _, err := net.ParseCIDR(entry); err != nil {
+			if net.ParseIP(entry) == nil {
+				return fmt.Errorf("IP access list \"%s\" must be a valid IP address or CIDR", entry)
+			}
+		}
+	}
+
+	return nil
+}
+
 func (opts *InstallOpts) Run(ctx context.Context) error {
 	kubeCtl, err := kubernetes.NewKubeCtl(opts.KubeConfig, opts.KubeContext)
 	if err != nil {
@@ -129,7 +150,7 @@ func (opts *InstallOpts) Run(ctx context.Context) error {
 		return err
 	}
 
-	err = operator.NewInstall(installer, atlasStore, credStore, featureValidator, kubeCtl, opts.operatorVersion).
+	err = operator.NewInstall(installer, atlasStore, credStore, featureValidator, kubeCtl, opts.operatorVersion, opts.ipAccessList).
 		WithNamespace(opts.targetNamespace).
 		WithWatchNamespaces(opts.watchNamespace).
 		WithWatchProjectName(opts.projectName).
@@ -164,25 +185,22 @@ The key is scoped to the project when you specify the --projectName option and t
   atlas kubernetes operator install
 
   # Install the latest version of the operator targeting Atlas for Government instead of regular commercial Atlas:
-  atlas kubernetes operator install --atlasGov
+  atlas kubernetes operator install --atlasGov --ipAccessList=<IP_ADDRESS_OR_CIDR>
 
   # Install a specific version of the operator:
-  atlas kubernetes operator install --operatorVersion=2.12.0
+  atlas kubernetes operator install --ipAccessList=<IP_ADDRESS_OR_CIDR> --operatorVersion=2.12.0
 
   # Install a specific version of the operator to a namespace and watch only this namespace and a second one:
-  atlas kubernetes operator install --operatorVersion=2.12.0 --targetNamespace=<namespace> --watchNamespace=<namespace>,<secondNamespace>
+  atlas kubernetes operator install --ipAccessList=<IP_ADDRESS_OR_CIDR> --operatorVersion=2.12.0 --targetNamespace=<namespace> --watchNamespace=<namespace>,<secondNamespace>
 
   # Install and import all objects from an organization:
-  atlas kubernetes operator install --targetNamespace=<namespace> --orgID <orgID> --import
+  atlas kubernetes operator install --ipAccessList=<IP_ADDRESS_OR_CIDR> --targetNamespace=<namespace> --orgID <orgID> --import
 
   # Install and import objects from a specific project:
-  atlas kubernetes operator install --targetNamespace=<namespace> --orgID <orgID> --projectName <project> --import
+  atlas kubernetes operator install --ipAccessList=<IP_ADDRESS_OR_CIDR> --targetNamespace=<namespace> --orgID <orgID> --projectName <project> --import
 
 	# Install the operator and disable deletion protection:
-	atlas kubernetes operator install --resourceDeletionProtection=false
-
-	# Install the operator and disable deletion protection for sub-resources (Atlas project integrations, private endpoints, etc.):
-	atlas kubernetes operator install --subresourceDeletionProtection=false`,
+	atlas kubernetes operator install --ipAccessList=<IP_ADDRESS_OR_CIDR> --resourceDeletionProtection=false`,
 		PreRunE: func(_ *cobra.Command, _ []string) error {
 			opts.versionProvider = version.NewOperatorVersion(github.NewClient(nil))
 
@@ -192,6 +210,7 @@ The key is scoped to the project when you specify the --projectName option and t
 				opts.ValidateOperatorVersion,
 				opts.ValidateTargetNamespace,
 				opts.ValidateWatchNamespace,
+				opts.ValidateIpAccessList,
 			)
 		},
 		RunE: func(cmd *cobra.Command, _ []string) error {
@@ -213,6 +232,7 @@ The key is scoped to the project when you specify the --projectName option and t
 	flags.BoolVar(&opts.featureDeletionProtection, flag.OperatorResourceDeletionProtection, true, usage.OperatorResourceDeletionProtection)
 	flags.BoolVar(&opts.featureSubDeletionProtection, flag.OperatorSubResourceDeletionProtection, true, usage.OperatorSubResourceDeletionProtection)
 	flags.BoolVar(&opts.configOnly, flag.OperatorConfigOnly, false, usage.OperatorConfigOnly)
+	flags.StringVar(&opts.ipAccessList, flag.IPAccessList, "", usage.IPAccessList)
 
 	return cmd
 }
