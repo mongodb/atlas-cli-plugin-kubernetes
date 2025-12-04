@@ -89,7 +89,7 @@ func TestKubernetesConfigApply(t *testing.T) {
 		err = operator.installOperator(defaultOperatorNamespace, features.LatestOperatorMajorVersion)
 		require.NoError(t, err)
 
-		operator.emulateCertifiedOperator()
+		operator.emulateUnsupportedOperatorImage()
 		g.t.Cleanup(func() {
 			operator.restoreOperatorImage()
 		})
