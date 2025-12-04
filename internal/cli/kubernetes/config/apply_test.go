@@ -24,10 +24,10 @@ import (
 
 func TestGetOperatorMajorVersion(t *testing.T) {
 	t.Run("should return major when version has minor different of 0", func(t *testing.T) {
-		assert.Equal(t, "1.7.0", getOperatorMajorVersion("mongodb/mongodb-atlas-kubernetes-operator:1.7.1"))
+		assert.Equal(t, "2.12.0", getOperatorMajorVersion("mongodb/mongodb-atlas-kubernetes-operator:2.12.1"))
 	})
 
 	t.Run("should return same major version when minor is 0", func(t *testing.T) {
-		assert.Equal(t, "1.7.0", getOperatorMajorVersion("mongodb/mongodb-atlas-kubernetes-operator:1.7.0"))
+		assert.Equal(t, "2.12.0", getOperatorMajorVersion("mongodb/mongodb-atlas-kubernetes-operator:2.12.0"))
 	})
 }
