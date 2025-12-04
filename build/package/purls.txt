@@ -52,11 +52,11 @@ pkg:golang/go.uber.org/zap@v1.27.0
 pkg:golang/go.yaml.in/yaml/v2@v2.4.2
 pkg:golang/go.yaml.in/yaml/v3@v3.0.4
 pkg:golang/golang.org/x/exp@v0.0.0-20240719175910-8a7402abbf56
-pkg:golang/golang.org/x/net@v0.44.0
+pkg:golang/golang.org/x/net@v0.47.0
 pkg:golang/golang.org/x/oauth2@v0.31.0
-pkg:golang/golang.org/x/sys@v0.36.0
-pkg:golang/golang.org/x/term@v0.35.0
-pkg:golang/golang.org/x/text@v0.29.0
+pkg:golang/golang.org/x/sys@v0.38.0
+pkg:golang/golang.org/x/term@v0.37.0
+pkg:golang/golang.org/x/text@v0.31.0
 pkg:golang/golang.org/x/time@v0.13.0
 pkg:golang/google.golang.org/protobuf@v1.36.9
 pkg:golang/gopkg.in/inf.v0@v0.9.1
