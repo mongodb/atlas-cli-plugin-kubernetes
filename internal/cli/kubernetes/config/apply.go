@@ -32,15 +32,7 @@ import (
 
 const (
 	containerImage         = "mongodb/mongodb-atlas-kubernetes-operator"
-	fullPathContainerImage = "docker.io/" + containerImage
-	quayContainerImage     = "quay.io/" + containerImage
 )
-
-var supportedPrefixes = []string{
-	containerImage,
-	fullPathContainerImage,
-	quayContainerImage,
-}
 
 type ApplyOpts struct {
 	cli.ProjectOpts
@@ -84,17 +76,12 @@ func (opts *ApplyOpts) autoDetectParams(kubeCtl *kubernetes.KubeCtl) error {
 
 	if opts.operatorVersion == "" {
 		image := operatorDeployment.Spec.Template.Spec.Containers[0].Image
-		hasExpectedPrefix := false
-		for _, supportedPrefix := range supportedPrefixes {
-			if strings.HasPrefix(image, supportedPrefix + ":") {
-				hasExpectedPrefix = true
-				break
-			}
-		}
-		if !hasExpectedPrefix {
+		hasContainerImageRepo := strings.Contains(image, containerImage + ":")
+		version := getOperatorMajorVersion(image)
+		if !hasContainerImageRepo || version == "" {
 			return errors.New("unable to auto detect operator version. you should explicitly set operator version if you are running an openshift certified installation")
 		}
-		opts.operatorVersion = getOperatorMajorVersion(image)
+		opts.operatorVersion = version
 	}
 
 	return nil
@@ -196,12 +183,11 @@ func ApplyBuilder() *cobra.Command {
 
 func getOperatorMajorVersion(image string) string {
 	version := ""
-	for _, supportedPrefix := range supportedPrefixes {
-		if strings.HasPrefix(image, supportedPrefix) {
-		  version = strings.TrimPrefix(image, supportedPrefix+":")
-		  break
-		}
+	parts := strings.Split(image, ":")
+	if len(parts) != 2 {
+		return ""
 	}
+	version = parts[1]
 	semVer := strings.Split(version, ".")
 	semVer[2] = "0"
 

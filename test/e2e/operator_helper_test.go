@@ -239,7 +239,7 @@ func (oh *operatorHelper) stopOperator() {
 	}
 }
 
-func (oh *operatorHelper) emulateCertifiedOperator() {
+func (oh *operatorHelper) emulateUnsupportedOperatorImage() {
 	err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		deployment := appsv1.Deployment{}
 		err := oh.getK8sObject(
@@ -252,7 +252,7 @@ func (oh *operatorHelper) emulateCertifiedOperator() {
 		}
 
 		container := deployment.Spec.Template.Spec.Containers[0]
-		container.Image = "quay.io/" + container.Image
+		container.Image = "madeUpImage"
 		deployment.Spec.Template.Spec.Containers[0] = container
 
 		return oh.k8sClient.Update(context.Background(), &deployment, &client.UpdateOptions{})
