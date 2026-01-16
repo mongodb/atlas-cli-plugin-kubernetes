@@ -188,10 +188,10 @@ The key is scoped to the project when you specify the --projectName option and t
   atlas kubernetes operator install --atlasGov --ipAccessList=<IP_ADDRESS_OR_CIDR>
 
   # Install a specific version of the operator:
-  atlas kubernetes operator install --ipAccessList=<IP_ADDRESS_OR_CIDR> --operatorVersion=2.12.0
+  atlas kubernetes operator install --ipAccessList=<IP_ADDRESS_OR_CIDR> --operatorVersion=2.13.0
 
   # Install a specific version of the operator to a namespace and watch only this namespace and a second one:
-  atlas kubernetes operator install --ipAccessList=<IP_ADDRESS_OR_CIDR> --operatorVersion=2.12.0 --targetNamespace=<namespace> --watchNamespace=<namespace>,<secondNamespace>
+  atlas kubernetes operator install --ipAccessList=<IP_ADDRESS_OR_CIDR> --operatorVersion=2.13.0 --targetNamespace=<namespace> --watchNamespace=<namespace>,<secondNamespace>
 
   # Install and import all objects from an organization:
   atlas kubernetes operator install --ipAccessList=<IP_ADDRESS_OR_CIDR> --targetNamespace=<namespace> --orgID <orgID> --import
