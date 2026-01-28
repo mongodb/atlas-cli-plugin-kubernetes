@@ -14,6 +14,6 @@ git push origin "v1.0.0"
 **Note:** Please use the `vX.Y.Z` format for the version to release.
 
 This will do the following things:
-1. The [evergreen](build/ci/release.yml) release task will run after a tag event from main.
+1. The [evergreen](build/ci/release.yml) release task will run after a tag event from main. The CI run can be [seen here](https://spruce.mongodb.com/variant-history/atlas-cli-plugin-kubernetes/release)
 2. This task signs all packages and includes both them and the public key in the release.
 3. If everything goes smoothly, the release will be published in the [releases page](https://github.com/mongodb/atlas-cli-plugin-kubernetes/releases).
