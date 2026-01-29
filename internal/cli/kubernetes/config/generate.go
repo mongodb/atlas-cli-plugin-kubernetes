@@ -27,6 +27,7 @@ import (
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator/features"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/usage"
+	"github.com/mongodb/atlas-cli-plugin-kubernetes/pkg/exporter"
 
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/util/validation"
@@ -85,20 +86,30 @@ func (opts *GenerateOpts) initStores(ctx context.Context) func() error {
 }
 
 func (opts *GenerateOpts) Run() error {
-	atlasCRDs, err := features.NewAtlasCRDs(opts.crdsProvider, opts.operatorVersion)
-	if err != nil {
-		return err
+	var exp operator.Exporter
+
+	switch opts.crdVersion {
+	case features.CRDVersionGenerated:
+		// Use the new generated exporter for auto-generated CRDs
+		exp = exporter.NewGeneratedExporter()
+	default:
+		// Use the existing curated exporter (legacy behavior)
+		atlasCRDs, err := features.NewAtlasCRDs(opts.crdsProvider, opts.operatorVersion)
+		if err != nil {
+			return err
+		}
+		exp = operator.NewConfigExporter(opts.store, opts.credsStore, opts.ProjectID, opts.OrgID).
+			WithClustersNames(opts.clusterName).
+			WithTargetNamespace(opts.targetNamespace).
+			WithSecretsData(opts.includeSecrets).
+			WithTargetOperatorVersion(opts.operatorVersion).
+			WithFeatureValidator(atlasCRDs).
+			WithPatcher(atlasCRDs).
+			WithDataFederationNames(opts.dataFederationName).
+			WithIndependentResources(opts.independentResources)
 	}
-	result, err := operator.NewConfigExporter(opts.store, opts.credsStore, opts.ProjectID, opts.OrgID).
-		WithClustersNames(opts.clusterName).
-		WithTargetNamespace(opts.targetNamespace).
-		WithSecretsData(opts.includeSecrets).
-		WithTargetOperatorVersion(opts.operatorVersion).
-		WithFeatureValidator(atlasCRDs).
-		WithPatcher(atlasCRDs).
-		WithDataFederationNames(opts.dataFederationName).
-		WithIndependentResources(opts.independentResources).
-		Run()
+
+	result, err := exp.Run()
 	if err != nil {
 		return err
 	}
