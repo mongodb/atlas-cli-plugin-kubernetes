@@ -47,6 +47,7 @@ type GenerateOpts struct {
 	credsStore           store.CredentialsGetter
 	crdsProvider         crds.AtlasOperatorCRDProvider
 	independentResources bool
+	crdVersion           string
 }
 
 func (opts *GenerateOpts) ValidateTargetNamespace() error {
@@ -157,5 +158,6 @@ func GenerateBuilder() *cobra.Command {
 	cmd.Flags().StringVar(&opts.operatorVersion, flag.OperatorVersion, features.LatestOperatorMajorVersion, usage.OperatorVersion)
 	cmd.Flags().StringSliceVar(&opts.dataFederationName, flag.DataFederationName, []string{}, usage.ExporterDataFederationName)
 	cmd.Flags().BoolVar(&opts.independentResources, flag.IndependentResources, false, usage.IndependentResources)
+	cmd.Flags().StringVar(&opts.crdVersion, flag.CRDVersion, features.CRDVersionCurated, usage.CRDVersion)
 	return cmd
 }

@@ -48,6 +48,9 @@ const (
 	ResourceAtlasNetworkPeering         = "atlasnetworkpeerings"
 	ResourceAtlasThirdPartyIntegration  = "atlasthirdpartyintegrations"
 	ResourceAtlasOrgSettings            = "atlasorgsettings"
+
+	CRDVersionCurated   = "curated"
+	CRDVersionGenerated = "generated"
 )
 
 var (
