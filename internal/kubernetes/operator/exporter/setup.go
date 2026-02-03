@@ -20,8 +20,6 @@ import (
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator/crds"
 	generated "github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator/exporter/generated"
-	admin "go.mongodb.org/atlas-sdk/v20250312013/admin"
-	"k8s.io/apimachinery/pkg/runtime"
 )
 
 // Function variables for dependency injection in tests
@@ -29,12 +27,6 @@ var (
 	newSDKClientFunc = NewSDKClient
 	newSchemeFunc    = NewScheme
 )
-
-// sdkClientCreator is a function type for creating SDK clients.
-type sdkClientCreator func(service string) (*admin.APIClient, error)
-
-// schemeCreator is a function type for creating runtime schemes.
-type schemeCreator func() (*runtime.Scheme, error)
 
 // SetupConfig holds the configuration for setting up the generated exporter.
 type SetupConfig struct {
