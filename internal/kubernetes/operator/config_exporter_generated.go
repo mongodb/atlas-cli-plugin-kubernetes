@@ -23,7 +23,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 
 	generated "github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator/exporter/generated"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // GeneratedExporter handles the export of Atlas resources using auto-generated CRDs.
@@ -74,9 +73,7 @@ func (e *GeneratedExporter) Run() (string, error) {
 		for _, obj := range objects {
 			// Set the target namespace if specified
 			if e.targetNamespace != "" {
-				if clientObj, ok := obj.(client.Object); ok {
-					clientObj.SetNamespace(e.targetNamespace)
-				}
+				obj.SetNamespace(e.targetNamespace)
 			}
 
 			if err := serializer.Encode(obj, output); err != nil {
