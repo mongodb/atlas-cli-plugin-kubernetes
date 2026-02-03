@@ -24,10 +24,10 @@ import (
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/flag"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator/crds"
+	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator/exporter"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator/features"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/usage"
-	"github.com/mongodb/atlas-cli-plugin-kubernetes/pkg/exporter"
 
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/util/validation"
@@ -49,6 +49,7 @@ type GenerateOpts struct {
 	crdsProvider         crds.AtlasOperatorCRDProvider
 	independentResources bool
 	crdVersion           string
+	service              string
 }
 
 func (opts *GenerateOpts) ValidateTargetNamespace() error {
@@ -78,6 +79,7 @@ func (opts *GenerateOpts) initStores(ctx context.Context) func() error {
 			return err
 		}
 		opts.credsStore = profile
+		opts.service = profile.Service()
 
 		opts.crdsProvider = crds.NewGithubAtlasCRDProvider()
 
@@ -91,7 +93,17 @@ func (opts *GenerateOpts) Run() error {
 	switch opts.crdVersion {
 	case features.CRDVersionGenerated:
 		// Use the new generated exporter for auto-generated CRDs
-		exp = exporter.NewGeneratedExporter()
+		generatedExp, err := exporter.Setup(exporter.SetupConfig{
+			ProjectID:       opts.ProjectID,
+			TargetNamespace: opts.targetNamespace,
+			Service:         opts.service,
+			CRDProvider:     opts.crdsProvider,
+			OperatorVersion: opts.operatorVersion,
+		})
+		if err != nil {
+			return fmt.Errorf("failed to setup generated exporter: %w", err)
+		}
+		exp = generatedExp
 	default:
 		// Use the existing curated exporter (legacy behavior)
 		atlasCRDs, err := features.NewAtlasCRDs(opts.crdsProvider, opts.operatorVersion)
