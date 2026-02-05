@@ -31,7 +31,7 @@ import (
 )
 
 const (
-	containerImage         = "mongodb/mongodb-atlas-kubernetes-operator"
+	containerImage = "mongodb/mongodb-atlas-kubernetes-operator"
 )
 
 type ApplyOpts struct {
@@ -76,7 +76,7 @@ func (opts *ApplyOpts) autoDetectParams(kubeCtl *kubernetes.KubeCtl) error {
 
 	if opts.operatorVersion == "" {
 		image := operatorDeployment.Spec.Template.Spec.Containers[0].Image
-		hasContainerImageRepo := strings.Contains(image, containerImage + ":")
+		hasContainerImageRepo := strings.Contains(image, containerImage+":")
 		version := getOperatorMajorVersion(image)
 		if !hasContainerImageRepo || version == "" {
 			return errors.New("unable to auto detect operator version. you should explicitly set operator version if you are running an openshift certified installation")
@@ -103,7 +103,7 @@ func (opts *ApplyOpts) Run() error {
 		return err
 	}
 
-	exporter := operator.NewConfigExporter(opts.store, opts.credsStore, opts.ProjectID, opts.OrgID).
+	exporter := operator.NewConfigExporter(opts.store, opts.profile, opts.ProjectID, opts.OrgID).
 		WithClustersNames(opts.clusterName).
 		WithTargetNamespace(opts.targetNamespace).
 		WithTargetOperatorVersion(opts.operatorVersion).

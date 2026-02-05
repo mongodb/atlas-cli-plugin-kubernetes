@@ -20,6 +20,7 @@ import (
 	"github.com/mongodb/atlas-cli-core/config"
 	"github.com/mongodb/atlas-cli-core/transport"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/log"
+	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/version"
 	admin "go.mongodb.org/atlas-sdk/v20250312013/admin"
 )
@@ -39,7 +40,7 @@ var httpClientFunc = func() (*http.Client, error) {
 
 // NewSDKClient creates a new Atlas SDK v20250312013 client using the same
 // authentication and configuration pattern as the Store abstraction.
-func NewSDKClient(service string) (*admin.APIClient, error) {
+func NewSDKClient(cfg store.ServiceGetter) (*admin.APIClient, error) {
 	httpClient, err := httpClientFunc()
 	if err != nil {
 		return nil, err
@@ -51,7 +52,10 @@ func NewSDKClient(service string) (*admin.APIClient, error) {
 		admin.UseDebug(log.IsDebugLevel()),
 	}
 
-	if service == config.CloudGovService {
+	// Determine base URL: OpsManagerURL takes precedence, then CloudGov service
+	if opsManagerURL := cfg.OpsManagerURL(); opsManagerURL != "" {
+		opts = append(opts, admin.UseBaseURL(opsManagerURL))
+	} else if cfg.Service() == config.CloudGovService {
 		opts = append(opts, admin.UseBaseURL(cloudGovServiceURL))
 	}
 
