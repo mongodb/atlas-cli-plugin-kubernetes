@@ -45,11 +45,10 @@ type GenerateOpts struct {
 	targetNamespace      string
 	operatorVersion      string
 	store                store.OperatorGenericStore
-	credsStore           store.CredentialsGetter
 	crdsProvider         crds.AtlasOperatorCRDProvider
 	independentResources bool
 	crdVersion           string
-	service              string
+	profile              store.AuthenticatedConfig
 }
 
 func (opts *GenerateOpts) ValidateTargetNamespace() error {
@@ -73,13 +72,11 @@ func (opts *GenerateOpts) initStores(ctx context.Context) func() error {
 	return func() error {
 		var err error
 
-		profile := config.Default()
-		opts.store, err = store.New(store.AuthenticatedPreset(profile), store.WithContext(ctx))
+		opts.profile = config.Default()
+		opts.store, err = store.New(store.AuthenticatedPreset(opts.profile), store.WithContext(ctx))
 		if err != nil {
 			return err
 		}
-		opts.credsStore = profile
-		opts.service = profile.Service()
 
 		opts.crdsProvider = crds.NewGithubAtlasCRDProvider()
 
@@ -92,12 +89,18 @@ func (opts *GenerateOpts) Run() error {
 
 	switch opts.crdVersion {
 	case features.CRDVersionGenerated:
+		// Use the embedded CRD provider for generated CRDs (not yet available on GitHub)
+		embeddedProvider, err := crds.NewEmbeddedAtlasCRDProvider()
+		if err != nil {
+			return fmt.Errorf("failed to create embedded CRD provider: %w", err)
+		}
+
 		// Use the new generated exporter for auto-generated CRDs
 		generatedExp, err := exporter.Setup(exporter.SetupConfig{
 			ProjectID:       opts.ProjectID,
 			TargetNamespace: opts.targetNamespace,
-			Service:         opts.service,
-			CRDProvider:     opts.crdsProvider,
+			Profile:         opts.profile,
+			CRDProvider:     embeddedProvider,
 			OperatorVersion: opts.operatorVersion,
 		})
 		if err != nil {
@@ -110,7 +113,7 @@ func (opts *GenerateOpts) Run() error {
 		if err != nil {
 			return err
 		}
-		exp = operator.NewConfigExporter(opts.store, opts.credsStore, opts.ProjectID, opts.OrgID).
+		exp = operator.NewConfigExporter(opts.store, opts.profile, opts.ProjectID, opts.OrgID).
 			WithClustersNames(opts.clusterName).
 			WithTargetNamespace(opts.targetNamespace).
 			WithSecretsData(opts.includeSecrets).
