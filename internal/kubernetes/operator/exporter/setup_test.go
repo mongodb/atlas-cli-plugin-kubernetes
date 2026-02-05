@@ -22,12 +22,30 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/mocks"
+	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	admin "go.mongodb.org/atlas-sdk/v20250312013/admin"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
+
+// testProfile implements store.ServiceGetter for testing.
+type testProfile struct {
+	service       string
+	opsManagerURL string
+}
+
+func (p *testProfile) Service() string {
+	return p.service
+}
+
+func (p *testProfile) OpsManagerURL() string {
+	return p.opsManagerURL
+}
+
+// Verify testProfile implements store.ServiceGetter
+var _ store.ServiceGetter = (*testProfile)(nil)
 
 func TestSetup_Success(t *testing.T) {
 	ctrl := gomock.NewController(t)
@@ -45,7 +63,7 @@ func TestSetup_Success(t *testing.T) {
 	cfg := SetupConfig{
 		ProjectID:       "test-project-id",
 		TargetNamespace: "test-namespace",
-		Service:         "cloud",
+		Profile:         &testProfile{service: "cloud"},
 		CRDProvider:     mockProvider,
 		OperatorVersion: "2.0.0",
 	}
@@ -61,14 +79,14 @@ func TestSetup_SDKClientError(t *testing.T) {
 	originalFunc := newSDKClientFunc
 	defer func() { newSDKClientFunc = originalFunc }()
 
-	newSDKClientFunc = func(_ string) (*admin.APIClient, error) {
+	newSDKClientFunc = func(_ store.ServiceGetter) (*admin.APIClient, error) {
 		return nil, errors.New("SDK client error")
 	}
 
 	cfg := SetupConfig{
 		ProjectID:       "test-project-id",
 		TargetNamespace: "test-namespace",
-		Service:         "cloud",
+		Profile:         &testProfile{service: "cloud"},
 		CRDProvider:     nil,
 		OperatorVersion: "2.0.0",
 	}
@@ -89,7 +107,7 @@ func TestSetup_SchemeError(t *testing.T) {
 		newSchemeFunc = originalSchemeFunc
 	}()
 
-	newSDKClientFunc = func(_ string) (*admin.APIClient, error) {
+	newSDKClientFunc = func(_ store.ServiceGetter) (*admin.APIClient, error) {
 		return &admin.APIClient{}, nil
 	}
 	newSchemeFunc = func() (*runtime.Scheme, error) {
@@ -99,7 +117,7 @@ func TestSetup_SchemeError(t *testing.T) {
 	cfg := SetupConfig{
 		ProjectID:       "test-project-id",
 		TargetNamespace: "test-namespace",
-		Service:         "cloud",
+		Profile:         &testProfile{service: "cloud"},
 		CRDProvider:     nil,
 		OperatorVersion: "2.0.0",
 	}
@@ -151,10 +169,20 @@ func TestSetup_CRDErrors(t *testing.T) {
 			cfg := SetupConfig{
 				ProjectID:       "test-project-id",
 				TargetNamespace: "test-namespace",
-				Service:         "cloud",
+				Profile:         &testProfile{service: "cloud"},
 				CRDProvider:     mockProvider,
 				OperatorVersion: "2.0.0",
 			}
+
+			// newSDKClientFunc and newSchemeFunc must succeed for CRD/translator errors to be reached
+			originalSDKFunc := newSDKClientFunc
+			originalSchemeFunc := newSchemeFunc
+			defer func() {
+				newSDKClientFunc = originalSDKFunc
+				newSchemeFunc = originalSchemeFunc
+			}()
+			newSDKClientFunc = func(_ store.ServiceGetter) (*admin.APIClient, error) { return &admin.APIClient{}, nil }
+			newSchemeFunc = func() (*runtime.Scheme, error) { return runtime.NewScheme(), nil }
 
 			exporter, err := Setup(cfg)
 
