@@ -20,10 +20,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	crapi "github.com/mongodb/mongodb-atlas-kubernetes/v2/pkg/crapi"
-	akov2generated "github.com/mongodb/mongodb-atlas-kubernetes/v2/pkg/crapi/testdata/samples/v1"
+
 	admin "go.mongodb.org/atlas-sdk/v20250312013/admin"
 	client "sigs.k8s.io/controller-runtime/pkg/client"
+
+	crapi "github.com/mongodb/mongodb-atlas-kubernetes/v2/pkg/crapi"
+	akov2generated "github.com/mongodb/mongodb-atlas-kubernetes/v2/pkg/crapi/testdata/samples/v1"
 )
 
 type FlexClusterExporter struct {
@@ -33,7 +35,7 @@ type FlexClusterExporter struct {
 	translator crapi.Translator
 }
 
-func (e *FlexClusterExporter) Export(ctx context.Context) ([]client.Object, error) {
+func (e *FlexClusterExporter) Export(ctx context.Context, referencedObjects []client.Object) ([]client.Object, error) {
 	var atlasResources []any
 	for pageNum := 1; ; pageNum++ {
 		resp, _, err := e.client.FlexClustersApi.ListFlexClusters(ctx, e.identifiers[0]).PageNum(pageNum).Execute()
@@ -55,11 +57,14 @@ func (e *FlexClusterExporter) Export(ctx context.Context) ([]client.Object, erro
 	resources := make([]client.Object, 0, len(atlasResources))
 	for _, atlasResource := range atlasResources {
 		resource := &akov2generated.FlexCluster{}
-		translatedResources, err := e.translator.FromAPI(resource, atlasResource)
+		translatedResources, err := e.translator.FromAPI(resource, atlasResource, referencedObjects...)
 		if err != nil {
 			return nil, fmt.Errorf("failed to translate FlexCluster: %w", err)
 		}
 
+		resource.GetObjectKind().SetGroupVersionKind(akov2generated.GroupVersion.WithKind("FlexCluster"))
+		//resource.Status = akov2generated.FlexClusterStatus{}
+		resources = append(resources, resource)
 		resources = append(resources, translatedResources...)
 	}
 
