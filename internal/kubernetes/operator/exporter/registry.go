@@ -21,7 +21,7 @@ import (
 )
 
 // ExporterFactory creates an exporter for a specific resource type.
-type ExporterFactory func(client *admin.APIClient, translator crapi.Translator, identifiers []string) generated.Exporter
+type Factory func(client *admin.APIClient, translator crapi.Translator, identifiers []string) generated.Exporter
 
 // ResourceConfig defines a resource type that can be exported.
 // To add a new resource, add an entry to the SupportedResources slice.
@@ -30,7 +30,7 @@ type ResourceConfig struct {
 	CRDName string
 
 	// Factory creates the exporter for this resource type
-	Factory ExporterFactory
+	Factory Factory
 }
 
 // SupportedResources lists all resources that can be exported.
