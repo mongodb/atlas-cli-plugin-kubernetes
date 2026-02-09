@@ -45,6 +45,11 @@ type SetupConfig struct {
 
 	// OperatorVersion is the operator version for CRD lookup
 	OperatorVersion string
+
+	// IndependentResources when true, resources are exported independently without
+	// cross-resource references. When false, previously exported objects are passed
+	// to each exporter for dependency resolution.
+	IndependentResources bool
 }
 
 // Setup creates and configures a GeneratedExporter with all required dependencies.
@@ -81,5 +86,5 @@ func Setup(cfg SetupConfig) (*operator.GeneratedExporter, error) {
 	}
 
 	// Create the GeneratedExporter
-	return operator.NewGeneratedExporter(cfg.TargetNamespace, scheme, exporters), nil
+	return operator.NewGeneratedExporter(cfg.TargetNamespace, scheme, exporters, cfg.IndependentResources), nil
 }
