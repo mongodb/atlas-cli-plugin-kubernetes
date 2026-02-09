@@ -35,11 +35,13 @@ import (
 
 // mockExporter is a simple mock implementation of generated.Exporter for testing.
 type mockExporter struct {
-	objects []client.Object
-	err     error
+	objects            []client.Object
+	err                error
+	receivedRefObjects []client.Object
 }
 
-func (m *mockExporter) Export(_ context.Context, _ []client.Object) ([]client.Object, error) {
+func (m *mockExporter) Export(_ context.Context, referencedObjects []client.Object) ([]client.Object, error) {
+	m.receivedRefObjects = referencedObjects
 	return m.objects, m.err
 }
 
@@ -47,12 +49,13 @@ func TestNewGeneratedExporter(t *testing.T) {
 	scheme := runtime.NewScheme()
 	exporters := []generated.Exporter{&mockExporter{}}
 
-	exp := NewGeneratedExporter("test-namespace", scheme, exporters)
+	exp := NewGeneratedExporter("test-namespace", scheme, exporters, true)
 
 	require.NotNil(t, exp)
 	assert.Equal(t, "test-namespace", exp.targetNamespace)
 	assert.Equal(t, scheme, exp.scheme)
 	assert.Len(t, exp.exporters, 1)
+	assert.True(t, exp.independentResources)
 }
 
 func TestGeneratedExporter_Run(t *testing.T) {
@@ -145,7 +148,7 @@ func TestGeneratedExporter_Run(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			exp := NewGeneratedExporter(tc.targetNamespace, scheme, tc.exporters)
+			exp := NewGeneratedExporter(tc.targetNamespace, scheme, tc.exporters, false)
 
 			output, err := exp.Run()
 
@@ -161,6 +164,55 @@ func TestGeneratedExporter_Run(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestGeneratedExporter_IndependentResources(t *testing.T) {
+	scheme := runtime.NewScheme()
+	require.NoError(t, corev1.AddToScheme(scheme))
+
+	newConfigMap := func(name string) *corev1.ConfigMap {
+		return &corev1.ConfigMap{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "v1",
+				Kind:       "ConfigMap",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name: name,
+			},
+		}
+	}
+
+	t.Run("when independentResources is true, exporters receive empty slice", func(t *testing.T) {
+		exporter1 := &mockExporter{objects: []client.Object{newConfigMap("config1")}}
+		exporter2 := &mockExporter{objects: []client.Object{newConfigMap("config2")}}
+
+		exp := NewGeneratedExporter("test", scheme, []generated.Exporter{exporter1, exporter2}, true)
+
+		_, err := exp.Run()
+		require.NoError(t, err)
+
+		// First exporter should receive nil (no previous objects)
+		assert.Nil(t, exporter1.receivedRefObjects)
+		// Second exporter should also receive nil (independentResources is true means no cross-references)
+		assert.Nil(t, exporter2.receivedRefObjects)
+	})
+
+	t.Run("when independentResources is false, exporters receive previously exported objects", func(t *testing.T) {
+		config1 := newConfigMap("config1")
+		exporter1 := &mockExporter{objects: []client.Object{config1}}
+		exporter2 := &mockExporter{objects: []client.Object{newConfigMap("config2")}}
+
+		exp := NewGeneratedExporter("test", scheme, []generated.Exporter{exporter1, exporter2}, false)
+
+		_, err := exp.Run()
+		require.NoError(t, err)
+
+		// First exporter should receive empty slice (no previous objects yet)
+		assert.Empty(t, exporter1.receivedRefObjects)
+		// Second exporter should receive the objects from first exporter
+		require.Len(t, exporter2.receivedRefObjects, 1)
+		assert.Equal(t, "config1", exporter2.receivedRefObjects[0].GetName())
+	})
 }
 
 // mockCRDObject is a mock Kubernetes object with a Spec field for testing name generation.
