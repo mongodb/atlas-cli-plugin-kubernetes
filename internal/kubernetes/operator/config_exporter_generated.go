@@ -41,14 +41,20 @@ type GeneratedExporter struct {
 
 	// exporters holds the resource-specific exporters
 	exporters []generated.Exporter
+
+	// independentResources when true, resources are exported independently without
+	// cross-resource references. When false, previously exported objects are passed
+	// to each exporter for dependency resolution.
+	independentResources bool
 }
 
 // NewGeneratedExporter creates a new instance of GeneratedExporter.
-func NewGeneratedExporter(targetNamespace string, scheme *runtime.Scheme, exporters []generated.Exporter) *GeneratedExporter {
+func NewGeneratedExporter(targetNamespace string, scheme *runtime.Scheme, exporters []generated.Exporter, independentResources bool) *GeneratedExporter {
 	return &GeneratedExporter{
-		targetNamespace: targetNamespace,
-		scheme:          scheme,
-		exporters:       exporters,
+		targetNamespace:      targetNamespace,
+		scheme:               scheme,
+		exporters:            exporters,
+		independentResources: independentResources,
 	}
 }
 
@@ -70,7 +76,14 @@ func (e *GeneratedExporter) Run() (string, error) {
 	// Export all resources from all exporters
 	var exportedObjects []client.Object
 	for _, exp := range e.exporters {
-		objects, err := exp.Export(ctx, exportedObjects)
+		// Pass previously exported objects only when resources are NOT independent
+		// (i.e., when they need to reference each other for cross-resource dependencies)
+		var referencedObjects []client.Object
+		if !e.independentResources {
+			referencedObjects = exportedObjects
+		}
+
+		objects, err := exp.Export(ctx, referencedObjects)
 		if err != nil {
 			return "", fmt.Errorf("failed to export resources: %w", err)
 		}

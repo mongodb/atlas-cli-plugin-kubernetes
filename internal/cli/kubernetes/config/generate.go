@@ -97,11 +97,12 @@ func (opts *GenerateOpts) Run() error {
 
 		// Use the new generated exporter for auto-generated CRDs
 		generatedExp, err := exporter.Setup(exporter.SetupConfig{
-			ProjectID:       opts.ProjectID,
-			TargetNamespace: opts.targetNamespace,
-			Profile:         opts.profile,
-			CRDProvider:     embeddedProvider,
-			OperatorVersion: opts.operatorVersion,
+			ProjectID:            opts.ProjectID,
+			TargetNamespace:      opts.targetNamespace,
+			Profile:              opts.profile,
+			CRDProvider:          embeddedProvider,
+			OperatorVersion:      opts.operatorVersion,
+			IndependentResources: opts.independentResources,
 		})
 		if err != nil {
 			return fmt.Errorf("failed to setup generated exporter: %w", err)
