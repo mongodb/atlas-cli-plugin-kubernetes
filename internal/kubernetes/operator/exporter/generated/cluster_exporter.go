@@ -20,10 +20,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	crapi "github.com/mongodb/mongodb-atlas-kubernetes/v2/pkg/crapi"
-	akov2generated "github.com/mongodb/mongodb-atlas-kubernetes/v2/pkg/crapi/testdata/samples/v1"
+
+	"github.com/crd2go/crd2go/k8s"
 	admin "go.mongodb.org/atlas-sdk/v20250312013/admin"
 	client "sigs.k8s.io/controller-runtime/pkg/client"
+
+	crapi "github.com/mongodb/mongodb-atlas-kubernetes/v2/pkg/crapi"
+	akov2generated "github.com/mongodb/mongodb-atlas-kubernetes/v2/pkg/crapi/testdata/samples/v1"
 )
 
 type ClusterExporter struct {
@@ -33,7 +36,7 @@ type ClusterExporter struct {
 	translator crapi.Translator
 }
 
-func (e *ClusterExporter) Export(ctx context.Context) ([]client.Object, error) {
+func (e *ClusterExporter) Export(ctx context.Context, referencedObjects []client.Object) ([]client.Object, error) {
 	var atlasResources []any
 	for pageNum := 1; ; pageNum++ {
 		resp, _, err := e.client.ClustersApi.ListClusters(ctx, e.identifiers[0]).PageNum(pageNum).Execute()
@@ -54,12 +57,22 @@ func (e *ClusterExporter) Export(ctx context.Context) ([]client.Object, error) {
 
 	resources := make([]client.Object, 0, len(atlasResources))
 	for _, atlasResource := range atlasResources {
-		resource := &akov2generated.Cluster{}
-		translatedResources, err := e.translator.FromAPI(resource, atlasResource)
+		resource := &akov2generated.Cluster{
+			Spec: akov2generated.ClusterSpec{
+				V20250312: &akov2generated.ClusterSpecV20250312{
+					GroupRef: &k8s.LocalReference{},
+					Entry:    &akov2generated.ClusterSpecV20250312Entry{},
+				},
+			},
+		}
+		translatedResources, err := e.translator.FromAPI(resource, atlasResource, referencedObjects...)
 		if err != nil {
 			return nil, fmt.Errorf("failed to translate Cluster: %w", err)
 		}
 
+		resource.GetObjectKind().SetGroupVersionKind(akov2generated.GroupVersion.WithKind("Cluster"))
+		//resource.Status = akov2generated.ClusterStatus{}
+		resources = append(resources, resource)
 		resources = append(resources, translatedResources...)
 	}
 

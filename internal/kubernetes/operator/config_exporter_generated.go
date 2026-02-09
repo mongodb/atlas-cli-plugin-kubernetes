@@ -18,9 +18,13 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"reflect"
+	"strings"
 
+	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator/resources"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	generated "github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator/exporter/generated"
 )
@@ -64,13 +68,17 @@ func (e *GeneratedExporter) Run() (string, error) {
 	)
 
 	// Export all resources from all exporters
+	var exportedObjects []client.Object
 	for _, exp := range e.exporters {
-		objects, err := exp.Export(ctx)
+		objects, err := exp.Export(ctx, exportedObjects)
 		if err != nil {
 			return "", fmt.Errorf("failed to export resources: %w", err)
 		}
 
 		for _, obj := range objects {
+			// Set hierarchical Kubernetes-compliant name
+			setResourceName(obj)
+
 			// Set the target namespace if specified
 			if e.targetNamespace != "" {
 				obj.SetNamespace(e.targetNamespace)
@@ -81,7 +89,111 @@ func (e *GeneratedExporter) Run() (string, error) {
 			}
 			output.WriteString(yamlSeparator)
 		}
+
+		exportedObjects = append(exportedObjects, objects...)
 	}
 
 	return output.String(), nil
+}
+
+// setResourceName sets a Kubernetes-compliant name on the object.
+// The name is derived from the resource kind and the resource name from the spec.
+// Format: {kind}-{name}
+// If no name can be extracted, the existing name is preserved.
+func setResourceName(obj client.Object) {
+	kind := strings.ToLower(obj.GetObjectKind().GroupVersionKind().Kind)
+	if kind == "" {
+		return
+	}
+
+	// Extract identifying information from the spec
+	identifiers := extractIdentifiers(obj)
+
+	// If no identifiers found, preserve the existing name
+	if len(identifiers) == 0 {
+		return
+	}
+
+	// Build hierarchical name: kind-identifier1-identifier2...
+	name := kind + "-" + strings.Join(identifiers, "-")
+
+	// Normalize to be Kubernetes DNS-1123 compliant
+	name = resources.NormalizeAtlasName(name, resources.AtlasNameToKubernetesName())
+	obj.SetName(name)
+}
+
+// extractIdentifiers extracts identifying fields from the object's spec.
+// It uses reflection to navigate the versioned spec structure and extract
+// the resource name (Name or Username fields).
+func extractIdentifiers(obj client.Object) []string {
+	// Use reflection to access the Spec field
+	objValue := reflect.ValueOf(obj)
+	if objValue.Kind() == reflect.Ptr {
+		objValue = objValue.Elem()
+	}
+
+	specField := objValue.FieldByName("Spec")
+	if !specField.IsValid() {
+		return nil
+	}
+
+	// Navigate through versioned spec structure (e.g., V20250312)
+	// The generated types have a nested structure: Spec.V{version}.Entry.{field}
+	for i := 0; i < specField.NumField(); i++ {
+		versionField := specField.Field(i)
+		if versionField.Kind() == reflect.Ptr && !versionField.IsNil() {
+			versionField = versionField.Elem()
+			if name := extractNameFromVersionedSpec(versionField); name != "" {
+				return []string{name}
+			}
+			break
+		}
+	}
+
+	return nil
+}
+
+// extractNameFromVersionedSpec extracts the resource name from the versioned spec struct.
+// It looks for Name or Username fields in the Entry struct or directly on the spec.
+func extractNameFromVersionedSpec(v reflect.Value) string {
+	// Check Entry field first (most generated types have this)
+	entryField := v.FieldByName("Entry")
+	if entryField.IsValid() && entryField.Kind() == reflect.Ptr && !entryField.IsNil() {
+		entryValue := entryField.Elem()
+		if name := getStringField(entryValue, "Name"); name != "" {
+			return name
+		}
+		if username := getStringField(entryValue, "Username"); username != "" {
+			return username
+		}
+	}
+
+	// Fallback: check directly on the versioned spec
+	if name := getStringField(v, "Name"); name != "" {
+		return name
+	}
+	if username := getStringField(v, "Username"); username != "" {
+		return username
+	}
+
+	return ""
+}
+
+// getStringField extracts a string value from a struct field by name.
+// It handles both direct string fields and pointer to string fields.
+func getStringField(v reflect.Value, fieldName string) string {
+	field := v.FieldByName(fieldName)
+	if !field.IsValid() {
+		return ""
+	}
+
+	switch field.Kind() {
+	case reflect.String:
+		return field.String()
+	case reflect.Ptr:
+		if !field.IsNil() && field.Elem().Kind() == reflect.String {
+			return field.Elem().String()
+		}
+	}
+	return ""
 }

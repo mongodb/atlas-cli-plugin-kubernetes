@@ -19,6 +19,7 @@ package operator
 import (
 	"context"
 	"errors"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -28,6 +29,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -37,7 +39,7 @@ type mockExporter struct {
 	err     error
 }
 
-func (m *mockExporter) Export(_ context.Context) ([]client.Object, error) {
+func (m *mockExporter) Export(_ context.Context, _ []client.Object) ([]client.Object, error) {
 	return m.objects, m.err
 }
 
@@ -157,6 +159,280 @@ func TestGeneratedExporter_Run(t *testing.T) {
 					tc.validate(t, output)
 				}
 			}
+		})
+	}
+}
+
+// mockCRDObject is a mock Kubernetes object with a Spec field for testing name generation.
+type mockCRDObject struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+	Spec              mockCRDSpec `json:"spec,omitempty"`
+}
+
+type mockCRDSpec struct {
+	V20250312 *mockVersionedSpec `json:"v20250312,omitempty"`
+}
+
+type mockVersionedSpec struct {
+	GroupId *string        `json:"groupId,omitempty"`
+	Entry   *mockEntrySpec `json:"entry,omitempty"`
+	Name    *string        `json:"name,omitempty"`
+}
+
+type mockEntrySpec struct {
+	Name     *string `json:"name,omitempty"`
+	Username *string `json:"username,omitempty"`
+	GroupId  *string `json:"groupId,omitempty"`
+}
+
+func (m *mockCRDObject) DeepCopyObject() runtime.Object {
+	return m
+}
+
+func (m *mockCRDObject) GetObjectKind() schema.ObjectKind {
+	return m
+}
+
+func strPtr(s string) *string {
+	return &s
+}
+
+func TestSetResourceName(t *testing.T) {
+	tests := []struct {
+		name         string
+		obj          client.Object
+		expectedName string
+	}{
+		{
+			name: "object with name in entry",
+			obj: &mockCRDObject{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "Cluster",
+					APIVersion: "atlas.generated.mongodb.com/v1",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "original-name",
+				},
+				Spec: mockCRDSpec{
+					V20250312: &mockVersionedSpec{
+						GroupId: strPtr("project123"),
+						Entry: &mockEntrySpec{
+							Name: strPtr("my-cluster"),
+						},
+					},
+				},
+			},
+			expectedName: "cluster-my-cluster",
+		},
+		{
+			name: "object with username for database user",
+			obj: &mockCRDObject{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "DatabaseUser",
+					APIVersion: "atlas.generated.mongodb.com/v1",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "original-name",
+				},
+				Spec: mockCRDSpec{
+					V20250312: &mockVersionedSpec{
+						GroupId: strPtr("project456"),
+						Entry: &mockEntrySpec{
+							Username: strPtr("admin@example.com"),
+						},
+					},
+				},
+			},
+			expectedName: "databaseuser-adminatexampledotcom",
+		},
+		{
+			name: "object with name at versioned spec level",
+			obj: &mockCRDObject{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "Group",
+					APIVersion: "atlas.generated.mongodb.com/v1",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "original-name",
+				},
+				Spec: mockCRDSpec{
+					V20250312: &mockVersionedSpec{
+						Name: strPtr("my-project"),
+					},
+				},
+			},
+			expectedName: "group-my-project",
+		},
+		{
+			name: "object without spec preserves original name",
+			obj: &corev1.ConfigMap{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "ConfigMap",
+					APIVersion: "v1",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "my-config",
+				},
+			},
+			expectedName: "my-config",
+		},
+		{
+			name: "object with special characters in name gets normalized",
+			obj: &mockCRDObject{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "Cluster",
+					APIVersion: "atlas.generated.mongodb.com/v1",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "original",
+				},
+				Spec: mockCRDSpec{
+					V20250312: &mockVersionedSpec{
+						GroupId: strPtr("proj_123"),
+						Entry: &mockEntrySpec{
+							Name: strPtr("My Cluster (test)"),
+						},
+					},
+				},
+			},
+			// Special characters are replaced: space -> "-", "(" -> "left-parenthesis", ")" -> "right-parenthesis"
+			expectedName: "cluster-my-cluster-left-parenthesistestright-parenthesis",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			setResourceName(tc.obj)
+			assert.Equal(t, tc.expectedName, tc.obj.GetName())
+		})
+	}
+}
+
+func TestExtractIdentifiers(t *testing.T) {
+	tests := []struct {
+		name        string
+		obj         client.Object
+		expectedIDs []string
+	}{
+		{
+			name: "extracts name from entry",
+			obj: &mockCRDObject{
+				Spec: mockCRDSpec{
+					V20250312: &mockVersionedSpec{
+						GroupId: strPtr("project123"),
+						Entry: &mockEntrySpec{
+							Name: strPtr("cluster-name"),
+						},
+					},
+				},
+			},
+			expectedIDs: []string{"cluster-name"},
+		},
+		{
+			name: "extracts username when name not available",
+			obj: &mockCRDObject{
+				Spec: mockCRDSpec{
+					V20250312: &mockVersionedSpec{
+						GroupId: strPtr("project456"),
+						Entry: &mockEntrySpec{
+							Username: strPtr("testuser"),
+						},
+					},
+				},
+			},
+			expectedIDs: []string{"testuser"},
+		},
+		{
+			name: "extracts name from versioned spec when entry not available",
+			obj: &mockCRDObject{
+				Spec: mockCRDSpec{
+					V20250312: &mockVersionedSpec{
+						Name: strPtr("project-name"),
+					},
+				},
+			},
+			expectedIDs: []string{"project-name"},
+		},
+		{
+			name: "returns nil for object without spec",
+			obj: &corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "config",
+				},
+			},
+			expectedIDs: nil,
+		},
+		{
+			name: "extracts name from entry ignoring groupId",
+			obj: &mockCRDObject{
+				Spec: mockCRDSpec{
+					V20250312: &mockVersionedSpec{
+						Entry: &mockEntrySpec{
+							GroupId: strPtr("entry-group"),
+							Name:    strPtr("resource-name"),
+						},
+					},
+				},
+			},
+			expectedIDs: []string{"resource-name"},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			ids := extractIdentifiers(tc.obj)
+			assert.Equal(t, tc.expectedIDs, ids)
+		})
+	}
+}
+
+func TestGetStringField(t *testing.T) {
+	type testStruct struct {
+		DirectString  string
+		PointerString *string
+		IntField      int
+	}
+
+	strValue := "pointer-value"
+
+	tests := []struct {
+		name      string
+		fieldName string
+		expected  string
+	}{
+		{
+			name:      "direct string field",
+			fieldName: "DirectString",
+			expected:  "direct-value",
+		},
+		{
+			name:      "pointer string field",
+			fieldName: "PointerString",
+			expected:  "pointer-value",
+		},
+		{
+			name:      "non-existent field",
+			fieldName: "NonExistent",
+			expected:  "",
+		},
+		{
+			name:      "non-string field",
+			fieldName: "IntField",
+			expected:  "",
+		},
+	}
+
+	obj := testStruct{
+		DirectString:  "direct-value",
+		PointerString: &strValue,
+		IntField:      42,
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			result := getStringField(reflect.ValueOf(obj), tc.fieldName)
+			assert.Equal(t, tc.expected, result)
 		})
 	}
 }
