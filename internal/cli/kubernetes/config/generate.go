@@ -100,9 +100,11 @@ func (opts *GenerateOpts) Run() error {
 			ProjectID:            opts.ProjectID,
 			TargetNamespace:      opts.targetNamespace,
 			Profile:              opts.profile,
+			OrgID:                opts.OrgID,
 			CRDProvider:          embeddedProvider,
 			OperatorVersion:      opts.operatorVersion,
 			IndependentResources: opts.independentResources,
+			IncludeSecrets:       opts.includeSecrets,
 		})
 		if err != nil {
 			return fmt.Errorf("failed to setup generated exporter: %w", err)

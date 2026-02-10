@@ -21,31 +21,37 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"github.com/mongodb/atlas-cli-core/config"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/mocks"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	admin "go.mongodb.org/atlas-sdk/v20250312013/admin"
+	atlasauth "go.mongodb.org/atlas/auth"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-// testProfile implements store.ServiceGetter for testing.
+// testProfile implements store.AuthenticatedConfig for testing.
 type testProfile struct {
 	service       string
 	opsManagerURL string
 }
 
-func (p *testProfile) Service() string {
-	return p.service
-}
+// ServiceGetter methods
+func (p *testProfile) Service() string       { return p.service }
+func (p *testProfile) OpsManagerURL() string { return p.opsManagerURL }
 
-func (p *testProfile) OpsManagerURL() string {
-	return p.opsManagerURL
-}
+// CredentialsGetter methods
+func (p *testProfile) PublicAPIKey() string             { return "test-public-key" }
+func (p *testProfile) PrivateAPIKey() string            { return "test-private-key" }
+func (p *testProfile) ClientID() string                 { return "" }
+func (p *testProfile) ClientSecret() string             { return "" }
+func (p *testProfile) Token() (*atlasauth.Token, error) { return nil, nil }
+func (p *testProfile) AuthType() config.AuthMechanism   { return config.APIKeys }
 
-// Verify testProfile implements store.ServiceGetter
-var _ store.ServiceGetter = (*testProfile)(nil)
+// Verify testProfile implements store.AuthenticatedConfig
+var _ store.AuthenticatedConfig = (*testProfile)(nil)
 
 func TestSetup_Success(t *testing.T) {
 	ctrl := gomock.NewController(t)

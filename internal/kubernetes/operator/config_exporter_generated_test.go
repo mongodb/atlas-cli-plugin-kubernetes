@@ -23,7 +23,12 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/crd2go/crd2go/k8s"
+	"github.com/mongodb/atlas-cli-core/config"
+	atlasauth "go.mongodb.org/atlas/auth"
+
 	generated "github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator/exporter/generated"
+	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -49,13 +54,21 @@ func TestNewGeneratedExporter(t *testing.T) {
 	scheme := runtime.NewScheme()
 	exporters := []generated.Exporter{&mockExporter{}}
 
-	exp := NewGeneratedExporter("test-namespace", scheme, exporters, true)
+	exp := NewGeneratedExporter(GeneratedExporterConfig{
+		TargetNamespace:      "test-namespace",
+		Scheme:               scheme,
+		Exporters:            exporters,
+		IndependentResources: true,
+		IncludeSecrets:       true,
+		OrgID:                "test-org",
+	})
 
 	require.NotNil(t, exp)
 	assert.Equal(t, "test-namespace", exp.targetNamespace)
 	assert.Equal(t, scheme, exp.scheme)
 	assert.Len(t, exp.exporters, 1)
 	assert.True(t, exp.independentResources)
+	assert.True(t, exp.includeSecrets)
 }
 
 func TestGeneratedExporter_Run(t *testing.T) {
@@ -148,7 +161,11 @@ func TestGeneratedExporter_Run(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			exp := NewGeneratedExporter(tc.targetNamespace, scheme, tc.exporters, false)
+			exp := NewGeneratedExporter(GeneratedExporterConfig{
+				TargetNamespace: tc.targetNamespace,
+				Scheme:          scheme,
+				Exporters:       tc.exporters,
+			})
 
 			output, err := exp.Run()
 
@@ -186,7 +203,12 @@ func TestGeneratedExporter_IndependentResources(t *testing.T) {
 		exporter1 := &mockExporter{objects: []client.Object{newConfigMap("config1")}}
 		exporter2 := &mockExporter{objects: []client.Object{newConfigMap("config2")}}
 
-		exp := NewGeneratedExporter("test", scheme, []generated.Exporter{exporter1, exporter2}, true)
+		exp := NewGeneratedExporter(GeneratedExporterConfig{
+			TargetNamespace:      "test",
+			Scheme:               scheme,
+			Exporters:            []generated.Exporter{exporter1, exporter2},
+			IndependentResources: true,
+		})
 
 		_, err := exp.Run()
 		require.NoError(t, err)
@@ -202,7 +224,11 @@ func TestGeneratedExporter_IndependentResources(t *testing.T) {
 		exporter1 := &mockExporter{objects: []client.Object{config1}}
 		exporter2 := &mockExporter{objects: []client.Object{newConfigMap("config2")}}
 
-		exp := NewGeneratedExporter("test", scheme, []generated.Exporter{exporter1, exporter2}, false)
+		exp := NewGeneratedExporter(GeneratedExporterConfig{
+			TargetNamespace: "test",
+			Scheme:          scheme,
+			Exporters:       []generated.Exporter{exporter1, exporter2},
+		})
 
 		_, err := exp.Run()
 		require.NoError(t, err)
@@ -213,6 +239,151 @@ func TestGeneratedExporter_IndependentResources(t *testing.T) {
 		require.Len(t, exporter2.receivedRefObjects, 1)
 		assert.Equal(t, "config1", exporter2.receivedRefObjects[0].GetName())
 	})
+}
+
+func TestGeneratedExporter_ShouldIncludeSecrets(t *testing.T) {
+	scheme := runtime.NewScheme()
+
+	tests := []struct {
+		name                 string
+		independentResources bool
+		includeSecrets       bool
+		expected             bool
+	}{
+		{
+			name:                 "includeSecrets true, independentResources false",
+			independentResources: false,
+			includeSecrets:       true,
+			expected:             true,
+		},
+		{
+			name:                 "includeSecrets false, independentResources true",
+			independentResources: true,
+			includeSecrets:       false,
+			expected:             true,
+		},
+		{
+			name:                 "both true",
+			independentResources: true,
+			includeSecrets:       true,
+			expected:             true,
+		},
+		{
+			name:                 "both false",
+			independentResources: false,
+			includeSecrets:       false,
+			expected:             false,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			exp := NewGeneratedExporter(GeneratedExporterConfig{
+				TargetNamespace:      "test",
+				Scheme:               scheme,
+				IndependentResources: tc.independentResources,
+				IncludeSecrets:       tc.includeSecrets,
+			})
+			assert.Equal(t, tc.expected, exp.ShouldIncludeSecrets())
+		})
+	}
+}
+
+// mockCredentialsProvider is a mock implementation of store.CredentialsGetter for testing.
+type mockCredentialsProvider struct {
+	publicKey  string
+	privateKey string
+}
+
+func (m *mockCredentialsProvider) PublicAPIKey() string             { return m.publicKey }
+func (m *mockCredentialsProvider) PrivateAPIKey() string            { return m.privateKey }
+func (m *mockCredentialsProvider) ClientID() string                 { return "" }
+func (m *mockCredentialsProvider) ClientSecret() string             { return "" }
+func (m *mockCredentialsProvider) Token() (*atlasauth.Token, error) { return nil, nil }
+func (m *mockCredentialsProvider) AuthType() config.AuthMechanism   { return config.APIKeys }
+
+var _ store.CredentialsGetter = (*mockCredentialsProvider)(nil)
+
+func TestGeneratedExporter_BuildCredentialsSecret(t *testing.T) {
+	scheme := runtime.NewScheme()
+	require.NoError(t, corev1.AddToScheme(scheme))
+
+	t.Run("builds secret with credentials when includeSecrets is true", func(t *testing.T) {
+		exp := NewGeneratedExporter(GeneratedExporterConfig{
+			TargetNamespace: "test-ns",
+			Scheme:          scheme,
+			IncludeSecrets:  true,
+			OrgID:           "org-123",
+			CredentialsProvider: &mockCredentialsProvider{
+				publicKey:  "pub-key",
+				privateKey: "priv-key",
+			},
+		})
+
+		secret := exp.buildCredentialsSecret()
+
+		require.NotNil(t, secret)
+		assert.Equal(t, "atlas-credentials", secret.Name)
+		assert.Equal(t, "test-ns", secret.Namespace)
+		assert.Equal(t, "org-123", string(secret.Data["orgId"]))
+		assert.Equal(t, "pub-key", string(secret.Data["publicApiKey"]))
+		assert.Equal(t, "priv-key", string(secret.Data["privateApiKey"]))
+	})
+
+	t.Run("builds secret with empty placeholders when includeSecrets is false", func(t *testing.T) {
+		exp := NewGeneratedExporter(GeneratedExporterConfig{
+			TargetNamespace:      "test-ns",
+			Scheme:               scheme,
+			IndependentResources: true, // This triggers ShouldIncludeSecrets but with empty creds
+			IncludeSecrets:       false,
+			OrgID:                "org-123",
+		})
+
+		secret := exp.buildCredentialsSecret()
+
+		require.NotNil(t, secret)
+		assert.Equal(t, "atlas-credentials", secret.Name)
+		assert.Equal(t, "", string(secret.Data["orgId"]))
+		assert.Equal(t, "", string(secret.Data["publicApiKey"]))
+		assert.Equal(t, "", string(secret.Data["privateApiKey"]))
+	})
+}
+
+func TestSetConnectionSecretRef(t *testing.T) {
+	t.Run("sets connection secret ref on object with ConnectionSecretRef field", func(t *testing.T) {
+		obj := &mockCRDWithConnectionSecretRef{
+			Spec: mockSpecWithConnectionSecretRef{},
+		}
+
+		setConnectionSecretRef(obj, "my-secret")
+
+		require.NotNil(t, obj.Spec.ConnectionSecretRef)
+		assert.Equal(t, "my-secret", obj.Spec.ConnectionSecretRef.Name)
+	})
+
+	t.Run("does nothing for objects without ConnectionSecretRef field", func(t *testing.T) {
+		obj := &corev1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{Name: "test"},
+		}
+
+		// Should not panic
+		setConnectionSecretRef(obj, "my-secret")
+	})
+}
+
+// mockCRDWithConnectionSecretRef is a mock CRD object with ConnectionSecretRef for testing.
+type mockCRDWithConnectionSecretRef struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+	Spec              mockSpecWithConnectionSecretRef `json:"spec,omitempty"`
+}
+
+type mockSpecWithConnectionSecretRef struct {
+	ConnectionSecretRef *k8s.LocalReference `json:"connectionSecretRef,omitempty"`
+}
+
+func (m *mockCRDWithConnectionSecretRef) DeepCopyObject() runtime.Object {
+	return m
 }
 
 // mockCRDObject is a mock Kubernetes object with a Spec field for testing name generation.
