@@ -37,8 +37,11 @@ type SetupConfig struct {
 	// TargetNamespace is the Kubernetes namespace for exported resources
 	TargetNamespace string
 
-	// Profile provides service configuration (Service and OpsManagerURL)
-	Profile store.ServiceGetter
+	// Profile provides service configuration and credentials
+	Profile store.AuthenticatedConfig
+
+	// OrgID is the Atlas organization ID for the credentials secret
+	OrgID string
 
 	// CRDProvider provides CRD definitions
 	CRDProvider crds.AtlasOperatorCRDProvider
@@ -50,6 +53,11 @@ type SetupConfig struct {
 	// cross-resource references. When false, previously exported objects are passed
 	// to each exporter for dependency resolution.
 	IndependentResources bool
+
+	// IncludeSecrets when true, generates Secret resources and references them
+	// in spec.connectionSecretRef. When false but IndependentResources is true,
+	// secrets are still generated to ensure standalone resources work correctly.
+	IncludeSecrets bool
 }
 
 // Setup creates and configures a GeneratedExporter with all required dependencies.
@@ -86,5 +94,13 @@ func Setup(cfg SetupConfig) (*operator.GeneratedExporter, error) {
 	}
 
 	// Create the GeneratedExporter
-	return operator.NewGeneratedExporter(cfg.TargetNamespace, scheme, exporters, cfg.IndependentResources), nil
+	return operator.NewGeneratedExporter(operator.GeneratedExporterConfig{
+		TargetNamespace:      cfg.TargetNamespace,
+		Scheme:               scheme,
+		Exporters:            exporters,
+		IndependentResources: cfg.IndependentResources,
+		IncludeSecrets:       cfg.IncludeSecrets,
+		CredentialsProvider:  cfg.Profile,
+		OrgID:                cfg.OrgID,
+	}), nil
 }
