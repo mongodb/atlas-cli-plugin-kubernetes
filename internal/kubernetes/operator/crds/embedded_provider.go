@@ -20,6 +20,7 @@ import (
 	"embed"
 	"fmt"
 	"io"
+	"io/fs"
 	"path"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -29,6 +30,10 @@ import (
 
 //go:embed generated/*/crds.yaml
 var generatedCRDsFS embed.FS
+
+// crdFS is the filesystem used to read embedded CRDs.
+// It defaults to the embedded filesystem but can be overridden for testing.
+var crdFS fs.FS = generatedCRDsFS
 
 // EmbeddedAtlasCRDProvider provides CRDs from embedded files organized by operator version.
 // This is used for generated CRDs that are not yet publicly available on GitHub.
@@ -52,7 +57,7 @@ func NewEmbeddedAtlasCRDProvider() (*EmbeddedAtlasCRDProvider, error) {
 
 // loadAllVersions discovers and loads all versioned CRD files.
 func (p *EmbeddedAtlasCRDProvider) loadAllVersions() error {
-	entries, err := generatedCRDsFS.ReadDir("generated")
+	entries, err := fs.ReadDir(crdFS, "generated")
 	if err != nil {
 		return fmt.Errorf("failed to read generated directory: %w", err)
 	}
@@ -74,7 +79,7 @@ func (p *EmbeddedAtlasCRDProvider) loadAllVersions() error {
 // loadCRDsForVersion reads and parses the CRDs file for a specific version.
 func (p *EmbeddedAtlasCRDProvider) loadCRDsForVersion(version string) error {
 	filePath := path.Join("generated", version, "crds.yaml")
-	data, err := generatedCRDsFS.ReadFile(filePath)
+	data, err := fs.ReadFile(crdFS, filePath)
 	if err != nil {
 		return fmt.Errorf("failed to read CRDs file for version %s: %w", version, err)
 	}
