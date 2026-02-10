@@ -21,7 +21,11 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/crd2go/crd2go/k8s"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator/resources"
+	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator/secrets"
+	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -46,16 +50,52 @@ type GeneratedExporter struct {
 	// cross-resource references. When false, previously exported objects are passed
 	// to each exporter for dependency resolution.
 	independentResources bool
+
+	// includeSecrets when true, generates Secret resources and references them
+	// in spec.connectionSecretRef. When false but independentResources is true,
+	// secrets are still generated to ensure standalone resources work correctly.
+	includeSecrets bool
+
+	// credentialsProvider provides API credentials for secret generation
+	credentialsProvider store.CredentialsGetter
+
+	// orgID is the Atlas organization ID for the credentials secret
+	orgID string
+}
+
+// credentialsSecretName is the fixed name for the Atlas credentials secret.
+// The namespace provides uniqueness when multiple projects are exported.
+const credentialsSecretName = "atlas-credentials"
+
+// GeneratedExporterConfig holds the configuration for creating a GeneratedExporter.
+type GeneratedExporterConfig struct {
+	TargetNamespace      string
+	Scheme               *runtime.Scheme
+	Exporters            []generated.Exporter
+	IndependentResources bool
+	IncludeSecrets       bool
+	CredentialsProvider  store.CredentialsGetter
+	OrgID                string
 }
 
 // NewGeneratedExporter creates a new instance of GeneratedExporter.
-func NewGeneratedExporter(targetNamespace string, scheme *runtime.Scheme, exporters []generated.Exporter, independentResources bool) *GeneratedExporter {
+func NewGeneratedExporter(cfg GeneratedExporterConfig) *GeneratedExporter {
 	return &GeneratedExporter{
-		targetNamespace:      targetNamespace,
-		scheme:               scheme,
-		exporters:            exporters,
-		independentResources: independentResources,
+		targetNamespace:      cfg.TargetNamespace,
+		scheme:               cfg.Scheme,
+		exporters:            cfg.Exporters,
+		independentResources: cfg.IndependentResources,
+		includeSecrets:       cfg.IncludeSecrets,
+		credentialsProvider:  cfg.CredentialsProvider,
+		orgID:                cfg.OrgID,
 	}
+}
+
+// ShouldIncludeSecrets returns true if secrets should be generated and referenced.
+// Secrets are included when explicitly requested (includeSecrets=true) or when
+// resources are independent (independentResources=true) to ensure they work standalone.
+func (e *GeneratedExporter) ShouldIncludeSecrets() bool {
+	return e.includeSecrets || e.independentResources
 }
 
 // Run executes the generated resource export workflow.
@@ -72,6 +112,16 @@ func (e *GeneratedExporter) Run() (string, error) {
 		e.scheme,
 		json.SerializerOptions{Yaml: true, Pretty: true},
 	)
+
+	// Create credentials secret if needed
+	var credentialsSecret *corev1.Secret
+	if e.ShouldIncludeSecrets() {
+		credentialsSecret = e.buildCredentialsSecret()
+		if err := serializer.Encode(credentialsSecret, output); err != nil {
+			return "", fmt.Errorf("failed to serialize credentials secret: %w", err)
+		}
+		output.WriteString(yamlSeparator)
+	}
 
 	// Export all resources from all exporters
 	var exportedObjects []client.Object
@@ -97,6 +147,11 @@ func (e *GeneratedExporter) Run() (string, error) {
 				obj.SetNamespace(e.targetNamespace)
 			}
 
+			// Set connection secret reference if secrets are included
+			if credentialsSecret != nil {
+				setConnectionSecretRef(obj, credentialsSecret.Name)
+			}
+
 			if err := serializer.Encode(obj, output); err != nil {
 				return "", fmt.Errorf("failed to serialize resource: %w", err)
 			}
@@ -107,6 +162,55 @@ func (e *GeneratedExporter) Run() (string, error) {
 	}
 
 	return output.String(), nil
+}
+
+// buildCredentialsSecret creates a Kubernetes Secret containing Atlas API credentials.
+func (e *GeneratedExporter) buildCredentialsSecret() *corev1.Secret {
+	secretName := credentialsSecretName
+	dictionary := resources.AtlasNameToKubernetesName()
+
+	secretBuilder := secrets.NewAtlasSecretBuilder(secretName, e.targetNamespace, dictionary)
+
+	// Include actual credentials data if the credentials provider is available
+	if e.credentialsProvider != nil && e.includeSecrets {
+		secretBuilder = secretBuilder.WithData(map[string][]byte{
+			secrets.CredOrgID:         []byte(e.orgID),
+			secrets.CredPublicAPIKey:  []byte(e.credentialsProvider.PublicAPIKey()),
+			secrets.CredPrivateAPIKey: []byte(e.credentialsProvider.PrivateAPIKey()),
+		})
+	} else {
+		// Create empty secret placeholders
+		secretBuilder = secretBuilder.WithData(map[string][]byte{
+			secrets.CredOrgID:         []byte(""),
+			secrets.CredPublicAPIKey:  []byte(""),
+			secrets.CredPrivateAPIKey: []byte(""),
+		})
+	}
+
+	return secretBuilder.Build()
+}
+
+// setConnectionSecretRef sets the ConnectionSecretRef field on a resource using reflection.
+// The generated CRD types have a Spec.ConnectionSecretRef field of type *k8s.LocalReference.
+func setConnectionSecretRef(obj client.Object, secretName string) {
+	objValue := reflect.ValueOf(obj)
+	if objValue.Kind() == reflect.Ptr {
+		objValue = objValue.Elem()
+	}
+
+	specField := objValue.FieldByName("Spec")
+	if !specField.IsValid() || !specField.CanSet() {
+		return
+	}
+
+	connSecretRefField := specField.FieldByName("ConnectionSecretRef")
+	if !connSecretRefField.IsValid() || !connSecretRefField.CanSet() {
+		return
+	}
+
+	// Create and set the LocalReference
+	localRef := &k8s.LocalReference{Name: secretName}
+	connSecretRefField.Set(reflect.ValueOf(localRef))
 }
 
 // setResourceName sets a Kubernetes-compliant name on the object.
