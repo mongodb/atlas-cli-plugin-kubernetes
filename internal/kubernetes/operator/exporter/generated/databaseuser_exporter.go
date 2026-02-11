@@ -63,7 +63,6 @@ func (e *DatabaseUserExporter) Export(ctx context.Context, referencedObjects []c
 		}
 
 		resource.GetObjectKind().SetGroupVersionKind(akov2generated.GroupVersion.WithKind("DatabaseUser"))
-		resource.Status = akov2generated.DatabaseUserStatus{}
 		resources = append(resources, resource)
 		resources = append(resources, translatedResources...)
 	}
