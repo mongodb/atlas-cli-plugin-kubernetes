@@ -71,7 +71,6 @@ func (e *ClusterExporter) Export(ctx context.Context, referencedObjects []client
 		}
 
 		resource.GetObjectKind().SetGroupVersionKind(akov2generated.GroupVersion.WithKind("Cluster"))
-		resource.Status = akov2generated.ClusterStatus{}
 		resources = append(resources, resource)
 		resources = append(resources, translatedResources...)
 	}

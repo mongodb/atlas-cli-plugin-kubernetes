@@ -26,6 +26,7 @@ import (
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator/secrets"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -152,7 +153,14 @@ func (e *GeneratedExporter) Run() (string, error) {
 				setConnectionSecretRef(obj, credentialsSecret.Name)
 			}
 
-			if err := serializer.Encode(obj, output); err != nil {
+			// Convert to unstructured and remove status for serialization only
+			// (keeps the concrete object intact for cross-resource references)
+			unstructuredObj, err := toUnstructuredWithoutStatus(obj)
+			if err != nil {
+				return "", fmt.Errorf("failed to prepare resource for serialization: %w", err)
+			}
+
+			if err := serializer.Encode(unstructuredObj, output); err != nil {
 				return "", fmt.Errorf("failed to serialize resource: %w", err)
 			}
 			output.WriteString(yamlSeparator)
@@ -313,4 +321,14 @@ func getStringField(v reflect.Value, fieldName string) string {
 		}
 	}
 	return ""
+}
+
+// toUnstructuredWithoutStatus converts a typed object to unstructured with the status field removed.
+func toUnstructuredWithoutStatus(obj client.Object) (*unstructured.Unstructured, error) {
+	unstructuredMap, err := runtime.DefaultUnstructuredConverter.ToUnstructured(obj)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert to unstructured: %w", err)
+	}
+	delete(unstructuredMap, "status")
+	return &unstructured.Unstructured{Object: unstructuredMap}, nil
 }
