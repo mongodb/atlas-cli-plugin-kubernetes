@@ -1,0 +1,334 @@
+// Copyright 2025 MongoDB Inc
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package operator
+
+import (
+	"bytes"
+	"context"
+	"fmt"
+	"reflect"
+	"strings"
+
+	"github.com/crd2go/crd2go/k8s"
+	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator/resources"
+	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator/secrets"
+	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/serializer/json"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	generated "github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator/exporter/generated"
+)
+
+// GeneratedExporter handles the export of Atlas resources using auto-generated CRDs.
+// It leverages the Crapi library for bi-directional translation between Go types
+// representing CRDs and the corresponding Go types within the Atlas SDK.
+type GeneratedExporter struct {
+	// targetNamespace is the Kubernetes namespace for the exported resources
+	targetNamespace string
+
+	// scheme is the Kubernetes runtime scheme for serialization
+	scheme *runtime.Scheme
+
+	// exporters holds the resource-specific exporters
+	exporters []generated.Exporter
+
+	// independentResources when true, resources are exported independently without
+	// cross-resource references. When false, previously exported objects are passed
+	// to each exporter for dependency resolution.
+	independentResources bool
+
+	// includeSecrets when true, generates Secret resources and references them
+	// in spec.connectionSecretRef. When false but independentResources is true,
+	// secrets are still generated to ensure standalone resources work correctly.
+	includeSecrets bool
+
+	// credentialsProvider provides API credentials for secret generation
+	credentialsProvider store.CredentialsGetter
+
+	// orgID is the Atlas organization ID for the credentials secret
+	orgID string
+}
+
+// credentialsSecretName is the fixed name for the Atlas credentials secret.
+// The namespace provides uniqueness when multiple projects are exported.
+const credentialsSecretName = "atlas-credentials"
+
+// GeneratedExporterConfig holds the configuration for creating a GeneratedExporter.
+type GeneratedExporterConfig struct {
+	TargetNamespace      string
+	Scheme               *runtime.Scheme
+	Exporters            []generated.Exporter
+	IndependentResources bool
+	IncludeSecrets       bool
+	CredentialsProvider  store.CredentialsGetter
+	OrgID                string
+}
+
+// NewGeneratedExporter creates a new instance of GeneratedExporter.
+func NewGeneratedExporter(cfg GeneratedExporterConfig) *GeneratedExporter {
+	return &GeneratedExporter{
+		targetNamespace:      cfg.TargetNamespace,
+		scheme:               cfg.Scheme,
+		exporters:            cfg.Exporters,
+		independentResources: cfg.IndependentResources,
+		includeSecrets:       cfg.IncludeSecrets,
+		credentialsProvider:  cfg.CredentialsProvider,
+		orgID:                cfg.OrgID,
+	}
+}
+
+// ShouldIncludeSecrets returns true if secrets should be generated and referenced.
+// Secrets are included when explicitly requested (includeSecrets=true) or when
+// resources are independent (independentResources=true) to ensure they work standalone.
+func (e *GeneratedExporter) ShouldIncludeSecrets() bool {
+	return e.includeSecrets || e.independentResources
+}
+
+// Run executes the generated resource export workflow.
+// It retrieves resources from MongoDB Atlas using the SDK,
+// delegates type conversion to the Crapi translator,
+// and serializes the CRD objects to YAML format.
+func (e *GeneratedExporter) Run() (string, error) {
+	ctx := context.Background()
+	output := bytes.NewBufferString(yamlSeparator)
+
+	serializer := json.NewSerializerWithOptions(
+		json.DefaultMetaFactory,
+		e.scheme,
+		e.scheme,
+		json.SerializerOptions{Yaml: true, Pretty: true},
+	)
+
+	// Create credentials secret if needed
+	var credentialsSecret *corev1.Secret
+	if e.ShouldIncludeSecrets() {
+		credentialsSecret = e.buildCredentialsSecret()
+		if err := serializer.Encode(credentialsSecret, output); err != nil {
+			return "", fmt.Errorf("failed to serialize credentials secret: %w", err)
+		}
+		output.WriteString(yamlSeparator)
+	}
+
+	// Export all resources from all exporters
+	var exportedObjects []client.Object
+	for _, exp := range e.exporters {
+		// Pass previously exported objects only when resources are NOT independent
+		// (i.e., when they need to reference each other for cross-resource dependencies)
+		var referencedObjects []client.Object
+		if !e.independentResources {
+			referencedObjects = exportedObjects
+		}
+
+		objects, err := exp.Export(ctx, referencedObjects)
+		if err != nil {
+			return "", fmt.Errorf("failed to export resources: %w", err)
+		}
+
+		for _, obj := range objects {
+			// Set hierarchical Kubernetes-compliant name
+			setResourceName(obj)
+
+			// Set the target namespace if specified
+			if e.targetNamespace != "" {
+				obj.SetNamespace(e.targetNamespace)
+			}
+
+			// Set connection secret reference if secrets are included
+			if credentialsSecret != nil {
+				setConnectionSecretRef(obj, credentialsSecret.Name)
+			}
+
+			// Convert to unstructured and remove status for serialization only
+			// (keeps the concrete object intact for cross-resource references)
+			unstructuredObj, err := toUnstructuredWithoutStatus(obj)
+			if err != nil {
+				return "", fmt.Errorf("failed to prepare resource for serialization: %w", err)
+			}
+
+			if err := serializer.Encode(unstructuredObj, output); err != nil {
+				return "", fmt.Errorf("failed to serialize resource: %w", err)
+			}
+			output.WriteString(yamlSeparator)
+		}
+
+		exportedObjects = append(exportedObjects, objects...)
+	}
+
+	return output.String(), nil
+}
+
+// buildCredentialsSecret creates a Kubernetes Secret containing Atlas API credentials.
+func (e *GeneratedExporter) buildCredentialsSecret() *corev1.Secret {
+	secretName := credentialsSecretName
+	dictionary := resources.AtlasNameToKubernetesName()
+
+	secretBuilder := secrets.NewAtlasSecretBuilder(secretName, e.targetNamespace, dictionary)
+
+	// Include actual credentials data if the credentials provider is available
+	if e.credentialsProvider != nil && e.includeSecrets {
+		secretBuilder = secretBuilder.WithData(map[string][]byte{
+			secrets.CredOrgID:         []byte(e.orgID),
+			secrets.CredPublicAPIKey:  []byte(e.credentialsProvider.PublicAPIKey()),
+			secrets.CredPrivateAPIKey: []byte(e.credentialsProvider.PrivateAPIKey()),
+		})
+	} else {
+		// Create empty secret placeholders
+		secretBuilder = secretBuilder.WithData(map[string][]byte{
+			secrets.CredOrgID:         []byte(""),
+			secrets.CredPublicAPIKey:  []byte(""),
+			secrets.CredPrivateAPIKey: []byte(""),
+		})
+	}
+
+	return secretBuilder.Build()
+}
+
+// setConnectionSecretRef sets the ConnectionSecretRef field on a resource using reflection.
+// The generated CRD types have a Spec.ConnectionSecretRef field of type *k8s.LocalReference.
+func setConnectionSecretRef(obj client.Object, secretName string) {
+	objValue := reflect.ValueOf(obj)
+	if objValue.Kind() == reflect.Ptr {
+		objValue = objValue.Elem()
+	}
+
+	specField := objValue.FieldByName("Spec")
+	if !specField.IsValid() || !specField.CanSet() {
+		return
+	}
+
+	connSecretRefField := specField.FieldByName("ConnectionSecretRef")
+	if !connSecretRefField.IsValid() || !connSecretRefField.CanSet() {
+		return
+	}
+
+	// Create and set the LocalReference
+	localRef := &k8s.LocalReference{Name: secretName}
+	connSecretRefField.Set(reflect.ValueOf(localRef))
+}
+
+// setResourceName sets a Kubernetes-compliant name on the object.
+// The name is derived from the resource kind and the resource name from the spec.
+// Format: {kind}-{name}
+// If no name can be extracted, the existing name is preserved.
+func setResourceName(obj client.Object) {
+	kind := strings.ToLower(obj.GetObjectKind().GroupVersionKind().Kind)
+	if kind == "" {
+		return
+	}
+
+	// Extract identifying information from the spec
+	identifiers := extractIdentifiers(obj)
+
+	// If no identifiers found, preserve the existing name
+	if len(identifiers) == 0 {
+		return
+	}
+
+	// Build hierarchical name: kind-identifier1-identifier2...
+	name := kind + "-" + strings.Join(identifiers, "-")
+
+	// Normalize to be Kubernetes DNS-1123 compliant
+	name = resources.NormalizeAtlasName(name, resources.AtlasNameToKubernetesName())
+	obj.SetName(name)
+}
+
+// extractIdentifiers extracts identifying fields from the object's spec.
+// It uses reflection to navigate the versioned spec structure and extract
+// the resource name (Name or Username fields).
+func extractIdentifiers(obj client.Object) []string {
+	// Use reflection to access the Spec field
+	objValue := reflect.ValueOf(obj)
+	if objValue.Kind() == reflect.Ptr {
+		objValue = objValue.Elem()
+	}
+
+	specField := objValue.FieldByName("Spec")
+	if !specField.IsValid() {
+		return nil
+	}
+
+	// Navigate through versioned spec structure (e.g., V20250312)
+	// The generated types have a nested structure: Spec.V{version}.Entry.{field}
+	for i := 0; i < specField.NumField(); i++ {
+		versionField := specField.Field(i)
+		if versionField.Kind() == reflect.Ptr && !versionField.IsNil() {
+			versionField = versionField.Elem()
+			if name := extractNameFromVersionedSpec(versionField); name != "" {
+				return []string{name}
+			}
+			break
+		}
+	}
+
+	return nil
+}
+
+// extractNameFromVersionedSpec extracts the resource name from the versioned spec struct.
+// It looks for Name or Username fields in the Entry struct or directly on the spec.
+func extractNameFromVersionedSpec(v reflect.Value) string {
+	// Check Entry field first (most generated types have this)
+	entryField := v.FieldByName("Entry")
+	if entryField.IsValid() && entryField.Kind() == reflect.Ptr && !entryField.IsNil() {
+		entryValue := entryField.Elem()
+		if name := getStringField(entryValue, "Name"); name != "" {
+			return name
+		}
+		if username := getStringField(entryValue, "Username"); username != "" {
+			return username
+		}
+	}
+
+	// Fallback: check directly on the versioned spec
+	if name := getStringField(v, "Name"); name != "" {
+		return name
+	}
+	if username := getStringField(v, "Username"); username != "" {
+		return username
+	}
+
+	return ""
+}
+
+// getStringField extracts a string value from a struct field by name.
+// It handles both direct string fields and pointer to string fields.
+func getStringField(v reflect.Value, fieldName string) string {
+	field := v.FieldByName(fieldName)
+	if !field.IsValid() {
+		return ""
+	}
+
+	switch field.Kind() {
+	case reflect.String:
+		return field.String()
+	case reflect.Ptr:
+		if !field.IsNil() && field.Elem().Kind() == reflect.String {
+			return field.Elem().String()
+		}
+	}
+	return ""
+}
+
+// toUnstructuredWithoutStatus converts a typed object to unstructured with the status field removed.
+func toUnstructuredWithoutStatus(obj client.Object) (*unstructured.Unstructured, error) {
+	unstructuredMap, err := runtime.DefaultUnstructuredConverter.ToUnstructured(obj)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert to unstructured: %w", err)
+	}
+	delete(unstructuredMap, "status")
+	return &unstructured.Unstructured{Object: unstructuredMap}, nil
+}

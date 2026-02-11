@@ -24,6 +24,7 @@ import (
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/flag"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator/crds"
+	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator/exporter"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator/features"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/usage"
@@ -44,9 +45,10 @@ type GenerateOpts struct {
 	targetNamespace      string
 	operatorVersion      string
 	store                store.OperatorGenericStore
-	credsStore           store.CredentialsGetter
 	crdsProvider         crds.AtlasOperatorCRDProvider
 	independentResources bool
+	crdVersion           string
+	profile              store.AuthenticatedConfig
 }
 
 func (opts *GenerateOpts) ValidateTargetNamespace() error {
@@ -70,12 +72,11 @@ func (opts *GenerateOpts) initStores(ctx context.Context) func() error {
 	return func() error {
 		var err error
 
-		profile := config.Default()
-		opts.store, err = store.New(store.AuthenticatedPreset(profile), store.WithContext(ctx))
+		opts.profile = config.Default()
+		opts.store, err = store.New(store.AuthenticatedPreset(opts.profile), store.WithContext(ctx))
 		if err != nil {
 			return err
 		}
-		opts.credsStore = profile
 
 		opts.crdsProvider = crds.NewGithubAtlasCRDProvider()
 
@@ -84,20 +85,49 @@ func (opts *GenerateOpts) initStores(ctx context.Context) func() error {
 }
 
 func (opts *GenerateOpts) Run() error {
-	atlasCRDs, err := features.NewAtlasCRDs(opts.crdsProvider, opts.operatorVersion)
-	if err != nil {
-		return err
+	var exp operator.Exporter
+
+	switch opts.crdVersion {
+	case features.CRDVersionGenerated:
+		// Use the embedded CRD provider for generated CRDs (not yet available on GitHub)
+		embeddedProvider, err := crds.NewEmbeddedAtlasCRDProvider()
+		if err != nil {
+			return fmt.Errorf("failed to create embedded CRD provider: %w", err)
+		}
+
+		// Use the new generated exporter for auto-generated CRDs
+		generatedExp, err := exporter.Setup(exporter.SetupConfig{
+			ProjectID:            opts.ProjectID,
+			TargetNamespace:      opts.targetNamespace,
+			Profile:              opts.profile,
+			OrgID:                opts.OrgID,
+			CRDProvider:          embeddedProvider,
+			OperatorVersion:      opts.operatorVersion,
+			IndependentResources: opts.independentResources,
+			IncludeSecrets:       opts.includeSecrets,
+		})
+		if err != nil {
+			return fmt.Errorf("failed to setup generated exporter: %w", err)
+		}
+		exp = generatedExp
+	default:
+		// Use the existing curated exporter (legacy behavior)
+		atlasCRDs, err := features.NewAtlasCRDs(opts.crdsProvider, opts.operatorVersion)
+		if err != nil {
+			return err
+		}
+		exp = operator.NewConfigExporter(opts.store, opts.profile, opts.ProjectID, opts.OrgID).
+			WithClustersNames(opts.clusterName).
+			WithTargetNamespace(opts.targetNamespace).
+			WithSecretsData(opts.includeSecrets).
+			WithTargetOperatorVersion(opts.operatorVersion).
+			WithFeatureValidator(atlasCRDs).
+			WithPatcher(atlasCRDs).
+			WithDataFederationNames(opts.dataFederationName).
+			WithIndependentResources(opts.independentResources)
 	}
-	result, err := operator.NewConfigExporter(opts.store, opts.credsStore, opts.ProjectID, opts.OrgID).
-		WithClustersNames(opts.clusterName).
-		WithTargetNamespace(opts.targetNamespace).
-		WithSecretsData(opts.includeSecrets).
-		WithTargetOperatorVersion(opts.operatorVersion).
-		WithFeatureValidator(atlasCRDs).
-		WithPatcher(atlasCRDs).
-		WithDataFederationNames(opts.dataFederationName).
-		WithIndependentResources(opts.independentResources).
-		Run()
+
+	result, err := exp.Run()
 	if err != nil {
 		return err
 	}
@@ -157,5 +187,6 @@ func GenerateBuilder() *cobra.Command {
 	cmd.Flags().StringVar(&opts.operatorVersion, flag.OperatorVersion, features.LatestOperatorMajorVersion, usage.OperatorVersion)
 	cmd.Flags().StringSliceVar(&opts.dataFederationName, flag.DataFederationName, []string{}, usage.ExporterDataFederationName)
 	cmd.Flags().BoolVar(&opts.independentResources, flag.IndependentResources, false, usage.IndependentResources)
+	cmd.Flags().StringVar(&opts.crdVersion, flag.CRDVersion, features.CRDVersionCurated, usage.CRDVersion)
 	return cmd
 }
