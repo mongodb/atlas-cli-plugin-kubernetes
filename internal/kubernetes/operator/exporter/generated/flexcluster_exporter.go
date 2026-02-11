@@ -63,7 +63,6 @@ func (e *FlexClusterExporter) Export(ctx context.Context, referencedObjects []cl
 		}
 
 		resource.GetObjectKind().SetGroupVersionKind(akov2generated.GroupVersion.WithKind("FlexCluster"))
-		resource.Status = akov2generated.FlexClusterStatus{}
 		resources = append(resources, resource)
 		resources = append(resources, translatedResources...)
 	}
