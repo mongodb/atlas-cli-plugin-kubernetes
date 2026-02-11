@@ -149,9 +149,13 @@ func TestGeneratedExporterRun(t *testing.T) {
 				assert.Contains(t, output, "kind: FlexCluster")
 				assert.Contains(t, output, "name: flexcluster-my-flex-cluster")
 
+				// Verify status field is empty
+				assert.Contains(t, output, "status: {}")
+
 				// Verify no secrets when not requested
 				assert.NotContains(t, output, "kind: Secret")
 				assert.NotContains(t, output, "connectionSecretRef:")
+
 			},
 		},
 		{

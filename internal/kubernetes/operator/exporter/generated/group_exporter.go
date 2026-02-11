@@ -48,7 +48,7 @@ func (e *GroupExporter) Export(ctx context.Context, referencedObjects []client.O
 	}
 
 	resource.GetObjectKind().SetGroupVersionKind(akov2generated.GroupVersion.WithKind("Group"))
-	//resource.Status = akov2generated.GroupStatus{}
+	resource.Status = akov2generated.GroupStatus{}
 
 	return append([]client.Object{resource}, resources...), nil
 }
