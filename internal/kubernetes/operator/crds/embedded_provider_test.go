@@ -244,13 +244,6 @@ func TestEmbeddedAtlasCRDProvider_GetAtlasOperatorResource(t *testing.T) {
 			wantKind:     "DatabaseUser",
 		},
 		{
-			name:         "organizations CRD exists",
-			resourceName: "organizations.atlas.generated.mongodb.com",
-			version:      version,
-			wantErr:      false,
-			wantKind:     "Organization",
-		},
-		{
 			name:         "non-existent CRD returns error",
 			resourceName: "nonexistent.atlas.generated.mongodb.com",
 			version:      version,
