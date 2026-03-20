@@ -20,11 +20,10 @@ import (
 	"context"
 	"fmt"
 
-	admin "go.mongodb.org/atlas-sdk/v20250312013/admin"
-	client "sigs.k8s.io/controller-runtime/pkg/client"
-
+	akov2generated "github.com/mongodb/mongodb-atlas-kubernetes/v2/generated/v1"
 	crapi "github.com/mongodb/mongodb-atlas-kubernetes/v2/pkg/crapi"
-	akov2generated "github.com/mongodb/mongodb-atlas-kubernetes/v2/pkg/crapi/testdata/samples/v1"
+	admin "go.mongodb.org/atlas-sdk/v20250312016/admin"
+	client "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type GroupExporter struct {

@@ -17,7 +17,7 @@ package exporter
 import (
 	generated "github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator/exporter/generated"
 	"github.com/mongodb/mongodb-atlas-kubernetes/v2/pkg/crapi"
-	admin "go.mongodb.org/atlas-sdk/v20250312013/admin"
+	admin "go.mongodb.org/atlas-sdk/v20250312016/admin"
 )
 
 // ExporterFactory creates an exporter for a specific resource type.

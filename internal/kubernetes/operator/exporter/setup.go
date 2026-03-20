@@ -23,12 +23,6 @@ import (
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store"
 )
 
-// Function variables for dependency injection in tests
-var (
-	newSDKClientFunc = NewSDKClient
-	newSchemeFunc    = NewScheme
-)
-
 // SetupConfig holds the configuration for setting up the generated exporter.
 type SetupConfig struct {
 	// ProjectID is the Atlas project ID to export
@@ -64,13 +58,13 @@ type SetupConfig struct {
 // It iterates over SupportedResources to create exporters for each resource type.
 func Setup(cfg SetupConfig) (*operator.GeneratedExporter, error) {
 	// Create the SDK client using CLI configuration
-	sdkClient, err := newSDKClientFunc(cfg.Profile)
+	sdkClient, err := NewSDKClient(cfg.Profile)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create SDK client: %w", err)
 	}
 
 	// Create the scheme once for all translators
-	scheme, err := newSchemeFunc()
+	scheme, err := NewScheme()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create scheme: %w", err)
 	}

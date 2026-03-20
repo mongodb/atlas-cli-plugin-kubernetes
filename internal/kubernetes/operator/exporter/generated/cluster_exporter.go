@@ -21,12 +21,10 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/crd2go/crd2go/k8s"
-	admin "go.mongodb.org/atlas-sdk/v20250312013/admin"
-	client "sigs.k8s.io/controller-runtime/pkg/client"
-
+	akov2generated "github.com/mongodb/mongodb-atlas-kubernetes/v2/generated/v1"
 	crapi "github.com/mongodb/mongodb-atlas-kubernetes/v2/pkg/crapi"
-	akov2generated "github.com/mongodb/mongodb-atlas-kubernetes/v2/pkg/crapi/testdata/samples/v1"
+	admin "go.mongodb.org/atlas-sdk/v20250312016/admin"
+	client "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type ClusterExporter struct {
@@ -57,14 +55,7 @@ func (e *ClusterExporter) Export(ctx context.Context, referencedObjects []client
 
 	resources := make([]client.Object, 0, len(atlasResources))
 	for _, atlasResource := range atlasResources {
-		resource := &akov2generated.Cluster{
-			Spec: akov2generated.ClusterSpec{
-				V20250312: &akov2generated.ClusterSpecV20250312{
-					GroupRef: &k8s.LocalReference{},
-					Entry:    &akov2generated.ClusterSpecV20250312Entry{},
-				},
-			},
-		}
+		resource := &akov2generated.Cluster{}
 		translatedResources, err := e.translator.FromAPI(resource, atlasResource, referencedObjects...)
 		if err != nil {
 			return nil, fmt.Errorf("failed to translate Cluster: %w", err)

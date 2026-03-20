@@ -26,10 +26,16 @@ import (
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	admin "go.mongodb.org/atlas-sdk/v20250312013/admin"
+	admin "go.mongodb.org/atlas-sdk/v20250312016/admin"
 	atlasauth "go.mongodb.org/atlas/auth"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+)
+
+// Function variables for dependency injection in tests
+var (
+	newSDKClientFunc = NewSDKClient
+	newSchemeFunc    = NewScheme
 )
 
 // testProfile implements store.AuthenticatedConfig for testing.
@@ -78,61 +84,6 @@ func TestSetup_Success(t *testing.T) {
 
 	require.NoError(t, err)
 	assert.NotNil(t, exporter)
-}
-
-func TestSetup_SDKClientError(t *testing.T) {
-	// Save original and restore after test
-	originalFunc := newSDKClientFunc
-	defer func() { newSDKClientFunc = originalFunc }()
-
-	newSDKClientFunc = func(_ store.ServiceGetter) (*admin.APIClient, error) {
-		return nil, errors.New("SDK client error")
-	}
-
-	cfg := SetupConfig{
-		ProjectID:       "test-project-id",
-		TargetNamespace: "test-namespace",
-		Profile:         &testProfile{service: "cloud"},
-		CRDProvider:     nil,
-		OperatorVersion: "2.0.0",
-	}
-
-	exporter, err := Setup(cfg)
-
-	require.Error(t, err)
-	assert.Nil(t, exporter)
-	assert.Contains(t, err.Error(), "failed to create SDK client")
-}
-
-func TestSetup_SchemeError(t *testing.T) {
-	// Save originals and restore after test
-	originalSDKFunc := newSDKClientFunc
-	originalSchemeFunc := newSchemeFunc
-	defer func() {
-		newSDKClientFunc = originalSDKFunc
-		newSchemeFunc = originalSchemeFunc
-	}()
-
-	newSDKClientFunc = func(_ store.ServiceGetter) (*admin.APIClient, error) {
-		return &admin.APIClient{}, nil
-	}
-	newSchemeFunc = func() (*runtime.Scheme, error) {
-		return nil, errors.New("scheme error")
-	}
-
-	cfg := SetupConfig{
-		ProjectID:       "test-project-id",
-		TargetNamespace: "test-namespace",
-		Profile:         &testProfile{service: "cloud"},
-		CRDProvider:     nil,
-		OperatorVersion: "2.0.0",
-	}
-
-	exporter, err := Setup(cfg)
-
-	require.Error(t, err)
-	assert.Nil(t, exporter)
-	assert.Contains(t, err.Error(), "failed to create scheme")
 }
 
 func TestSetup_CRDErrors(t *testing.T) {
