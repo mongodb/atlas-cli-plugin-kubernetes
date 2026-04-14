@@ -51,6 +51,7 @@ devtools:  ## Install dev tools
 	go install github.com/golang/mock/mockgen@latest
 	go install mvdan.cc/sh/v3/cmd/shfmt@latest
 	go install golang.org/x/tools/cmd/goimports@latest
+	go install golang.org/x/vuln/cmd/govulncheck@latest
 	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(shell go env GOPATH)/bin $(GOLANGCI_VERSION)
 
 .PHONY: fmt
@@ -60,6 +61,10 @@ fmt: ## Format changed go
 .PHONY: lint
 lint: ## Run linter
 	golangci-lint run
+
+.PHONY: govulncheck
+govulncheck: ## Run govulncheck for known vulnerabilities
+	govulncheck ./...
 
 .PHONY: unit-test
 unit-test: ## Run unit-tests
