@@ -1,7 +1,7 @@
 # A Self-Documenting Makefile: http://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
 
 GOCOVERDIR?=$(abspath cov)
-GOLANGCI_VERSION?=latest
+GOLANGCI_VERSION?=v2.11.0
 
 PLUGIN_SOURCE_FILES?=./cmd/plugin
 ifeq ($(OS),Windows_NT)
