@@ -27,27 +27,27 @@ import (
 )
 
 const (
-	LatestOperatorMajorVersion          = "2.13.0"
+	LatestOperatorMajorVersion          = "2.14.0"
 	maxDepth                            = 100
 	ResourceVersion                     = "mongodb.com/atlas-resource-version"
-	ResourceAtlasProject                = "atlasprojects"
-	ResourceAtlasDeployment             = "atlasdeployments"
-	ResourceAtlasDatabaseUser           = "atlasdatabaseusers"
-	ResourceAtlasBackupSchedule         = "atlasbackupschedules"
-	ResourceAtlasBackupPolicy           = "atlasbackuppolicies"
-	ResourceAtlasTeam                   = "atlasteams"
-	ResourceAtlasDataFederation         = "atlasdatafederations"
-	ResourceAtlasFederatedAuth          = "atlasfederatedauths"
-	ResourceAtlasStreamInstance         = "atlasstreaminstances"
-	ResourceAtlasStreamConnection       = "atlasstreamconnections"
-	ResourceAtlasBackupCompliancePolicy = "atlasbackupcompliancepolicies"
-	ResourceAtlasPrivateEndpoint        = "atlasprivateendpoints"
-	ResourceAtlasCustomRole             = "atlascustomroles"
-	ResourceAtlasIPAccessList           = "atlasipaccesslists"
-	ResourceAtlasNetworkContainer       = "atlasnetworkcontainers"
-	ResourceAtlasNetworkPeering         = "atlasnetworkpeerings"
-	ResourceAtlasThirdPartyIntegration  = "atlasthirdpartyintegrations"
-	ResourceAtlasOrgSettings            = "atlasorgsettings"
+	ResourceAtlasProject                = "atlas.mongodb.com_atlasprojects"
+	ResourceAtlasDeployment             = "atlas.mongodb.com_atlasdeployments"
+	ResourceAtlasDatabaseUser           = "atlas.mongodb.com_atlasdatabaseusers"
+	ResourceAtlasBackupSchedule         = "atlas.mongodb.com_atlasbackupschedules"
+	ResourceAtlasBackupPolicy           = "atlas.mongodb.com_atlasbackuppolicies"
+	ResourceAtlasTeam                   = "atlas.mongodb.com_atlasteams"
+	ResourceAtlasDataFederation         = "atlas.mongodb.com_atlasdatafederations"
+	ResourceAtlasFederatedAuth          = "atlas.mongodb.com_atlasfederatedauths"
+	ResourceAtlasStreamInstance         = "atlas.mongodb.com_atlasstreaminstances"
+	ResourceAtlasStreamConnection       = "atlas.mongodb.com_atlasstreamconnections"
+	ResourceAtlasBackupCompliancePolicy = "atlas.mongodb.com_atlasbackupcompliancepolicies"
+	ResourceAtlasPrivateEndpoint        = "atlas.mongodb.com_atlasprivateendpoints"
+	ResourceAtlasCustomRole             = "atlas.mongodb.com_atlascustomroles"
+	ResourceAtlasIPAccessList           = "atlas.mongodb.com_atlasipaccesslists"
+	ResourceAtlasNetworkContainer       = "atlas.mongodb.com_atlasnetworkcontainers"
+	ResourceAtlasNetworkPeering         = "atlas.mongodb.com_atlasnetworkpeerings"
+	ResourceAtlasThirdPartyIntegration  = "atlas.mongodb.com_atlasthirdpartyintegrations"
+	ResourceAtlasOrgSettings            = "atlas.mongodb.com_atlasorgsettings"
 
 	CRDVersionCurated   = "curated"
 	CRDVersionGenerated = "generated"
@@ -62,26 +62,6 @@ var (
 	ErrDocumentHasNoSpec         = errors.New("document contains no Spec")
 
 	versionsToResourcesMap = map[string][]resource{
-		"2.11.0": {
-			resource{ResourceAtlasDatabaseUser, NopPatcher()},
-			resource{ResourceAtlasProject, NopPatcher()},
-			resource{ResourceAtlasDeployment, NopPatcher()},
-			resource{ResourceAtlasBackupSchedule, NopPatcher()},
-			resource{ResourceAtlasBackupPolicy, NopPatcher()},
-			resource{ResourceAtlasTeam, NopPatcher()},
-			resource{ResourceAtlasDataFederation, NopPatcher()},
-			resource{ResourceAtlasFederatedAuth, NopPatcher()},
-			resource{ResourceAtlasStreamInstance, NopPatcher()},
-			resource{ResourceAtlasStreamConnection, NopPatcher()},
-			resource{ResourceAtlasBackupCompliancePolicy, NopPatcher()},
-			resource{ResourceAtlasPrivateEndpoint, NopPatcher()},
-			resource{ResourceAtlasCustomRole, NopPatcher()},
-			resource{ResourceAtlasIPAccessList, NopPatcher()},
-			resource{ResourceAtlasNetworkContainer, NopPatcher()},
-			resource{ResourceAtlasNetworkPeering, NopPatcher()},
-			resource{ResourceAtlasThirdPartyIntegration, NopPatcher()},
-			resource{ResourceAtlasOrgSettings, NopPatcher()},
-		},
 		"2.12.0": {
 			resource{ResourceAtlasDatabaseUser, NopPatcher()},
 			resource{ResourceAtlasProject, NopPatcher()},
@@ -103,6 +83,26 @@ var (
 			resource{ResourceAtlasOrgSettings, NopPatcher()},
 		},
 		"2.13.0": {
+			resource{ResourceAtlasDatabaseUser, NopPatcher()},
+			resource{ResourceAtlasProject, NopPatcher()},
+			resource{ResourceAtlasDeployment, NopPatcher()},
+			resource{ResourceAtlasBackupSchedule, NopPatcher()},
+			resource{ResourceAtlasBackupPolicy, NopPatcher()},
+			resource{ResourceAtlasTeam, NopPatcher()},
+			resource{ResourceAtlasDataFederation, NopPatcher()},
+			resource{ResourceAtlasFederatedAuth, NopPatcher()},
+			resource{ResourceAtlasStreamInstance, NopPatcher()},
+			resource{ResourceAtlasStreamConnection, NopPatcher()},
+			resource{ResourceAtlasBackupCompliancePolicy, NopPatcher()},
+			resource{ResourceAtlasPrivateEndpoint, NopPatcher()},
+			resource{ResourceAtlasCustomRole, NopPatcher()},
+			resource{ResourceAtlasIPAccessList, NopPatcher()},
+			resource{ResourceAtlasNetworkContainer, NopPatcher()},
+			resource{ResourceAtlasNetworkPeering, NopPatcher()},
+			resource{ResourceAtlasThirdPartyIntegration, NopPatcher()},
+			resource{ResourceAtlasOrgSettings, NopPatcher()},
+		},
+		"2.14.0": {
 			resource{ResourceAtlasDatabaseUser, NopPatcher()},
 			resource{ResourceAtlasProject, NopPatcher()},
 			resource{ResourceAtlasDeployment, NopPatcher()},

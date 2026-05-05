@@ -20,26 +20,25 @@ import (
 	"context"
 	"errors"
 	"fmt"
-
 	akov2generated "github.com/mongodb/mongodb-atlas-kubernetes/v2/generated/v1"
 	crapi "github.com/mongodb/mongodb-atlas-kubernetes/v2/pkg/crapi"
 	admin "go.mongodb.org/atlas-sdk/v20250312018/admin"
 	client "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type DatabaseUserExporter struct {
+type IPAccessListEntryExporter struct {
 	identifiers []string
 
 	client     *admin.APIClient
 	translator crapi.Translator
 }
 
-func (e *DatabaseUserExporter) Export(ctx context.Context, referencedObjects []client.Object) ([]client.Object, error) {
+func (e *IPAccessListEntryExporter) Export(ctx context.Context, referencedObjects []client.Object) ([]client.Object, error) {
 	var atlasResources []any
 	for pageNum := 1; ; pageNum++ {
-		resp, _, err := e.client.DatabaseUsersApi.ListDatabaseUsers(ctx, e.identifiers[0]).PageNum(pageNum).Execute()
+		resp, _, err := e.client.ProjectIPAccessListApi.ListAccessListEntries(ctx, e.identifiers[0]).PageNum(pageNum).Execute()
 		if err != nil {
-			return nil, fmt.Errorf("failed to list DatabaseUsers from Atlas: %w", err)
+			return nil, fmt.Errorf("failed to list IPAccessListEntrys from Atlas: %w", err)
 		}
 		if resp == nil {
 			return nil, errors.New("no response")
@@ -55,13 +54,18 @@ func (e *DatabaseUserExporter) Export(ctx context.Context, referencedObjects []c
 
 	resources := make([]client.Object, 0, len(atlasResources))
 	for _, atlasResource := range atlasResources {
-		resource := &akov2generated.DatabaseUser{}
+		resource := &akov2generated.IPAccessListEntry{}
 		translatedResources, err := e.translator.FromAPI(resource, atlasResource, referencedObjects...)
 		if err != nil {
-			return nil, fmt.Errorf("failed to translate DatabaseUser: %w", err)
+			return nil, fmt.Errorf("failed to translate IPAccessListEntry: %w", err)
 		}
 
-		resource.GetObjectKind().SetGroupVersionKind(akov2generated.GroupVersion.WithKind("DatabaseUser"))
+		// Edge case: Atlas returns both IP address and CIDR block when the config is an IP address.
+		if resource.Spec.V20250312 != nil && resource.Spec.V20250312.Entry != nil && resource.Spec.V20250312.Entry.IpAddress != nil {
+			resource.Spec.V20250312.Entry.CidrBlock = nil
+		}
+
+		resource.GetObjectKind().SetGroupVersionKind(akov2generated.GroupVersion.WithKind("IPAccessListEntry"))
 		resources = append(resources, resource)
 		resources = append(resources, translatedResources...)
 	}
@@ -69,8 +73,8 @@ func (e *DatabaseUserExporter) Export(ctx context.Context, referencedObjects []c
 	return resources, nil
 }
 
-func NewDatabaseUserExporter(client *admin.APIClient, translator crapi.Translator, identifiers []string) *DatabaseUserExporter {
-	return &DatabaseUserExporter{
+func NewIPAccessListEntryExporter(client *admin.APIClient, translator crapi.Translator, identifiers []string) *IPAccessListEntryExporter {
+	return &IPAccessListEntryExporter{
 		client:      client,
 		identifiers: identifiers,
 		translator:  translator,

@@ -17,10 +17,10 @@ package exporter
 import (
 	generated "github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator/exporter/generated"
 	"github.com/mongodb/mongodb-atlas-kubernetes/v2/pkg/crapi"
-	admin "go.mongodb.org/atlas-sdk/v20250312016/admin"
+	"go.mongodb.org/atlas-sdk/v20250312018/admin"
 )
 
-// ExporterFactory creates an exporter for a specific resource type.
+// Factory creates an exporter for a specific resource type.
 type Factory func(client *admin.APIClient, translator crapi.Translator, identifiers []string) generated.Exporter
 
 // ResourceConfig defines a resource type that can be exported.
@@ -36,10 +36,11 @@ type ResourceConfig struct {
 // SupportedResources lists all resources that can be exported.
 // To add a new resource, simply add an entry here.
 var SupportedResources = []ResourceConfig{
-	{CRDName: "groups.atlas.generated.mongodb.com", Factory: newGroupExporter},
-	{CRDName: "clusters.atlas.generated.mongodb.com", Factory: newClusterExporter},
-	{CRDName: "flexclusters.atlas.generated.mongodb.com", Factory: newFlexClusterExporter},
-	{CRDName: "databaseusers.atlas.generated.mongodb.com", Factory: newDatabaseUserExporter},
+	{CRDName: "atlas.generated.mongodb.com_groups", Factory: newGroupExporter},
+	{CRDName: "atlas.generated.mongodb.com_clusters", Factory: newClusterExporter},
+	{CRDName: "atlas.generated.mongodb.com_flexclusters", Factory: newFlexClusterExporter},
+	{CRDName: "atlas.generated.mongodb.com_databaseusers", Factory: newDatabaseUserExporter},
+	{CRDName: "atlas.generated.mongodb.com_ipaccesslistentries", Factory: newIpAccessListEntryExporter},
 }
 
 // Factory wrapper functions to match the ExporterFactory signature
@@ -58,4 +59,8 @@ func newFlexClusterExporter(client *admin.APIClient, translator crapi.Translator
 
 func newDatabaseUserExporter(client *admin.APIClient, translator crapi.Translator, identifiers []string) generated.Exporter {
 	return generated.NewDatabaseUserExporter(client, translator, identifiers)
+}
+
+func newIpAccessListEntryExporter(client *admin.APIClient, translator crapi.Translator, identifiers []string) generated.Exporter {
+	return generated.NewIPAccessListEntryExporter(client, translator, identifiers)
 }

@@ -15,12 +15,12 @@
 package exporter
 
 import (
-	generatedv1 "github.com/mongodb/mongodb-atlas-kubernetes/v2/pkg/crapi/testdata/samples/v1"
+	akov2generated "github.com/mongodb/mongodb-atlas-kubernetes/v2/generated/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
 // addToSchemeFunc is a function variable for dependency injection in tests.
-var addToSchemeFunc = generatedv1.AddToScheme
+var addToSchemeFunc = akov2generated.AddToScheme
 
 // NewScheme creates a new runtime.Scheme with the generated CRD types registered.
 func NewScheme() (*runtime.Scheme, error) {

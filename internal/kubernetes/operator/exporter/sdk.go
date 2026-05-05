@@ -22,7 +22,7 @@ import (
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/log"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/version"
-	admin "go.mongodb.org/atlas-sdk/v20250312016/admin"
+	admin "go.mongodb.org/atlas-sdk/v20250312018/admin"
 )
 
 const (

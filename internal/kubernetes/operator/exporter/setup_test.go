@@ -26,7 +26,7 @@ import (
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	admin "go.mongodb.org/atlas-sdk/v20250312016/admin"
+	admin "go.mongodb.org/atlas-sdk/v20250312018/admin"
 	atlasauth "go.mongodb.org/atlas/auth"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/runtime"
