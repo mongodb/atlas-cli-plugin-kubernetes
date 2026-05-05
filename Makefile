@@ -60,7 +60,7 @@ fmt: ## Format changed go
 
 .PHONY: lint
 lint: ## Run linter
-	golangci-lint run
+	golangci-lint run --timeout 3m0s
 
 .PHONY: govulncheck
 govulncheck: ## Run govulncheck for known vulnerabilities
