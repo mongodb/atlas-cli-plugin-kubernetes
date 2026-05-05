@@ -89,6 +89,14 @@ func (opts *GenerateOpts) Run() error {
 
 	switch opts.crdVersion {
 	case features.CRDVersionGenerated:
+		if len(opts.clusterName) > 0 {
+			return fmt.Errorf("clusterName option is not supported for generated CRDs")
+		}
+
+		if len(opts.dataFederationName) > 0 {
+			return fmt.Errorf("dataFederationName option is not supported for generated CRDs")
+		}
+
 		// Use the new generated exporter for auto-generated CRDs
 		generatedExp, err := exporter.Setup(exporter.SetupConfig{
 			ProjectID:            opts.ProjectID,
@@ -162,6 +170,7 @@ func GenerateBuilder() *cobra.Command {
   atlas kubernetes config generate --projectId=<projectId> --dataFederationName=<data-federation-name-1, data-federation-name-2> --targetNamespace=<namespace>`,
 		PreRunE: func(cmd *cobra.Command, _ []string) error {
 			return opts.OrgOpts.PreRunE(
+				opts.ValidateOrgID,
 				opts.ValidateProjectID,
 				opts.ValidateTargetNamespace,
 				opts.ValidateOperatorVersion,
