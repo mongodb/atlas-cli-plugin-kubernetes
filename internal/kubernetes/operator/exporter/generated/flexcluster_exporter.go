@@ -62,6 +62,8 @@ func (e *FlexClusterExporter) Export(ctx context.Context, referencedObjects []cl
 		}
 
 		resource.GetObjectKind().SetGroupVersionKind(akov2generated.GroupVersion.WithKind("FlexCluster"))
+		resource.SetAnnotations(map[string]string{"mongodb.com/external-id": resource.Spec.V20250312.Entry.Name})
+
 		resources = append(resources, resource)
 		resources = append(resources, translatedResources...)
 	}

@@ -66,6 +66,17 @@ func (e *IPAccessListEntryExporter) Export(ctx context.Context, referencedObject
 		}
 
 		resource.GetObjectKind().SetGroupVersionKind(akov2generated.GroupVersion.WithKind("IPAccessListEntry"))
+		var id string
+		switch {
+		case resource.Spec.V20250312 != nil && resource.Spec.V20250312.Entry != nil && resource.Spec.V20250312.Entry.IpAddress != nil:
+			id = *resource.Spec.V20250312.Entry.IpAddress
+		case resource.Spec.V20250312 != nil && resource.Spec.V20250312.Entry != nil && resource.Spec.V20250312.Entry.CidrBlock != nil:
+			id = *resource.Spec.V20250312.Entry.CidrBlock
+		case resource.Spec.V20250312 != nil && resource.Spec.V20250312.Entry != nil && resource.Spec.V20250312.Entry.AwsSecurityGroup != nil:
+			id = *resource.Spec.V20250312.Entry.AwsSecurityGroup
+		}
+		resource.SetAnnotations(map[string]string{"mongodb.com/external-id": id})
+
 		resources = append(resources, resource)
 		resources = append(resources, translatedResources...)
 	}

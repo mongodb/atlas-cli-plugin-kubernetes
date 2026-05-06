@@ -62,6 +62,8 @@ func (e *DatabaseUserExporter) Export(ctx context.Context, referencedObjects []c
 		}
 
 		resource.GetObjectKind().SetGroupVersionKind(akov2generated.GroupVersion.WithKind("DatabaseUser"))
+		resource.SetAnnotations(map[string]string{"mongodb.com/external-id": resource.Spec.V20250312.Entry.DatabaseName + ":" + resource.Spec.V20250312.Entry.Username})
+
 		resources = append(resources, resource)
 		resources = append(resources, translatedResources...)
 	}
