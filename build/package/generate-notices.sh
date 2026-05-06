@@ -16,8 +16,6 @@
 
 set -Eeou pipefail
 
-go install github.com/google/go-licenses@latest
-
-go-licenses save "github.com/mongodb/atlas-cli-plugin-kubernetes/cmd/plugin" --save_path=third_party_notices
+go tool go-licenses save "github.com/mongodb/atlas-cli-plugin-kubernetes/cmd/plugin" --save_path=third_party_notices
 # For HCL, a dependency of viper, go-license adds the source code with restricted permissions, this is a problem for some linux users
 sudo chmod -R 755 ./third_party_notices
