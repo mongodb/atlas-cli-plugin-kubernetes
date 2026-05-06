@@ -175,7 +175,7 @@ func TestGeneratedExporterWithResources(t *testing.T) {
 
 			// Validate Group
 			group := convertTo[akov2generated.Group](t, findByKind(objects, "Group"))
-			assert.Equal(t, expectedGroup(orgId, generator.projectName, tc.expectSecret), group)
+			assert.Equal(t, expectedGroup(orgId, generator.projectID, generator.projectName, tc.expectSecret), group)
 
 			// Validate Cluster
 			cluster := convertTo[akov2generated.Cluster](t, findByKind(objects, "Cluster"))
@@ -199,7 +199,7 @@ func connectionSecretRef(expectSecret bool) *k8s.LocalReference {
 	return nil
 }
 
-func expectedGroup(orgId, name string, expectSecret bool) *akov2generated.Group {
+func expectedGroup(orgId, groupId, name string, expectSecret bool) *akov2generated.Group {
 	return &akov2generated.Group{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "atlas.generated.mongodb.com/v1",
@@ -208,6 +208,9 @@ func expectedGroup(orgId, name string, expectSecret bool) *akov2generated.Group 
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      resourceName("Group", name),
 			Namespace: targetNamespace,
+			Annotations: map[string]string{
+				"mongodb.com/external-id": groupId,
+			},
 		},
 		Spec: akov2generated.GroupSpec{
 			ConnectionSecretRef: connectionSecretRef(expectSecret),
@@ -294,6 +297,9 @@ func expectedCluster(actual *akov2generated.Cluster, groupName, groupID, cluster
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      resourceName("Cluster", clusterName),
 			Namespace: targetNamespace,
+			Annotations: map[string]string{
+				"mongodb.com/external-id": clusterName,
+			},
 		},
 		Spec: akov2generated.ClusterSpec{
 			ConnectionSecretRef: connectionSecretRef(expectSecret),
@@ -329,6 +335,9 @@ func expectedFlexCluster(groupName, groupID, flexName string, independentResourc
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      resourceName("FlexCluster", flexName),
 			Namespace: targetNamespace,
+			Annotations: map[string]string{
+				"mongodb.com/external-id": flexName,
+			},
 		},
 		Spec: akov2generated.FlexClusterSpec{
 			ConnectionSecretRef: connectionSecretRef(expectSecret),
@@ -371,6 +380,9 @@ func expectedDatabaseUser(groupName, groupID, username string, independentResour
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      resourceName("DatabaseUser", username),
 			Namespace: targetNamespace,
+			Annotations: map[string]string{
+				"mongodb.com/external-id": "$external:" + username,
+			},
 		},
 		Spec: akov2generated.DatabaseUserSpec{
 			ConnectionSecretRef: connectionSecretRef(expectSecret),
