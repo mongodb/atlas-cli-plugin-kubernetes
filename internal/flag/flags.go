@@ -40,4 +40,5 @@ const (
 	DataFederationName                    = "dataFederationName"   // DataFederationName flag
 	IndependentResources                  = "independentResources" // IndependentResources flag
 	IPAccessList                          = "ipAccessList"         // IPAccessList flag
+	CRDType                               = "crdType"              // CRDType flag
 )
