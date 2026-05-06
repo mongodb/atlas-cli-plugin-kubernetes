@@ -22,6 +22,7 @@ import (
 	"strings"
 
 	"github.com/crd2go/crd2go/k8s"
+	"github.com/google/uuid"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator/resources"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator/secrets"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store"
@@ -143,6 +144,8 @@ func (e *GeneratedExporter) Run() (string, error) {
 			// Set hierarchical Kubernetes-compliant name
 			setResourceName(obj)
 
+			//obj.SetAnnotations(map[string]string{"mongodb.com/external-id": extractIdentifier(obj)})
+
 			// Set the target namespace if specified
 			if e.targetNamespace != "" {
 				obj.SetNamespace(e.targetNamespace)
@@ -232,25 +235,25 @@ func setResourceName(obj client.Object) {
 	}
 
 	// Extract identifying information from the spec
-	identifiers := extractIdentifiers(obj)
+	identifier := extractNameIdentifier(obj)
 
-	// If no identifiers found, preserve the existing name
-	if len(identifiers) == 0 {
-		return
+	// If no identifier found, generate a random one
+	if len(identifier) == 0 {
+		identifier = uuid.NewString()[:7]
 	}
 
 	// Build hierarchical name: kind-identifier1-identifier2...
-	name := kind + "-" + strings.Join(identifiers, "-")
+	name := kind + "-" + identifier
 
 	// Normalize to be Kubernetes DNS-1123 compliant
 	name = resources.NormalizeAtlasName(name, resources.AtlasNameToKubernetesName())
 	obj.SetName(name)
 }
 
-// extractIdentifiers extracts identifying fields from the object's spec.
+// extractIdentifier extracts identifying fields from the object's spec.
 // It uses reflection to navigate the versioned spec structure and extract
-// the resource name (Name or Username fields).
-func extractIdentifiers(obj client.Object) []string {
+// the resource name (Name, Username, ... fields).
+func extractNameIdentifier(obj client.Object) string {
 	// Use reflection to access the Spec field
 	objValue := reflect.ValueOf(obj)
 	if objValue.Kind() == reflect.Ptr {
@@ -259,7 +262,7 @@ func extractIdentifiers(obj client.Object) []string {
 
 	specField := objValue.FieldByName("Spec")
 	if !specField.IsValid() {
-		return nil
+		return ""
 	}
 
 	// Navigate through versioned spec structure (e.g., V20250312)
@@ -269,13 +272,13 @@ func extractIdentifiers(obj client.Object) []string {
 		if versionField.Kind() == reflect.Ptr && !versionField.IsNil() {
 			versionField = versionField.Elem()
 			if name := extractNameFromVersionedSpec(versionField); name != "" {
-				return []string{name}
+				return name
 			}
 			break
 		}
 	}
 
-	return nil
+	return ""
 }
 
 // extractNameFromVersionedSpec extracts the resource name from the versioned spec struct.
@@ -284,42 +287,25 @@ func extractNameFromVersionedSpec(v reflect.Value) string {
 	// Check Entry field first (most generated types have this)
 	entryField := v.FieldByName("Entry")
 	if entryField.IsValid() && entryField.Kind() == reflect.Ptr && !entryField.IsNil() {
-		entryValue := entryField.Elem()
-		if name := getStringField(entryValue, "Name"); name != "" {
-			return name
-		}
-		if username := getStringField(entryValue, "Username"); username != "" {
-			return username
-		}
-	}
+		entryField = entryField.Elem()
+		identifierFields := []string{"Name", "ClusterName", "Username", "CidrBlock", "IpAddress", "AwsSecurityGroup"}
+		for _, fieldName := range identifierFields {
+			field := entryField.FieldByName(fieldName)
+			if !field.IsValid() {
+				continue
+			}
 
-	// Fallback: check directly on the versioned spec
-	if name := getStringField(v, "Name"); name != "" {
-		return name
-	}
-	if username := getStringField(v, "Username"); username != "" {
-		return username
-	}
-
-	return ""
-}
-
-// getStringField extracts a string value from a struct field by name.
-// It handles both direct string fields and pointer to string fields.
-func getStringField(v reflect.Value, fieldName string) string {
-	field := v.FieldByName(fieldName)
-	if !field.IsValid() {
-		return ""
-	}
-
-	switch field.Kind() {
-	case reflect.String:
-		return field.String()
-	case reflect.Ptr:
-		if !field.IsNil() && field.Elem().Kind() == reflect.String {
-			return field.Elem().String()
+			switch field.Kind() {
+			case reflect.String:
+				return field.String()
+			case reflect.Ptr:
+				if !field.IsNil() && field.Elem().Kind() == reflect.String {
+					return field.Elem().String()
+				}
+			}
 		}
 	}
+
 	return ""
 }
 
