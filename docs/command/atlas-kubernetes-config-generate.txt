@@ -41,10 +41,10 @@ Options
      - strings
      - false
      - One or more comma separated cluster names to import
-   * - --crdVersion
+   * - --crdType
      - string
      - false
-     - Version of the CRD to generate. Valid values are 'curated' or 'generated'. This value defaults to "curated".
+     - Type of the CRD to generate. Valid values are 'curated' or 'generated'. This value defaults to "curated".
    * - --dataFederationName
      - strings
      - false

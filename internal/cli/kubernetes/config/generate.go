@@ -47,7 +47,7 @@ type GenerateOpts struct {
 	store                store.OperatorGenericStore
 	crdsProvider         crds.AtlasOperatorCRDProvider
 	independentResources bool
-	crdVersion           string
+	crdType              string
 	profile              store.AuthenticatedConfig
 }
 
@@ -87,8 +87,8 @@ func (opts *GenerateOpts) initStores(ctx context.Context) func() error {
 func (opts *GenerateOpts) Run() error {
 	var exp operator.Exporter
 
-	switch opts.crdVersion {
-	case features.CRDVersionGenerated:
+	switch opts.crdType {
+	case features.CRDTypeGenerated:
 		if len(opts.clusterName) > 0 {
 			return fmt.Errorf("clusterName option is not supported for generated CRDs")
 		}
@@ -190,6 +190,6 @@ func GenerateBuilder() *cobra.Command {
 	cmd.Flags().StringVar(&opts.operatorVersion, flag.OperatorVersion, features.LatestOperatorMajorVersion, usage.OperatorVersion)
 	cmd.Flags().StringSliceVar(&opts.dataFederationName, flag.DataFederationName, []string{}, usage.ExporterDataFederationName)
 	cmd.Flags().BoolVar(&opts.independentResources, flag.IndependentResources, false, usage.IndependentResources)
-	cmd.Flags().StringVar(&opts.crdVersion, flag.CRDVersion, features.CRDVersionCurated, usage.CRDVersion)
+	cmd.Flags().StringVar(&opts.crdType, flag.CRDType, features.CRDTypeCurated, usage.CRDType)
 	return cmd
 }

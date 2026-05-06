@@ -136,7 +136,7 @@ func TestGeneratedExporterWithResources(t *testing.T) {
 			cmdArgs := []string{
 				"kubernetes", "config", "generate",
 				"--projectId", generator.projectID,
-				"--crdVersion", features.CRDVersionGenerated,
+				"--crdType", features.CRDTypeGenerated,
 				"--targetNamespace", targetNamespace,
 			}
 			if tc.independentResources {

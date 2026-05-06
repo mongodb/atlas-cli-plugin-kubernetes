@@ -20,9 +20,6 @@ import (
 	"go.mongodb.org/atlas-sdk/v20250312018/admin"
 )
 
-// Factory creates an exporter for a specific resource type.
-type Factory func(client *admin.APIClient, translator crapi.Translator, identifiers []string) generated.Exporter
-
 // ResourceConfig defines a resource type that can be exported.
 // To add a new resource, add an entry to the SupportedResources slice.
 type ResourceConfig struct {
@@ -30,37 +27,15 @@ type ResourceConfig struct {
 	CRDName string
 
 	// Factory creates the exporter for this resource type
-	Factory Factory
+	Factory func(client *admin.APIClient, translator crapi.Translator, identifiers []string) generated.Exporter
 }
 
 // SupportedResources lists all resources that can be exported.
 // To add a new resource, simply add an entry here.
 var SupportedResources = []ResourceConfig{
-	{CRDName: "atlas.generated.mongodb.com_groups", Factory: newGroupExporter},
-	{CRDName: "atlas.generated.mongodb.com_clusters", Factory: newClusterExporter},
-	{CRDName: "atlas.generated.mongodb.com_flexclusters", Factory: newFlexClusterExporter},
-	{CRDName: "atlas.generated.mongodb.com_databaseusers", Factory: newDatabaseUserExporter},
-	{CRDName: "atlas.generated.mongodb.com_ipaccesslistentries", Factory: newIpAccessListEntryExporter},
-}
-
-// Factory wrapper functions to match the ExporterFactory signature
-
-func newGroupExporter(client *admin.APIClient, translator crapi.Translator, identifiers []string) generated.Exporter {
-	return generated.NewGroupExporter(client, translator, identifiers)
-}
-
-func newClusterExporter(client *admin.APIClient, translator crapi.Translator, identifiers []string) generated.Exporter {
-	return generated.NewClusterExporter(client, translator, identifiers)
-}
-
-func newFlexClusterExporter(client *admin.APIClient, translator crapi.Translator, identifiers []string) generated.Exporter {
-	return generated.NewFlexClusterExporter(client, translator, identifiers)
-}
-
-func newDatabaseUserExporter(client *admin.APIClient, translator crapi.Translator, identifiers []string) generated.Exporter {
-	return generated.NewDatabaseUserExporter(client, translator, identifiers)
-}
-
-func newIpAccessListEntryExporter(client *admin.APIClient, translator crapi.Translator, identifiers []string) generated.Exporter {
-	return generated.NewIPAccessListEntryExporter(client, translator, identifiers)
+	{CRDName: "atlas.generated.mongodb.com_groups", Factory: generated.NewGroupExporter},
+	{CRDName: "atlas.generated.mongodb.com_clusters", Factory: generated.NewClusterExporter},
+	{CRDName: "atlas.generated.mongodb.com_flexclusters", Factory: generated.NewFlexClusterExporter},
+	{CRDName: "atlas.generated.mongodb.com_databaseusers", Factory: generated.NewDatabaseUserExporter},
+	{CRDName: "atlas.generated.mongodb.com_ipaccesslistentries", Factory: generated.NewIPAccessListEntryExporter},
 }

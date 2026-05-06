@@ -49,8 +49,8 @@ const (
 	ResourceAtlasThirdPartyIntegration  = "atlas.mongodb.com_atlasthirdpartyintegrations"
 	ResourceAtlasOrgSettings            = "atlas.mongodb.com_atlasorgsettings"
 
-	CRDVersionCurated   = "curated"
-	CRDVersionGenerated = "generated"
+	CRDTypeCurated   = "curated"
+	CRDTypeGenerated = "generated"
 )
 
 var (

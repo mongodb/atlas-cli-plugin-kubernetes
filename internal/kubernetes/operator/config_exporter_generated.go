@@ -17,6 +17,7 @@ package operator
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"reflect"
 	"strings"
@@ -144,8 +145,6 @@ func (e *GeneratedExporter) Run() (string, error) {
 			// Set hierarchical Kubernetes-compliant name
 			setResourceName(obj)
 
-			//obj.SetAnnotations(map[string]string{"mongodb.com/external-id": extractIdentifier(obj)})
-
 			// Set the target namespace if specified
 			if e.targetNamespace != "" {
 				obj.SetNamespace(e.targetNamespace)
@@ -153,7 +152,10 @@ func (e *GeneratedExporter) Run() (string, error) {
 
 			// Set connection secret reference if secrets are included
 			if credentialsSecret != nil {
-				setConnectionSecretRef(obj, credentialsSecret.Name)
+				err = setConnectionSecretRef(obj, credentialsSecret.Name)
+				if err != nil {
+					return "", err
+				}
 			}
 
 			// Convert to unstructured and remove status for serialization only
@@ -203,7 +205,7 @@ func (e *GeneratedExporter) buildCredentialsSecret() *corev1.Secret {
 
 // setConnectionSecretRef sets the ConnectionSecretRef field on a resource using reflection.
 // The generated CRD types have a Spec.ConnectionSecretRef field of type *k8s.LocalReference.
-func setConnectionSecretRef(obj client.Object, secretName string) {
+func setConnectionSecretRef(obj client.Object, secretName string) error {
 	objValue := reflect.ValueOf(obj)
 	if objValue.Kind() == reflect.Ptr {
 		objValue = objValue.Elem()
@@ -211,17 +213,19 @@ func setConnectionSecretRef(obj client.Object, secretName string) {
 
 	specField := objValue.FieldByName("Spec")
 	if !specField.IsValid() || !specField.CanSet() {
-		return
+		return errors.New("failed to set connection secret ref: spec field is not valid or cannot be set")
 	}
 
 	connSecretRefField := specField.FieldByName("ConnectionSecretRef")
 	if !connSecretRefField.IsValid() || !connSecretRefField.CanSet() {
-		return
+		return errors.New("failed to set connection secret ref: connection secret ref field is not valid or cannot be set")
 	}
 
 	// Create and set the LocalReference
 	localRef := &k8s.LocalReference{Name: secretName}
 	connSecretRefField.Set(reflect.ValueOf(localRef))
+
+	return nil
 }
 
 // setResourceName sets a Kubernetes-compliant name on the object.
