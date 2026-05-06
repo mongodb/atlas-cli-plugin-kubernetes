@@ -282,7 +282,6 @@ func expectedCluster(actual *akov2generated.Cluster, groupName, groupID, cluster
 
 	if independentResources {
 		spec.GroupId = pointer.Get(groupID)
-		spec.GroupRef = &k8s.LocalReference{Name: ""}
 	} else {
 		spec.GroupRef = &k8s.LocalReference{Name: groupName}
 	}
