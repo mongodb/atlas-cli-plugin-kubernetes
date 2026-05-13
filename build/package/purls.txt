@@ -32,7 +32,7 @@ pkg:golang/github.com/modern-go/reflect2@v1.0.3-0.20250322232337-35a7c28c31ee
 pkg:golang/github.com/mohae/deepcopy@v0.0.0-20170929034955-c48cc78d4826
 pkg:golang/github.com/mongodb-forks/digest@v1.1.0
 pkg:golang/github.com/mongodb/atlas-cli-core@v0.0.0-20250909113945-ffb322e05f59
-pkg:golang/github.com/mongodb/mongodb-atlas-kubernetes/v2@v2.14.0
+pkg:golang/github.com/mongodb/mongodb-atlas-kubernetes/v2@v2.14.1
 pkg:golang/github.com/munnerz/goautoneg@v0.0.0-20191010083416-a7dc8b61c822
 pkg:golang/github.com/oasdiff/yaml3@v0.0.12
 pkg:golang/github.com/oasdiff/yaml@v0.0.9
