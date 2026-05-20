@@ -67,7 +67,7 @@ functions:
         script: |
           set -Eeou pipefail
 
-          curl -sfL ${goreleaser_pro_tar_gz} | tar zx
+          curl -sfL ${goreleaser_tar_gz} | tar zx
   "install macos notarization service":
     - command: shell.exec
       type: setup
@@ -173,7 +173,6 @@ functions:
           - notary_service_key_id
           - notary_service_secret
           - notary_service_url
-          - goreleaser_key
           - version
           - test_mode
         binary: build/package/package.sh
