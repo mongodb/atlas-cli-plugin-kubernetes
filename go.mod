@@ -1,6 +1,6 @@
 module github.com/mongodb/atlas-cli-plugin-kubernetes
 
-go 1.26.3
+go 1.26.4
 
 require (
 	cloud.google.com/go/compute v1.64.0
@@ -77,6 +77,7 @@ require (
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
+	github.com/josvazg/gobump v0.0.0-20260529132322-e7688722806b // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/magiconair/properties v1.8.10 // indirect
@@ -119,7 +120,7 @@ require (
 	go.yaml.in/yaml/v2 v2.4.3 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/crypto v0.51.0 // indirect
-	golang.org/x/mod v0.35.0 // indirect
+	golang.org/x/mod v0.36.0 // indirect
 	golang.org/x/net v0.55.0 // indirect
 	golang.org/x/oauth2 v0.36.0 // indirect
 	golang.org/x/sync v0.20.0 // indirect
@@ -145,4 +146,7 @@ require (
 	sigs.k8s.io/structured-merge-diff/v6 v6.3.2 // indirect
 )
 
-tool github.com/google/go-licenses/v2
+tool (
+	github.com/google/go-licenses/v2
+	github.com/josvazg/gobump
+)
