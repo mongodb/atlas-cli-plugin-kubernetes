@@ -4,7 +4,8 @@
     "git@latest",
     "go@1.25.8",
     "kind@latest",
-    "kubectl@latest"
+    "kubectl@latest",
+    "govulncheck@latest"
   ],
   "shell": {
     "init_hook": [
