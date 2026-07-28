@@ -9,7 +9,7 @@ pkg:golang/github.com/emicklei/go-restful/v3@v3.13.0
 pkg:golang/github.com/evanphx/json-patch/v5@v5.9.11
 pkg:golang/github.com/fsnotify/fsnotify@v1.9.0
 pkg:golang/github.com/fxamacker/cbor/v2@v2.9.0
-pkg:golang/github.com/getkin/kin-openapi@v0.140.0
+pkg:golang/github.com/getkin/kin-openapi@v0.144.0
 pkg:golang/github.com/go-logr/logr@v1.4.3
 pkg:golang/github.com/go-openapi/jsonpointer@v0.22.5
 pkg:golang/github.com/go-openapi/jsonreference@v0.20.2
@@ -34,8 +34,8 @@ pkg:golang/github.com/mongodb-forks/digest@v1.1.0
 pkg:golang/github.com/mongodb/atlas-cli-core@v0.0.0-20250909113945-ffb322e05f59
 pkg:golang/github.com/mongodb/mongodb-atlas-kubernetes/v2@v2.15.0
 pkg:golang/github.com/munnerz/goautoneg@v0.0.0-20191010083416-a7dc8b61c822
-pkg:golang/github.com/oasdiff/yaml3@v0.0.13
-pkg:golang/github.com/oasdiff/yaml@v0.1.0
+pkg:golang/github.com/oasdiff/yaml3@v0.0.14
+pkg:golang/github.com/oasdiff/yaml@v0.1.1
 pkg:golang/github.com/pelletier/go-toml/v2@v2.2.4
 pkg:golang/github.com/pelletier/go-toml@v1.9.5
 pkg:golang/github.com/sagikazarmark/slog-shim@v0.1.0
