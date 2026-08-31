@@ -17,7 +17,7 @@ package exporter
 import (
 	"fmt"
 
-	"github.com/mongodb/mongodb-atlas-kubernetes/v2/pkg/crapi"
+	"github.com/crd2go/crapi"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )

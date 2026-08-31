@@ -21,9 +21,9 @@ import (
 	"errors"
 	"testing"
 
+	samplesv1 "github.com/crd2go/crapi/testdata/samples/v1"
 	"github.com/mongodb/atlas-cli-core/config"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/pointer"
-	samplesv1 "github.com/mongodb/mongodb-atlas-kubernetes/v2/pkg/crapi/testdata/samples/v1"
 	atlasauth "go.mongodb.org/atlas/auth"
 
 	generated "github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator/exporter/generated"
