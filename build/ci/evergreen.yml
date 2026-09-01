@@ -77,6 +77,10 @@ functions:
           - workdir
         binary: build/ci/check-purls.sh
   "e2e test":
+    # AWS creds via role assumption — see build/ci/aws-e2e-role.md
+    - command: ec2.assume_role
+      params:
+        role_arn: ${aws_role_arn}
     - command: subprocess.exec
       type: test
       params:
@@ -106,6 +110,7 @@ functions:
           - AWS_ACCOUNT_ID
           - AWS_ACCESS_KEY_ID
           - AWS_SECRET_ACCESS_KEY
+          - AWS_SESSION_TOKEN
           - AZURE_SUBSCRIPTION_ID
           - AZURE_TENANT_ID
           - AZURE_RESOURCE_GROUP_NAME
@@ -254,8 +259,6 @@ tasks:
           MCLI_OPS_MANAGER_URL: ${mcli_ops_manager_url}
           MCLI_SERVICE: cloud
           AWS_ACCOUNT_ID: ${aws_account_id}
-          AWS_ACCESS_KEY_ID: ${aws_access_key_id}
-          AWS_SECRET_ACCESS_KEY: ${aws_secret_access_key}
           AZURE_SUBSCRIPTION_ID: ${azure_subscription_id}
           AZURE_TENANT_ID: ${azure_tenant_id}
           AZURE_RESOURCE_GROUP_NAME: ${azure_resource_group_name}
@@ -282,8 +285,6 @@ tasks:
           MCLI_OPS_MANAGER_URL: ${mcli_ops_manager_url}
           MCLI_SERVICE: cloud
           AWS_ACCOUNT_ID: ${aws_account_id}
-          AWS_ACCESS_KEY_ID: ${aws_access_key_id}
-          AWS_SECRET_ACCESS_KEY: ${aws_secret_access_key}
           AZURE_SUBSCRIPTION_ID: ${azure_subscription_id}
           AZURE_TENANT_ID: ${azure_tenant_id}
           AZURE_RESOURCE_GROUP_NAME: ${azure_resource_group_name}
@@ -310,8 +311,6 @@ tasks:
           MCLI_OPS_MANAGER_URL: ${mcli_ops_manager_url}
           MCLI_SERVICE: cloud
           AWS_ACCOUNT_ID: ${aws_account_id}
-          AWS_ACCESS_KEY_ID: ${aws_access_key_id}
-          AWS_SECRET_ACCESS_KEY: ${aws_secret_access_key}
           AZURE_SUBSCRIPTION_ID: ${azure_subscription_id}
           AZURE_TENANT_ID: ${azure_tenant_id}
           AZURE_RESOURCE_GROUP_NAME: ${azure_resource_group_name}
@@ -338,8 +337,6 @@ tasks:
           MCLI_OPS_MANAGER_URL: ${mcli_ops_manager_url}
           MCLI_SERVICE: cloud
           AWS_ACCOUNT_ID: ${aws_account_id}
-          AWS_ACCESS_KEY_ID: ${aws_access_key_id}
-          AWS_SECRET_ACCESS_KEY: ${aws_secret_access_key}
           AZURE_SUBSCRIPTION_ID: ${azure_subscription_id}
           AZURE_TENANT_ID: ${azure_tenant_id}
           AZURE_RESOURCE_GROUP_NAME: ${azure_resource_group_name}
