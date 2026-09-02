@@ -24,12 +24,12 @@ import (
 	"strings"
 	"testing"
 
+	akov2generated "github.com/crd2go/crapi/testdata/samples/v1"
 	"github.com/crd2go/crd2go/k8s"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator/features"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator/resources"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/internal/pointer"
 	"github.com/mongodb/atlas-cli-plugin-kubernetes/test"
-	akov2generated "github.com/mongodb/mongodb-atlas-kubernetes/v2/pkg/crapi/testdata/samples/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
