@@ -15,8 +15,8 @@
 package exporter
 
 import (
+	"github.com/crd2go/crapi"
 	generated "github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator/exporter/generated"
-	"github.com/mongodb/mongodb-atlas-kubernetes/v2/pkg/crapi"
 	"go.mongodb.org/atlas-sdk/v20250312018/admin"
 )
 
