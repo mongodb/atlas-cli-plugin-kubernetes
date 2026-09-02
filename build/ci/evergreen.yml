@@ -76,6 +76,18 @@ functions:
         include_expansions_in_env:
           - workdir
         binary: build/ci/check-purls.sh
+  "authenticate to ecr":
+    - command: ec2.assume_role
+      params:
+        role_arn: ${ecr_role_arn}
+    - command: subprocess.exec
+      params:
+        <<: *go_options
+        include_expansions_in_env:
+          - AWS_ACCESS_KEY_ID
+          - AWS_SECRET_ACCESS_KEY
+          - AWS_SESSION_TOKEN
+        binary: build/package/ecr-login.sh
   "e2e test":
     # AWS creds via role assumption — see build/ci/aws-e2e-role.md
     - command: ec2.assume_role
