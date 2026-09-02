@@ -2,13 +2,15 @@
 
 The e2e tests (under `test/e2e/`) create and destroy real AWS VPCs via the EC2 API. Rather than using static AWS credentials, the Evergreen CI pipeline uses `ec2.assume_role` to obtain temporary credentials.
 
+Values using `${...}` placeholders reference Evergreen project variables (see `build/ci/evergreen.yml`).
+
 ## Role ARN
 
 ```
-arn:aws:iam::358363220050:role/atlas-cli-plugin-kubernetes-evergreen-role
+arn:aws:iam::${AWS_ACCOUNT_ID}:role/atlas-cli-plugin-kubernetes-evergreen-role
 ```
 
-Set as the Evergreen project variable `aws_role_arn` (plaintext, not a secret).
+Set as the Evergreen project variable `aws_role_arn` (plaintext, not a secret). `${AWS_ACCOUNT_ID}` corresponds to the Evergreen project variable `aws_account_id`.
 
 ## Permissions Policy
 
@@ -28,7 +30,7 @@ The role grants the minimum EC2 permissions needed for the e2e VPC lifecycle:
                 "ec2:DeleteVpc",
                 "ec2:DescribeVpcs"
             ],
-            "Resource": "arn:aws:ec2:eu-south-2:358363220050:vpc/*"
+            "Resource": "arn:aws:ec2:eu-south-2:${AWS_ACCOUNT_ID}:vpc/*"
         }
     ]
 }
@@ -47,20 +49,18 @@ The role can only be assumed by the Evergreen production instance role, restrict
         {
             "Effect": "Allow",
             "Principal": {
-                "AWS": "arn:aws:iam::557821124784:role/evergreen.role.production"
+                "AWS": "arn:aws:iam::${EVERGREEN_AWS_ACCOUNT_ID}:role/evergreen.role.production"
             },
             "Action": "sts:AssumeRole",
             "Condition": {
                 "StringLike": {
-                    "sts:ExternalId": "67695d6afadbc80007e0c945-*"
+                    "sts:ExternalId": "${EVERGREEN_PROJECT_ID}-*"
                 }
             }
         }
     ]
 }
 ```
-
-The external ID prefix `67695d6afadbc80007e0c945` is the Evergreen project ID.
 
 ## Usage in CI
 
