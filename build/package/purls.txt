@@ -47,6 +47,7 @@ pkg:golang/github.com/oasdiff/yaml3@v0.0.14
 pkg:golang/github.com/oasdiff/yaml@v0.1.1
 pkg:golang/github.com/pelletier/go-toml/v2@v2.2.4
 pkg:golang/github.com/pelletier/go-toml@v1.9.5
+pkg:golang/github.com/pmezard/go-difflib@v1.0.1-0.20181226105442-5d4384ee4fb2
 pkg:golang/github.com/sagikazarmark/slog-shim@v0.1.0
 pkg:golang/github.com/santhosh-tekuri/jsonschema/v6@v6.0.2
 pkg:golang/github.com/spf13/afero@v1.15.0
@@ -86,7 +87,7 @@ pkg:golang/k8s.io/client-go@v0.37.0
 pkg:golang/k8s.io/klog/v2@v2.140.0
 pkg:golang/k8s.io/kube-openapi@v0.0.0-20260721132016-d427ff9ee9ad
 pkg:golang/k8s.io/utils@v0.0.0-20260626114624-be93311217bd
-pkg:golang/sigs.k8s.io/controller-runtime@v0.24.1
+pkg:golang/sigs.k8s.io/controller-runtime@v0.25.0
 pkg:golang/sigs.k8s.io/json@v0.0.0-20250730193827-2d320260d730
 pkg:golang/sigs.k8s.io/randfill@v1.0.0
 pkg:golang/sigs.k8s.io/structured-merge-diff/v6@v6.4.2
