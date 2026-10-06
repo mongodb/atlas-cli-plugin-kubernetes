@@ -428,6 +428,45 @@ func TestBuildAtlasAdvancedDeployment(t *testing.T) {
 			t.Fatalf("Advanced deployment mismatch.\r\nexpected: %v\r\ngot: %v\r\n", expected, got)
 		}
 	})
+
+	t.Run("Should import termination protection setting", func(t *testing.T) {
+		const (
+			projectID       = "abcdef1234567"
+			projectName     = "testProject-2"
+			clusterName     = "testCluster-2"
+			targetNamespace = "test-namespace-2"
+		)
+
+		for name, tc := range map[string]struct {
+			terminationProtection *bool
+			expected              bool
+		}{
+			"enabled":  {terminationProtection: pointer.Get(true), expected: true},
+			"disabled": {terminationProtection: pointer.Get(false), expected: false},
+			"unset":    {terminationProtection: nil, expected: false},
+		} {
+			t.Run(name, func(t *testing.T) {
+				cluster := &atlasClustersPinned.AdvancedClusterDescription{
+					ClusterType:                  pointer.Get("REPLICASET"),
+					Name:                         pointer.Get(clusterName),
+					TerminationProtectionEnabled: tc.terminationProtection,
+				}
+
+				clusterStore.EXPECT().AtlasCluster(projectID, clusterName).Return(cluster, nil)
+				featureValidator.EXPECT().FeatureExist(features.ResourceAtlasDeployment, featureProcessArgs).Return(false)
+				featureValidator.EXPECT().FeatureExist(features.ResourceAtlasDeployment, featureBackupSchedule).Return(false)
+				featureValidator.EXPECT().FeatureExist(features.ResourceAtlasDeployment, featureGlobalDeployments).Return(false)
+
+				creds := projectName + credentialSuffix
+				got, err := BuildAtlasAdvancedDeployment(clusterStore, featureValidator, projectID, projectName, clusterName, targetNamespace, creds, dictionary, resourceVersion, false)
+				if err != nil {
+					t.Fatalf("%v", err)
+				}
+
+				assert.Equal(t, tc.expected, got.Deployment.Spec.DeploymentSpec.TerminationProtectionEnabled)
+			})
+		}
+	})
 }
 
 func TestBuildServerlessDeployments(t *testing.T) {
