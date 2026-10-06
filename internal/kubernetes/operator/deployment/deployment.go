@@ -96,19 +96,20 @@ func BuildAtlasAdvancedDeployment(deploymentStore store.OperatorClusterStore, va
 
 	// TODO: DiskSizeGB field skipped on purpose. See https://jira.mongodb.org/browse/CLOUDP-146469
 	advancedSpec = &akov2.AdvancedDeploymentSpec{
-		BackupEnabled:            deployment.BackupEnabled,
-		BiConnector:              convertBiConnector(deployment.BiConnector),
-		ClusterType:              deployment.GetClusterType(),
-		EncryptionAtRestProvider: deployment.GetEncryptionAtRestProvider(),
-		Labels:                   convertLabels(deployment.GetLabels()),
-		Name:                     deployment.GetName(),
-		Paused:                   deployment.Paused,
-		PitEnabled:               deployment.PitEnabled,
-		ReplicationSpecs:         replicationSpec,
-		RootCertType:             deployment.GetRootCertType(),
-		VersionReleaseSystem:     deployment.GetVersionReleaseSystem(),
-		Tags:                     convertTags(deployment.GetTags()),
-		MongoDBMajorVersion:      deployment.GetMongoDBMajorVersion(),
+		BackupEnabled:                deployment.BackupEnabled,
+		BiConnector:                  convertBiConnector(deployment.BiConnector),
+		ClusterType:                  deployment.GetClusterType(),
+		EncryptionAtRestProvider:     deployment.GetEncryptionAtRestProvider(),
+		Labels:                       convertLabels(deployment.GetLabels()),
+		Name:                         deployment.GetName(),
+		Paused:                       deployment.Paused,
+		PitEnabled:                   deployment.PitEnabled,
+		ReplicationSpecs:             replicationSpec,
+		RootCertType:                 deployment.GetRootCertType(),
+		VersionReleaseSystem:         deployment.GetVersionReleaseSystem(),
+		Tags:                         convertTags(deployment.GetTags()),
+		MongoDBMajorVersion:          deployment.GetMongoDBMajorVersion(),
+		TerminationProtectionEnabled: deployment.GetTerminationProtectionEnabled(),
 	}
 
 	atlasDeployment := &akov2.AtlasDeployment{
