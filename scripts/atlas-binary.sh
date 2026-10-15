@@ -18,7 +18,7 @@ set -Eeou pipefail
 
 OS=$(uname -s)
 ARCH=$(uname -m)
-CLI_VERSION=$(curl -s "https://api.github.com/repos/mongodb/mongodb-atlas-cli/releases/latest"  |jq -r .tag_name | sed 's|atlascli/v||g')
+CLI_VERSION=$(curl -s "https://api.github.com/repos/mongodb/mongodb-atlas-cli/releases/latest"  |jq -r .tag_name | sed -e 's|^atlascli/||' -e 's|^v||')
 
 echo "==> Fetching AtlasCLI binary..."
 if ls ./test/bin/atlas* 1> /dev/null 2>&1; then
