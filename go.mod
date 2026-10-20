@@ -11,7 +11,7 @@ require (
 	github.com/aws/aws-sdk-go v1.55.8
 	github.com/crd2go/crapi v0.0.0-20260721091450-94a8b15b1d1e
 	github.com/crd2go/crd2go v0.0.0-20260430094551-91802e5f84b2
-	github.com/go-test/deep v1.1.1
+	github.com/go-test/deep v1.1.2
 	github.com/golang/mock v1.6.0
 	github.com/google/go-github/v61 v61.0.0
 	github.com/google/uuid v1.6.0
