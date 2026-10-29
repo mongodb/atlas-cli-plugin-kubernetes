@@ -3,7 +3,7 @@ module github.com/mongodb/atlas-cli-plugin-kubernetes
 go 1.27.3
 
 require (
-	cloud.google.com/go/compute v1.73.0
+	cloud.google.com/go/compute v1.74.0
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.15.0
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/network/armnetwork/v2 v2.2.1
 	github.com/Masterminds/semver/v3 v3.5.0
