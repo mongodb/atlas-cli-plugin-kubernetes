@@ -207,7 +207,7 @@ func (e *GeneratedExporter) buildCredentialsSecret() *corev1.Secret {
 // The generated CRD types have a Spec.ConnectionSecretRef field of type *k8s.LocalReference.
 func setConnectionSecretRef(obj client.Object, secretName string) error {
 	objValue := reflect.ValueOf(obj)
-	if objValue.Kind() == reflect.Ptr {
+	if objValue.Kind() == reflect.Pointer {
 		objValue = objValue.Elem()
 	}
 
@@ -260,7 +260,7 @@ func setResourceName(obj client.Object) {
 func extractNameIdentifier(obj client.Object) string {
 	// Use reflection to access the Spec field
 	objValue := reflect.ValueOf(obj)
-	if objValue.Kind() == reflect.Ptr {
+	if objValue.Kind() == reflect.Pointer {
 		objValue = objValue.Elem()
 	}
 
@@ -273,7 +273,7 @@ func extractNameIdentifier(obj client.Object) string {
 	// The generated types have a nested structure: Spec.V{version}.Entry.{field}
 	for i := 0; i < specField.NumField(); i++ {
 		versionField := specField.Field(i)
-		if versionField.Kind() == reflect.Ptr && !versionField.IsNil() {
+		if versionField.Kind() == reflect.Pointer && !versionField.IsNil() {
 			versionField = versionField.Elem()
 			if name := extractNameFromVersionedSpec(versionField); name != "" {
 				return name
@@ -290,7 +290,7 @@ func extractNameIdentifier(obj client.Object) string {
 func extractNameFromVersionedSpec(v reflect.Value) string {
 	// Check Entry field first (most generated types have this)
 	entryField := v.FieldByName("Entry")
-	if entryField.IsValid() && entryField.Kind() == reflect.Ptr && !entryField.IsNil() {
+	if entryField.IsValid() && entryField.Kind() == reflect.Pointer && !entryField.IsNil() {
 		entryField = entryField.Elem()
 		identifierFields := []string{"Name", "ClusterName", "Username", "CidrBlock", "IpAddress", "AwsSecurityGroup"}
 		for _, fieldName := range identifierFields {
@@ -302,7 +302,7 @@ func extractNameFromVersionedSpec(v reflect.Value) string {
 			switch field.Kind() {
 			case reflect.String:
 				return field.String()
-			case reflect.Ptr:
+			case reflect.Pointer:
 				if !field.IsNil() && field.Elem().Kind() == reflect.String {
 					return field.Elem().String()
 				}
