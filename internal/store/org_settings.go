@@ -20,7 +20,7 @@ import (
 	atlasv2 "go.mongodb.org/atlas-sdk/v20250312006/admin"
 )
 
-//go:generate mockgen -destination=../mocks/mock_orgsettings.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store OrgSettingsDescriber,OrgSettingsUpdater
+//go:generate go tool -modfile=$MODFILE mockgen -destination=../mocks/mock_orgsettings.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store OrgSettingsDescriber,OrgSettingsUpdater
 
 type OrgSettingsDescriber interface {
 	GetOrgSettings(string) (*atlasv2.OrganizationSettings, error)

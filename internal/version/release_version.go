@@ -21,7 +21,7 @@ import (
 	"github.com/google/go-github/v61/github"
 )
 
-//go:generate mockgen -destination=../mocks/mock_release_version.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/version ReleaseVersionDescriber
+//go:generate go tool -modfile=$MODFILE mockgen -destination=../mocks/mock_release_version.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/version ReleaseVersionDescriber
 
 const (
 	maxWaitTime = 500 * time.Millisecond

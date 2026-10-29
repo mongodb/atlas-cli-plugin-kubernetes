@@ -21,7 +21,7 @@ import (
 	atlasClustersPinned "go.mongodb.org/atlas-sdk/v20240530005/admin"
 )
 
-//go:generate mockgen -destination=../mocks/mock_serverless_instances.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store ServerlessInstanceLister,ServerlessInstanceDescriber
+//go:generate go tool -modfile=$MODFILE mockgen -destination=../mocks/mock_serverless_instances.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store ServerlessInstanceLister,ServerlessInstanceDescriber
 
 type ServerlessInstanceLister interface {
 	ServerlessInstances(string) ([]atlasClustersPinned.ServerlessInstanceDescription, error)

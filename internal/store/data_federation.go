@@ -20,7 +20,7 @@ import (
 	"go.mongodb.org/atlas-sdk/v20250312006/admin"
 )
 
-//go:generate mockgen -destination=../mocks/mock_data_federation.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store DataFederationLister,DataFederationDescriber,DataFederationStore
+//go:generate go tool -modfile=$MODFILE mockgen -destination=../mocks/mock_data_federation.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store DataFederationLister,DataFederationDescriber,DataFederationStore
 
 type DataFederationStore interface {
 	DataFederationLister

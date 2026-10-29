@@ -19,12 +19,12 @@ STAGED_GO_FILES=$(git diff --name-only | grep ".go$" | grep -v "mock")
 echo "==> Formatting changed go files..."
 for FILE in ${STAGED_GO_FILES}; do
 	gofmt -w -s "${FILE}"
-	goimports -w "${FILE}"
+	go tool -modfile=devtools/go.mod goimports -w "${FILE}"
 done
 
 echo "==> Formatting changed sh files..."
 STAGED_SH_FILES=$(git diff --name-only | grep ".sh$")
 for FILE in ${STAGED_SH_FILES}; do
-	shfmt -l -w "${FILE}"
+	go tool -modfile=devtools/go.mod shfmt -l -w "${FILE}"
 done
 echo "==> Done..."
