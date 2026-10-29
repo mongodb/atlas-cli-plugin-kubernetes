@@ -21,7 +21,7 @@ import (
 	atlasv2 "go.mongodb.org/atlas-sdk/v20250312006/admin"
 )
 
-//go:generate mockgen -destination=../mocks/mock_clusters.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store ClusterLister,ClusterDescriber,AtlasClusterConfigurationOptionsDescriber
+//go:generate go tool -modfile=$MODFILE mockgen -destination=../mocks/mock_clusters.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store ClusterLister,ClusterDescriber,AtlasClusterConfigurationOptionsDescriber
 
 type ClusterLister interface {
 	ListAtlasClusters(string) ([]atlasClustersPinned.AdvancedClusterDescription, error)

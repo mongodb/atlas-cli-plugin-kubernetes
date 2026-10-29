@@ -18,7 +18,7 @@ import (
 	atlasClustersPinned "go.mongodb.org/atlas-sdk/v20240530005/admin"
 )
 
-//go:generate mockgen -destination=../mocks/mock_global_cluster.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store GlobalClusterDescriber
+//go:generate go tool -modfile=$MODFILE mockgen -destination=../mocks/mock_global_cluster.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store GlobalClusterDescriber
 
 type GlobalClusterDescriber interface {
 	GlobalCluster(string, string) (*atlasClustersPinned.GeoSharding, error)

@@ -29,7 +29,7 @@ var (
 	}
 )
 
-//go:generate mockgen -destination=../mocks/mock_network_connections.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store NetworkContainerLister
+//go:generate go tool -modfile=$MODFILE mockgen -destination=../mocks/mock_network_connections.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store NetworkContainerLister
 
 type NetworkContainerLister interface {
 	NetworkContainers(projectID string) ([]atlasv2.CloudProviderContainer, error)
