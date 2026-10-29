@@ -38,7 +38,7 @@ func valueOrEmptySlice(slice any) (result any) {
 	}
 
 	k := reflect.TypeOf(slice).Kind()
-	if (k == reflect.Slice || k == reflect.Ptr) && reflect.ValueOf(slice).IsNil() {
+	if (k == reflect.Slice || k == reflect.Pointer) && reflect.ValueOf(slice).IsNil() {
 		return result
 	}
 

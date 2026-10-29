@@ -1,7 +1,6 @@
 # A Self-Documenting Makefile: http://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
 
 GOCOVERDIR?=$(abspath cov)
-GOLANGCI_VERSION?=v2.11.0
 
 PLUGIN_SOURCE_FILES?=./cmd/plugin
 ifeq ($(OS),Windows_NT)
@@ -52,7 +51,6 @@ devtools:  ## Install dev tools
 	go install mvdan.cc/sh/v3/cmd/shfmt@latest
 	go install golang.org/x/tools/cmd/goimports@latest
 	go install golang.org/x/vuln/cmd/govulncheck@latest
-	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(shell go env GOPATH)/bin $(GOLANGCI_VERSION)
 
 .PHONY: fmt
 fmt: ## Format changed go
@@ -60,7 +58,7 @@ fmt: ## Format changed go
 
 .PHONY: lint
 lint: ## Run linter
-	golangci-lint run --timeout 3m0s
+	go tool -modfile=devtools/go.mod golangci-lint run --timeout 3m0s
 
 .PHONY: govulncheck
 govulncheck: ## Run govulncheck for known vulnerabilities
