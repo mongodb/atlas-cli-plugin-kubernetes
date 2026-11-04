@@ -143,7 +143,8 @@ func TestWithAuthentication(t *testing.T) {
 			name: "user account",
 			setTestProfile: func(p *config.Profile) {
 				p.SetAuthType(config.UserAccount)
-				p.SetAccessToken("token")
+				p.SetAccessToken("eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJleHAiOjQxMDI0NDQ4MDB9.")
+				p.SetRefreshToken("refresh-token")
 			},
 		},
 	}
