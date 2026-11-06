@@ -14,7 +14,7 @@
 
 package features
 
-//go:generate mockgen -destination=../../../mocks/mock_atlas_operator_feature_validator.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator/features FeatureValidator
+//go:generate go tool -modfile=$MODFILE mockgen -destination=../../../mocks/mock_atlas_operator_feature_validator.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/kubernetes/operator/features FeatureValidator
 
 type FeatureValidator interface {
 	IsResourceSupported(resourceName string) bool

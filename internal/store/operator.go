@@ -14,13 +14,13 @@
 
 package store
 
-//go:generate mockgen -destination=../mocks/mock_atlas_operator_cluster_store.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store OperatorClusterStore
-//go:generate mockgen -destination=../mocks/mock_atlas_operator_project_store.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store OperatorProjectStore
-//go:generate mockgen -destination=../mocks/mock_atlas_operator_db_users_store.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store OperatorDBUsersStore
-//go:generate mockgen -destination=../mocks/mock_atlas_operator_private_endpoint_store.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store OperatorPrivateEndpointStore
-//go:generate mockgen -destination=../mocks/mock_atlas_operator_org_store.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store OperatorOrgStore
-//go:generate mockgen -destination=../mocks/mock_atlas_generic_store.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store OperatorGenericStore
-//go:generate mockgen -destination=../mocks/mock_atlas_org_settings_store.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store OrgSettingsStore
+//go:generate go tool -modfile=$MODFILE mockgen -destination=../mocks/mock_atlas_operator_cluster_store.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store OperatorClusterStore
+//go:generate go tool -modfile=$MODFILE mockgen -destination=../mocks/mock_atlas_operator_project_store.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store OperatorProjectStore
+//go:generate go tool -modfile=$MODFILE mockgen -destination=../mocks/mock_atlas_operator_db_users_store.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store OperatorDBUsersStore
+//go:generate go tool -modfile=$MODFILE mockgen -destination=../mocks/mock_atlas_operator_private_endpoint_store.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store OperatorPrivateEndpointStore
+//go:generate go tool -modfile=$MODFILE mockgen -destination=../mocks/mock_atlas_operator_org_store.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store OperatorOrgStore
+//go:generate go tool -modfile=$MODFILE mockgen -destination=../mocks/mock_atlas_generic_store.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store OperatorGenericStore
+//go:generate go tool -modfile=$MODFILE mockgen -destination=../mocks/mock_atlas_org_settings_store.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store OrgSettingsStore
 
 type OperatorProjectStore interface {
 	OperatorTeamsStore

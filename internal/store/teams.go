@@ -18,7 +18,7 @@ import (
 	atlasv2 "go.mongodb.org/atlas-sdk/v20250312006/admin"
 )
 
-//go:generate mockgen -destination=../mocks/mock_teams.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store TeamDescriber
+//go:generate go tool -modfile=$MODFILE mockgen -destination=../mocks/mock_teams.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store TeamDescriber
 
 type TeamDescriber interface {
 	TeamByID(string, string) (*atlasv2.TeamResponse, error)

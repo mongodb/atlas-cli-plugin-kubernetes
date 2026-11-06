@@ -30,7 +30,7 @@ export E2E_PLUGIN_BINARY_PATH
 export E2E_ATLASCLI_BINARY_PATH
 
 .PHONY: setup
-setup: deps devtools ## Set up dev env
+setup: deps ## Set up dev env
 
 .PHONY: deps
 deps:  ## Download go module dependencies
@@ -43,15 +43,6 @@ build: ## Generate the binary in ./bin
 	@echo "==> Building kubernetes plugin binary"
 	go build -o $(PLUGIN_BINARY_PATH) $(PLUGIN_SOURCE_FILES)
 
-.PHONY: devtools
-devtools:  ## Install dev tools
-	@echo "==> Installing dev tools..."
-	go install github.com/google/addlicense@latest
-	go install github.com/golang/mock/mockgen@latest
-	go install mvdan.cc/sh/v3/cmd/shfmt@latest
-	go install golang.org/x/tools/cmd/goimports@latest
-	go install golang.org/x/vuln/cmd/govulncheck@latest
-
 .PHONY: fmt
 fmt: ## Format changed go
 	@scripts/fmt.sh
@@ -62,7 +53,7 @@ lint: ## Run linter
 
 .PHONY: govulncheck
 govulncheck: ## Run govulncheck for known vulnerabilities
-	govulncheck ./...
+	go tool -modfile=devtools/go.mod govulncheck ./...
 
 .PHONY: unit-test
 unit-test: ## Run unit-tests
@@ -90,7 +81,7 @@ e2e-test: build-debug ## Run E2E tests
 gen-mocks: ## Generate mocks
 	@echo "==> Generating mocks"
 	rm -rf ./internal/mocks
-	GOFLAGS=-mod=mod go generate ./internal...
+	MODFILE=$(CURDIR)/devtools/go.mod GOFLAGS=-mod=mod go generate ./internal...
 
 .PHONY: gen-docs
 gen-docs: ## Generate docs for atlascli commands

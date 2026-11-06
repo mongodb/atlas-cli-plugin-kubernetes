@@ -18,7 +18,7 @@ import (
 	atlasv2 "go.mongodb.org/atlas-sdk/v20250312006/admin"
 )
 
-//go:generate mockgen -destination=../mocks/mock_connected_orgs_store.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store ConnectedOrgConfigsDescriber
+//go:generate go tool -modfile=$MODFILE mockgen -destination=../mocks/mock_connected_orgs_store.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store ConnectedOrgConfigsDescriber
 
 type ConnectedOrgConfigsDescriber interface {
 	GetConnectedOrgConfig(opts *atlasv2.GetConnectedOrgConfigApiParams) (*atlasv2.ConnectedOrgConfig, error)

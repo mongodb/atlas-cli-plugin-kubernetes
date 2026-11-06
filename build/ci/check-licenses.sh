@@ -28,5 +28,5 @@ find_files() {
 }
 
 for FILE in $(find_files); do
-	addlicense -c "MongoDB Inc" -check "${FILE}"
+	go tool -modfile=devtools/go.mod addlicense -c "MongoDB Inc" -check "${FILE}"
 done

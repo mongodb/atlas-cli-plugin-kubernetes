@@ -18,7 +18,7 @@ import (
 	atlasv2 "go.mongodb.org/atlas-sdk/v20250312006/admin"
 )
 
-//go:generate mockgen -destination=../mocks/mock_api_keys.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store ProjectAPIKeyCreator,OrganizationAPIKeyCreator,ProjectAPIKeyAssigner
+//go:generate go tool -modfile=$MODFILE mockgen -destination=../mocks/mock_api_keys.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store ProjectAPIKeyCreator,OrganizationAPIKeyCreator,ProjectAPIKeyAssigner
 
 type ProjectAPIKeyCreator interface {
 	CreateProjectAPIKey(string, *atlasv2.CreateAtlasProjectApiKey) (*atlasv2.ApiKeyUserDetails, error)

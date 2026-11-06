@@ -18,7 +18,7 @@ import (
 	atlasClustersPinned "go.mongodb.org/atlas-sdk/v20240530005/admin"
 )
 
-//go:generate mockgen -destination=../mocks/mock_cloud_provider_backup.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store ScheduleDescriber
+//go:generate go tool -modfile=$MODFILE mockgen -destination=../mocks/mock_cloud_provider_backup.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store ScheduleDescriber
 
 type ScheduleDescriber interface {
 	DescribeSchedule(string, string) (*atlasClustersPinned.DiskBackupSnapshotSchedule, error)

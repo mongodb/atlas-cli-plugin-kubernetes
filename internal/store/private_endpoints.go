@@ -18,7 +18,7 @@ import (
 	atlasv2 "go.mongodb.org/atlas-sdk/v20250312006/admin"
 )
 
-//go:generate mockgen -destination=../mocks/mock_private_endpoints.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store PrivateEndpointLister,InterfaceEndpointDescriber
+//go:generate go tool -modfile=$MODFILE mockgen -destination=../mocks/mock_private_endpoints.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store PrivateEndpointLister,InterfaceEndpointDescriber
 
 type PrivateEndpointLister interface {
 	PrivateEndpoints(string, string) ([]atlasv2.EndpointService, error)

@@ -20,7 +20,7 @@ import (
 	"go.mongodb.org/atlas-sdk/v20250312006/admin"
 )
 
-//go:generate mockgen -destination=../mocks/mock_alert_configuration.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store AlertConfigurationLister
+//go:generate go tool -modfile=$MODFILE mockgen -destination=../mocks/mock_alert_configuration.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store AlertConfigurationLister
 
 type AlertConfigurationLister interface {
 	AlertConfigurations(projectID string) ([]admin.GroupAlertsConfig, error)

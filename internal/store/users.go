@@ -18,7 +18,7 @@ import (
 	atlasv2 "go.mongodb.org/atlas-sdk/v20250312006/admin"
 )
 
-//go:generate mockgen -destination=../mocks/mock_users.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store TeamUserLister
+//go:generate go tool -modfile=$MODFILE mockgen -destination=../mocks/mock_users.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store TeamUserLister
 
 type TeamUserLister interface {
 	TeamUsers(string, string) (*atlasv2.PaginatedOrgUser, error)

@@ -18,7 +18,7 @@ import (
 	atlasClustersPinned "go.mongodb.org/atlas-sdk/v20240530005/admin"
 )
 
-//go:generate mockgen -destination=../mocks/mock_serverless_private_endpoints.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store ServerlessPrivateEndpointsLister
+//go:generate go tool -modfile=$MODFILE mockgen -destination=../mocks/mock_serverless_private_endpoints.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store ServerlessPrivateEndpointsLister
 
 type ServerlessPrivateEndpointsLister interface {
 	ServerlessPrivateEndpoints(string, string) ([]atlasClustersPinned.ServerlessTenantEndpoint, error)

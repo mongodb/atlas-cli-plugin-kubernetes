@@ -18,7 +18,7 @@ import (
 	atlasv2 "go.mongodb.org/atlas-sdk/v20250312006/admin"
 )
 
-//go:generate mockgen -destination=../mocks/mock_backup_compliance.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store CompliancePolicyDescriber
+//go:generate go tool -modfile=$MODFILE mockgen -destination=../mocks/mock_backup_compliance.go -package=mocks github.com/mongodb/atlas-cli-plugin-kubernetes/internal/store CompliancePolicyDescriber
 
 type CompliancePolicyDescriber interface {
 	DescribeCompliancePolicy(projectID string) (*atlasv2.DataProtectionSettings20231001, error)
