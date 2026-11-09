@@ -51,8 +51,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version-file: 'go.mod'
-      - run: make devtools
-      - run: ./build/ci/check-licenses.sh
+      - run: make check-licenses
   docs:
     runs-on: ubuntu-latest
     steps:

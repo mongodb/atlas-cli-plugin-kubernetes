@@ -30,7 +30,7 @@ export E2E_PLUGIN_BINARY_PATH
 export E2E_ATLASCLI_BINARY_PATH
 
 .PHONY: setup
-setup: deps devtools ## Set up dev env
+setup: deps ## Set up dev env
 
 .PHONY: deps
 deps:  ## Download go module dependencies
@@ -44,13 +44,15 @@ build: ## Generate the binary in ./bin
 	go build -o $(PLUGIN_BINARY_PATH) $(PLUGIN_SOURCE_FILES)
 
 .PHONY: devtools
-devtools:  ## Install dev tools
+devtools: ## Install pinned dev tools into the Go bin directory
 	@echo "==> Installing dev tools..."
-	go install github.com/google/addlicense@latest
-	go install github.com/golang/mock/mockgen@latest
-	go install mvdan.cc/sh/v3/cmd/shfmt@latest
-	go install golang.org/x/tools/cmd/goimports@latest
-	go install golang.org/x/vuln/cmd/govulncheck@latest
+	GOBIN=$(shell go env GOPATH)/bin go install -modfile=devtools/go.mod \
+		github.com/golang/mock/mockgen \
+		github.com/golangci/golangci-lint/v2/cmd/golangci-lint \
+		github.com/google/addlicense \
+		golang.org/x/tools/cmd/goimports \
+		golang.org/x/vuln/cmd/govulncheck \
+		mvdan.cc/sh/v3/cmd/shfmt
 
 .PHONY: fmt
 fmt: ## Format changed go
@@ -62,7 +64,7 @@ lint: ## Run linter
 
 .PHONY: govulncheck
 govulncheck: ## Run govulncheck for known vulnerabilities
-	govulncheck ./...
+	go tool -modfile=devtools/go.mod govulncheck ./...
 
 .PHONY: unit-test
 unit-test: ## Run unit-tests
@@ -87,10 +89,10 @@ e2e-test: build-debug ## Run E2E tests
 	GOCOVERDIR=$(GOCOVERDIR) $(TEST_CMD) -race -v -p 1 -parallel $(E2E_PARALLEL) -v -timeout $(E2E_TIMEOUT) -tags="$(E2E_TAGS)" ./test/e2e... $(E2E_EXTRA_ARGS)
 
 .PHONY: gen-mocks
-gen-mocks: ## Generate mocks
+gen-mocks: devtools ## Generate mocks
 	@echo "==> Generating mocks"
 	rm -rf ./internal/mocks
-	GOFLAGS=-mod=mod go generate ./internal...
+	PATH=$(shell go env GOPATH)/bin:$$PATH GOFLAGS=-mod=mod go generate ./internal...
 
 .PHONY: gen-docs
 gen-docs: ## Generate docs for atlascli commands
@@ -98,9 +100,9 @@ gen-docs: ## Generate docs for atlascli commands
 	go run -ldflags "$(LINKER_FLAGS)" ./tools/docs/main.go
 
 .PHONY: check-licenses
-check-licenses: ## Check licenses
+check-licenses: devtools ## Check licenses
 	@echo "==> Running lincense checker..."
-	@build/ci/check-licenses.sh
+	@PATH=$(shell go env GOPATH)/bin:$$PATH ./build/ci/check-licenses.sh
 
 .PHONY: generate-all-manifests
 generate-all-manifests: generate-manifest generate-manifest-windows
