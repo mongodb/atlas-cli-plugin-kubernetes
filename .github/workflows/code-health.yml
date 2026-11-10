@@ -6,16 +6,12 @@ on:
       - main
   pull_request:
 permissions:
-  pull-requests: write  # For PR-specific operations
-  issues: write        # For commenting functionality
+  contents: read
 jobs:
   golangci:
     name: lint
     runs-on: ubuntu-latest
     steps:
-      - uses: GitHubSecurityLab/actions-permissions/monitor@v1
-        with:
-          config: ${{ vars.PERMISSIONS_CONFIG }}
       - uses: actions/checkout@v4
       - name: Install Go
         uses: actions/setup-go@v5
@@ -27,9 +23,6 @@ jobs:
     name: govulncheck
     runs-on: ubuntu-latest
     steps:
-      - uses: GitHubSecurityLab/actions-permissions/monitor@v1
-        with:
-          config: ${{ vars.PERMISSIONS_CONFIG }}
       - uses: actions/checkout@v4
       - name: Install Go
         uses: actions/setup-go@v5
@@ -43,9 +36,6 @@ jobs:
     name: licensecheck
     runs-on: ubuntu-latest
     steps:
-      - uses: GitHubSecurityLab/actions-permissions/monitor@v1
-        with:
-          config: ${{ vars.PERMISSIONS_CONFIG }}
       - uses: actions/checkout@v4
       - name: Install Go
         uses: actions/setup-go@v5
@@ -55,9 +45,6 @@ jobs:
   docs:
     runs-on: ubuntu-latest
     steps:
-      - uses: GitHubSecurityLab/actions-permissions/monitor@v1
-        with:
-          config: ${{ vars.PERMISSIONS_CONFIG }}
       - name: Checkout repository
         uses: actions/checkout@v4
       - name: Install Go
@@ -82,9 +69,6 @@ jobs:
   actionlint:
     runs-on: ubuntu-latest
     steps:
-      - uses: GitHubSecurityLab/actions-permissions/monitor@v1
-        with:
-          config: ${{ vars.PERMISSIONS_CONFIG }}
       - uses: actions/checkout@v4
       - name: Download actionlint
         id: get_actionlint
@@ -98,9 +82,6 @@ jobs:
   mocks:
     runs-on: ubuntu-latest
     steps:
-      - uses: GitHubSecurityLab/actions-permissions/monitor@v1
-        with:
-          config: ${{ vars.PERMISSIONS_CONFIG }}
       - name: Checkout repository
         uses: actions/checkout@v4
       - name: Install Go
@@ -128,18 +109,12 @@ jobs:
     name: shellcheck
     runs-on: ubuntu-latest
     steps:
-      - uses: GitHubSecurityLab/actions-permissions/monitor@v1
-        with:
-          config: ${{ vars.PERMISSIONS_CONFIG }}
       - uses: actions/checkout@v4
       - name: Run ShellCheck
         uses: bewuethr/shellcheck-action@v2
   tidy:
     runs-on: ubuntu-latest
     steps:
-      - uses: GitHubSecurityLab/actions-permissions/monitor@v1
-        with:
-          config: ${{ vars.PERMISSIONS_CONFIG }}
       - name: Checkout repository
         uses: actions/checkout@v4
       - name: Install Go
@@ -173,10 +148,6 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: GitHubSecurityLab/actions-permissions/monitor@v1
-        if: ${{ matrix.os=='ubuntu-latest' }}
-        with:
-          config: ${{ vars.PERMISSIONS_CONFIG }}
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
@@ -207,9 +178,6 @@ jobs:
       INTEGRATION_TAGS: integration
     runs-on: ubuntu-latest
     steps:
-      - uses: GitHubSecurityLab/actions-permissions/monitor@v1
-        with:
-          config: ${{ vars.PERMISSIONS_CONFIG }}
       - name: Checkout repository
         uses: actions/checkout@v4
       - name: Install Go

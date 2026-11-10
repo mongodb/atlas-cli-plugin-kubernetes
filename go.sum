@@ -192,8 +192,8 @@ github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510/go.mod h1:pupxD2MaaD3
 github.com/google/uuid v1.1.2/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
 github.com/google/uuid v1.6.0 h1:NIvaJDMOsjHA8n1jAhLSgzrAzy1Hgr+hNrb57e+94F0=
 github.com/google/uuid v1.6.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
-github.com/googleapis/enterprise-certificate-proxy v0.3.23 h1:J+VGF1wjAM2dU2kKUXZxJdDppRLReWP7KWcclfngQhc=
-github.com/googleapis/enterprise-certificate-proxy v0.3.23/go.mod h1:Y8NO/15GNLkrXI3OR5xOFmeU3XLX1sLSdtlXgJ0zmIw=
+github.com/googleapis/enterprise-certificate-proxy v0.3.24 h1:G9iCJIY+AYVmUskKdjX8FVy7sG+nbzjOQ41cvlmhcvg=
+github.com/googleapis/enterprise-certificate-proxy v0.3.24/go.mod h1:hEjCmnoakQzv5ImLUp6alkY7XgLlNoAxwTXmhHHNIsI=
 github.com/googleapis/gax-go/v2 v2.27.0 h1:qe2iQOUzxb3fd6x6ewpIEixPQhJ+0Ihc/RRZhKA/2g0=
 github.com/googleapis/gax-go/v2 v2.27.0/go.mod h1:RofiqDw3ehcG4L0H1zO3D2Itpwd3/uS/7wdmbNDF1DE=
 github.com/hashicorp/hcl v1.0.0 h1:0Anlzjpi4vEasTeNFn2mLJgTSwt0+6sfsiTG8qcWGx4=
@@ -237,8 +237,8 @@ github.com/mongodb-labs/cobra2snooty v1.19.1 h1:GDEQZWy8f/DeJlImNgVvStu6sgNi8nuS
 github.com/mongodb-labs/cobra2snooty v1.19.1/go.mod h1:Hyq4YadN8dwdOiz56MXwTuVN63p0WlkQwxdLxOSGdX8=
 github.com/mongodb/atlas-cli-core v0.0.0-20250909113945-ffb322e05f59 h1:uIxkUglkDOtrvfzyNsV/FHwGC717mAI0S4/jzFOBvsM=
 github.com/mongodb/atlas-cli-core v0.0.0-20250909113945-ffb322e05f59/go.mod h1:QDfVGpdfxXM1httLNXCKsfWTKv6slzCqBZxkkPIktlQ=
-github.com/mongodb/mongodb-atlas-kubernetes/v2 v2.17.1 h1:hwMC8NnefixcSYv5T1flxD26pXTGFpCTHc8XNaFG4bw=
-github.com/mongodb/mongodb-atlas-kubernetes/v2 v2.17.1/go.mod h1:QmWNiPQZG2Y3EBWTUm8RS7ocZfgxBRD5fHEP2o3WZaw=
+github.com/mongodb/mongodb-atlas-kubernetes/v2 v2.18.1 h1:GoY0YcWL3TjUOlSTGGy7LqxpJ1ZG0iMGuulN706U4y8=
+github.com/mongodb/mongodb-atlas-kubernetes/v2 v2.18.1/go.mod h1:u4V4jXZNhsRoE7TEzLnDkSc+BLyV6sm8BxCbvVmqk7Y=
 github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 h1:C3w9PqII01/Oq1c1nUAm88MOHcQC9l5mIlSMApZMrHA=
 github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822/go.mod h1:+n7T8mK8HuQTcFwEeznm/DIxMOiR9yIdICNftLE1DvQ=
 github.com/oasdiff/yaml v0.1.1 h1:6nHx+pn9gBRM6YpBlFZFQGCCd1nuvqOBtTD3KKTgGxY=
@@ -332,8 +332,8 @@ go.mongodb.org/atlas-sdk/v20250312018 v20250312018.1.0 h1:tHQf++4+qGqXrKrKsPhnHL
 go.mongodb.org/atlas-sdk/v20250312018 v20250312018.1.0/go.mod h1:Jaz/KTPpC4od8zWi/84FbvsaFasm2+1Oy0yn+BY/2Gs=
 go.mongodb.org/atlas-sdk/v20250312020 v20250312020.1.0 h1:Ba+iX5yraZiwXGs6mCyjWxMDbs5bC7kLGYpHu3R8RGM=
 go.mongodb.org/atlas-sdk/v20250312020 v20250312020.1.0/go.mod h1:8OGHqMpalr/OTRHA9kjSSg2EKfig5lrNEeNaVYphYYo=
-go.mongodb.org/atlas-sdk/v20250312027 v20250312027.0.0 h1:EDyeDzQYPyf9NV9b+D3rgQgVvtantuyYP/I9LHPdsz4=
-go.mongodb.org/atlas-sdk/v20250312027 v20250312027.0.0/go.mod h1:gE2ncE9Za9uidv80jvoA0hLueIL2I6q/Fe7bvISuNto=
+go.mongodb.org/atlas-sdk/v20250312027 v20250312027.1.0 h1:6GORUQ87dG1wWQJl0xttmsMhv+lCAkl4xkzpnMBSfrk=
+go.mongodb.org/atlas-sdk/v20250312027 v20250312027.1.0/go.mod h1:gE2ncE9Za9uidv80jvoA0hLueIL2I6q/Fe7bvISuNto=
 go.opencensus.io v0.24.0 h1:y73uSU6J157QMP2kn2r30vwW1A2W2WFwSCGnAVxeaD0=
 go.opencensus.io v0.24.0/go.mod h1:vNK8G9p7aAivkbmorf4v+7Hgx+Zs0yY+0fOtgBfjQKo=
 go.opentelemetry.io/auto/sdk v1.2.1 h1:jXsnJ4Lmnqd11kwkBV2LgLoFMZKizbCi5fNZ/ipaZ64=
@@ -433,8 +433,8 @@ golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543/go.mod h1:I/5z698sn9Ka8T
 golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1/go.mod h1:I/5z698sn9Ka8TeJc9MKroUUfqBBauWjQqLJ2OPfmY0=
 gonum.org/v1/gonum v0.17.0 h1:VbpOemQlsSMrYmn7T2OUvQ4dqxQXU+ouZFQsZOx50z4=
 gonum.org/v1/gonum v0.17.0/go.mod h1:El3tOrEuMpv2UdMrbNlKEh9vd86bmQ6vqIcDwxEOc1E=
-google.golang.org/api v0.308.0 h1:iGb+4qT3nVb3uuIzwor3yP2nyu+rMZr31PvLFiRNJQk=
-google.golang.org/api v0.308.0/go.mod h1:4XMH+b/ZEfuTbK7FnrFRY9c4xfFHVflGTKuy/i5wUmE=
+google.golang.org/api v0.310.0 h1:537ccDDmbwuwX1iof3Vtdz9vow6uJCgrSZJWedAWM0I=
+google.golang.org/api v0.310.0/go.mod h1:5NUthU+LmGMKzYgRaScb+TTe1Lo7x4A+J7g+Yj8BRzA=
 google.golang.org/appengine v1.1.0/go.mod h1:EbEs0AVv82hx2wNQdGPgUI5lhzA/G0D9YwlJXL52JkM=
 google.golang.org/appengine v1.4.0/go.mod h1:xpcJRLb0r/rnEns0DIKYYv+WjYCduHsrkT7/EB5XEv4=
 google.golang.org/genproto v0.0.0-20180817151627-c66870c02cf8/go.mod h1:JiN7NxoALGmiZfu7CAH4rXhgtRTLTxftemlI0sWmxmc=
