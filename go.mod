@@ -1,6 +1,6 @@
 module github.com/mongodb/atlas-cli-plugin-kubernetes
 
-go 1.27.3
+go 1.27.4
 
 require (
 	cloud.google.com/go/compute v1.75.0
