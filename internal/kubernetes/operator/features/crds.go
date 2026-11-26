@@ -27,7 +27,7 @@ import (
 )
 
 const (
-	LatestOperatorMajorVersion          = "2.16.0"
+	LatestOperatorMajorVersion          = "2.19.0"
 	maxDepth                            = 100
 	ResourceVersion                     = "mongodb.com/atlas-resource-version"
 	ResourceAtlasProject                = "atlas.mongodb.com_atlasprojects"
@@ -62,7 +62,7 @@ var (
 	ErrDocumentHasNoSpec         = errors.New("document contains no Spec")
 
 	versionsToResourcesMap = map[string][]resource{
-		"2.14.0": {
+		"2.17.0": {
 			resource{ResourceAtlasDatabaseUser, NopPatcher()},
 			resource{ResourceAtlasProject, NopPatcher()},
 			resource{ResourceAtlasDeployment, NopPatcher()},
@@ -82,7 +82,7 @@ var (
 			resource{ResourceAtlasThirdPartyIntegration, NopPatcher()},
 			resource{ResourceAtlasOrgSettings, NopPatcher()},
 		},
-		"2.15.0": {
+		"2.18.0": {
 			resource{ResourceAtlasDatabaseUser, NopPatcher()},
 			resource{ResourceAtlasProject, NopPatcher()},
 			resource{ResourceAtlasDeployment, NopPatcher()},
@@ -102,7 +102,7 @@ var (
 			resource{ResourceAtlasThirdPartyIntegration, NopPatcher()},
 			resource{ResourceAtlasOrgSettings, NopPatcher()},
 		},
-		"2.16.0": {
+		"2.19.0": {
 			resource{ResourceAtlasDatabaseUser, NopPatcher()},
 			resource{ResourceAtlasProject, NopPatcher()},
 			resource{ResourceAtlasDeployment, NopPatcher()},
